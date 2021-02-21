@@ -151,6 +151,15 @@ def detect_modules(at_path):
 def is_module(path):
     return os.path.isdir(path) and os.path.exists(os.path.join(path, "SCsub"))
 
+# composes OrderedDict from modules_ids and modules_paths arrays and calls write_modules
+def cmake_write_modules(modules_ids, modules_paths):
+    from collections import OrderedDict
+    length = min(len(modules_ids), len(modules_paths))
+    modules_list = OrderedDict()
+    for i in range(length):
+        modules_list[name] = path
+
+    write_modules(module_list)
 
 def write_modules(module_list):
     includes_cpp = ""

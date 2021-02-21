@@ -1,0 +1,43 @@
+
+add_lib(core-crypto-lib
+	PARENT_LIB
+		core-lib
+	COMPONENTS
+		global-env
+		warnings-env
+)
+
+if (GODOT_BUILTIN_MBEDTLS OR NOT mbedtls_IS_MODULE_ENABLED)
+	# Use our headers for builtin or if the module is not going to be compiled.
+	# We decided not to depend on system mbedtls just for these few files that can
+	# be easily extracted.
+	target_include_directories(core-crypto-lib PRIVATE
+		"${GODOT_SOURCE_DIR}/thirdparty/mbedtls/include"
+	)
+endif()
+
+if(NOT mbedtls_IS_MODULE_ENABLED)
+
+	add_lib(thirdparty-core-crypto-lib
+		PARENT_LIB
+			core-crypto-lib
+		COMPONENTS
+			global-env
+	)
+
+	target_compile_definitions(thirdparty-core-crypto-lib PRIVATE 
+		MBEDTLS_CONFIG_FILE="thirdparty/mbedtls/include/godot_core_mbedtls_config.h"
+	)
+	set(__THIRDPARTY_MBEDTLS_DIR "${GODOT_SOURCE_DIR}/thirdparty/mbedtls/library")
+	target_sources(thirdparty-core-crypto-lib PRIVATE
+		"${__THIRDPARTY_MBEDTLS_DIR}/aes.c"
+		"${__THIRDPARTY_MBEDTLS_DIR}/base64.c"
+		"${__THIRDPARTY_MBEDTLS_DIR}/md5.c"
+		"${__THIRDPARTY_MBEDTLS_DIR}/sha1.c"
+		"${__THIRDPARTY_MBEDTLS_DIR}/sha256.c"
+		"${__THIRDPARTY_MBEDTLS_DIR}/godot_core_mbedtls_platform.c"
+	)
+
+endif()
+
+target_glob_sources(core-crypto-lib PRIVATE "*.cpp")

@@ -1,0 +1,174 @@
+
+execute_python_method(gen_methods generate_encryption_key_header
+	PYTHON_ARGS 
+		STR_VAL "$ENV{SCRIPT_AES256_ENCRYPTION_KEY}"
+)
+
+add_lib(core-lib 
+	STANDALONE
+	PARENT_ENV
+		global-libs-list
+	COMPONENTS
+		global-env
+		warnings-env
+)
+add_lib(thirdparty-core-lib 
+	PARENT_LIB 
+		core-lib
+	COMPONENTS
+		global-env	
+)
+
+# Misc thirdparty code: header paths are hardcoded, we don't need to append
+# to the include path (saves a few chars on the compiler invocation for touchy MSVC...)
+
+# Here we assume, that godot project will be build as standalone, so thirdparty folder will be in the source directory. 
+# Usually this is true, but if another is the case, this will lead to some problems.
+#TODO: Think of the solution for this.  
+set(__THIRDPARTY_MISC_DIR "${GODOT_SOURCE_DIR}/thirdparty/misc")
+target_sources(thirdparty-core-lib PRIVATE 
+	# C sources
+	"${__THIRDPARTY_MISC_DIR}/fastlz.c"
+	"${__THIRDPARTY_MISC_DIR}/smaz.c"
+	# C++ sources
+	"${__THIRDPARTY_MISC_DIR}/hq2x.cpp"
+	"${__THIRDPARTY_MISC_DIR}/pcg.cpp"
+	"${__THIRDPARTY_MISC_DIR}/triangulator.cpp"
+	"${__THIRDPARTY_MISC_DIR}/clipper.cpp"
+)
+
+if(GODOT_BUILTIN_ZLIB)
+	set(__THIRDPARTY_ZLIB_DIR "${GODOT_SOURCE_DIR}/thirdparty/zlib")
+
+	target_sources(thirdparty-core-lib PRIVATE
+		"${__THIRDPARTY_ZLIB_DIR}/adler32.c"
+		"${__THIRDPARTY_ZLIB_DIR}/compress.c"
+		"${__THIRDPARTY_ZLIB_DIR}/crc32.c"
+		"${__THIRDPARTY_ZLIB_DIR}/deflate.c"
+		"${__THIRDPARTY_ZLIB_DIR}/infback.c"
+		"${__THIRDPARTY_ZLIB_DIR}/inffast.c"
+		"${__THIRDPARTY_ZLIB_DIR}/inflate.c"
+		"${__THIRDPARTY_ZLIB_DIR}/inftrees.c"
+		"${__THIRDPARTY_ZLIB_DIR}/trees.c"
+		"${__THIRDPARTY_ZLIB_DIR}/uncompr.c"
+		"${__THIRDPARTY_ZLIB_DIR}/zutil.c"
+	)
+
+	# Needs to be available in main env too
+	target_include_directories(global-env INTERFACE "${__THIRDPARTY_ZLIB_DIR}")
+
+	target_compile_definitions(thirdparty-core-lib PRIVATE $<$<CONFIG:Debug>:"ZLIB_DEBUG">)	
+endif()
+
+# Minizip library, could be unbundled in theory
+# However, our version has some custom modifications, so it won't compile with the system one
+set(__THIRDPARTY_MINIZIP_DIR "${GODOT_SOURCE_DIR}/thirdparty/minizip")
+target_sources(thirdparty-core-lib PRIVATE
+	"${__THIRDPARTY_MINIZIP_DIR}/ioapi.c"
+	"${__THIRDPARTY_MINIZIP_DIR}/unzip.c"
+	"${__THIRDPARTY_MINIZIP_DIR}/zip.c"
+)
+
+# Zstd library, can be unbundled in theory
+# though we currently use some private symbols
+# https://github.com/godotengine/godot/issues/17374
+if(GODOT_BUILTIN_ZSTD)
+	set(__THIRDPARTY_ZSTD_DIR "${GODOT_SOURCE_DIR}/thirdparty/zstd")
+
+	target_sources(thirdparty-core-lib PRIVATE
+		"${__THIRDPARTY_ZSTD_DIR}/common/debug.c"
+		"${__THIRDPARTY_ZSTD_DIR}/common/entropy_common.c"
+		"${__THIRDPARTY_ZSTD_DIR}/common/error_private.c"
+		"${__THIRDPARTY_ZSTD_DIR}/common/fse_decompress.c"
+		"${__THIRDPARTY_ZSTD_DIR}/common/pool.c"
+		"${__THIRDPARTY_ZSTD_DIR}/common/threading.c"
+		"${__THIRDPARTY_ZSTD_DIR}/common/xxhash.c"
+		"${__THIRDPARTY_ZSTD_DIR}/common/zstd_common.c"
+		"${__THIRDPARTY_ZSTD_DIR}/compress/fse_compress.c"
+		"${__THIRDPARTY_ZSTD_DIR}/compress/hist.c"
+		"${__THIRDPARTY_ZSTD_DIR}/compress/huf_compress.c"
+		"${__THIRDPARTY_ZSTD_DIR}/compress/zstd_compress.c"
+		"${__THIRDPARTY_ZSTD_DIR}/compress/zstd_double_fast.c"
+		"${__THIRDPARTY_ZSTD_DIR}/compress/zstd_fast.c"
+		"${__THIRDPARTY_ZSTD_DIR}/compress/zstd_lazy.c"
+		"${__THIRDPARTY_ZSTD_DIR}/compress/zstd_ldm.c"
+		"${__THIRDPARTY_ZSTD_DIR}/compress/zstd_opt.c"
+		"${__THIRDPARTY_ZSTD_DIR}/compress/zstdmt_compress.c"
+		"${__THIRDPARTY_ZSTD_DIR}/compress/zstd_compress_literals.c"
+		"${__THIRDPARTY_ZSTD_DIR}/compress/zstd_compress_sequences.c"
+		"${__THIRDPARTY_ZSTD_DIR}/decompress/huf_decompress.c"
+		"${__THIRDPARTY_ZSTD_DIR}/decompress/zstd_ddict.c"
+		"${__THIRDPARTY_ZSTD_DIR}/decompress/zstd_decompress_block.c"
+		"${__THIRDPARTY_ZSTD_DIR}/decompress/zstd_decompress.c"
+	)
+
+	# Needs to be available in main env too
+	target_include_directories(global-env INTERFACE "${__THIRDPARTY_ZSTD_DIR}")
+	# Also needed in main env includes will trigger warnings
+	target_compile_definitions(global-env INTERFACE "ZSTD_STATIC_LINKING_ONLY")		
+
+	# only needed in the thirdparty
+	target_include_directories(thirdparty-core-lib PRIVATE 
+		"${__THIRDPARTY_ZSTD_DIR}/common"
+	)
+endif()
+
+target_glob_sources(core-lib PRIVATE "*.cpp")
+
+# Certificates
+set(__CERTIFICATES_FILE_HEADER "${GODOT_SOURCE_DIR}/core/io/certs_compressed.gen.h")
+target_sources(core-lib PRIVATE "${__CERTIFICATES_FILE_HEADER}")
+
+add_python_generator_command(core_builders cmake_make_certs_header
+	TARGET_FILES "${__CERTIFICATES_FILE_HEADER}"
+	SOURCE_FILES "${GODOT_SOURCE_DIR}/thirdparty/certs/ca-certificates.crt"
+	STR_VAR "system_certs_path=GODOT_SYSTEM_CERTS_PATH"
+	BOOL_VAR "is_builtin_certs=GODOT_BUILTIN_CERTS"
+)
+
+# Make binders
+set(__MAKE_BINDERS_FILES 
+	"${CMAKE_CURRENT_SOURCE_DIR}/method_bind.gen.inc" 
+	"${CMAKE_CURRENT_SOURCE_DIR}/method_bind_ext.gen.inc" 
+	"${CMAKE_CURRENT_SOURCE_DIR}/method_bind_free_func.gen.inc"
+)
+target_sources(core-lib PRIVATE ${__MAKE_BINDERS_FILES})
+
+add_python_generator_command(make_binders cmake_run
+	TARGET_FILES ${__MAKE_BINDERS_FILES}
+)
+
+# Authors
+set(__AUTHORS_FILE_HEADER "${GODOT_SOURCE_DIR}/core/authors.gen.h")
+target_sources(core-lib PRIVATE ${__AUTHORS_FILE_HEADER})
+
+add_python_generator_command(core_builders cmake_make_authors_header
+	TARGET_FILES "${__AUTHORS_FILE_HEADER}"
+	SOURCE_FILES "${GODOT_SOURCE_DIR}/AUTHORS.md"
+)
+
+# Donors
+set(__DONORS_FILE_HEADER "${GODOT_SOURCE_DIR}/core/donors.gen.h")
+target_sources(core-lib PRIVATE ${__DONORS_FILE_HEADER})
+
+add_python_generator_command(core_builders cmake_make_donors_header
+	TARGET_FILES "${__DONORS_FILE_HEADER}"
+	SOURCE_FILES "${GODOT_SOURCE_DIR}/DONORS.md"
+)
+
+# License
+set(__LICENSE_FILE_HEADER "${GODOT_SOURCE_DIR}/core/license.gen.h")
+target_sources(core-lib PRIVATE ${__LICENSE_FILE_HEADER})
+
+add_python_generator_command(core_builders cmake_make_license_header
+	TARGET_FILES "${__LICENSE_FILE_HEADER}"
+	SOURCE_FILES 
+		"${GODOT_SOURCE_DIR}/COPYRIGHT.txt"
+		"${GODOT_SOURCE_DIR}/LICENSE.txt"
+)
+
+add_subdirectory(os)
+add_subdirectory(math)
+add_subdirectory(crypto)
+add_subdirectory(io)
+add_subdirectory(bind)

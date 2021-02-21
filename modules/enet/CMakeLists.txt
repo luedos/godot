@@ -1,0 +1,39 @@
+
+add_env(enet-env
+	COMPONENTS
+		modules-env
+)
+
+add_module_lib(enet-lib
+	COMPONENTS
+		enet-env
+		warnings-env
+)
+
+if(GODOT_BUILTIN_ENET)
+	set(__THIRDPARTY_ENET_PATH "${GODOT_SOURCE_DIR}/thirdparty/enet")
+
+	target_include_directories(enet-env INTERFACE "${__THIRDPARTY_ENET_PATH}")	
+	target_compile_definitions(enet-env INTERFACE "GODOT_ENET")
+
+	add_lib(thirdparty-enet-lib
+		PARENT_LIB
+			enet-lib
+		COMPONENTS
+			enet-env
+	)
+
+	target_sources(thirdparty-enet-lib PRIVATE 
+		"${__THIRDPARTY_ENET_PATH}/godot.cpp"
+		"${__THIRDPARTY_ENET_PATH}/callbacks.c"
+		"${__THIRDPARTY_ENET_PATH}/compress.c"
+		"${__THIRDPARTY_ENET_PATH}/host.c"
+		"${__THIRDPARTY_ENET_PATH}/list.c"
+		"${__THIRDPARTY_ENET_PATH}/packet.c"
+		"${__THIRDPARTY_ENET_PATH}/peer.c"
+		"${__THIRDPARTY_ENET_PATH}/protocol.c"
+	)
+
+endif()
+
+target_glob_sources(enet-lib PRIVATE "*.cpp")

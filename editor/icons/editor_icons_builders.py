@@ -7,6 +7,8 @@ import os
 from platform_methods import subprocess_main
 from compat import StringIO
 
+def cmake_make_editor_icons_action(target, source):
+    make_editor_icons_action(target, source, None)
 
 def make_editor_icons_action(target, source, env):
 

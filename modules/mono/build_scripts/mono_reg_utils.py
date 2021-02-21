@@ -68,6 +68,16 @@ def find_mono_root_dir(bits):
     return ""
 
 
+def cmake_find_mono_root_dir(bits):
+    import sys
+    # here we really need to return som output, and we will do it with stdout
+    old_stdout = sys.stdout
+    result = find_mono_root_dir(bits)
+    sys.stdout = old_stdout
+
+    print(str(result)) # real output
+
+
 def find_msbuild_tools_path_reg():
     import subprocess
 

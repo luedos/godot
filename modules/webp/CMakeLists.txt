@@ -1,0 +1,145 @@
+
+add_env(webp-env
+	COMPONENTS
+		modules-env
+)
+
+add_module_lib(webp-lib
+	COMPONENTS
+		webp-env
+		warnings-env
+)
+
+if(GODOT_BUILTIN_LIBWEBP)	
+
+	set(__THIRDPARTY_WEBP_PATH "${GODOT_SOURCE_DIR}/thirdparty/libwebp")
+
+	target_include_directories(webp-env INTERFACE 
+		"${__THIRDPARTY_WEBP_PATH}"
+		"${__THIRDPARTY_WEBP_PATH}/src"
+	)
+
+	add_lib(thirdparty-webp-lib
+		PARENT_LIB
+			webp-lib
+		COMPONENTS
+			webp-env	
+		SOURCES
+			"${__THIRDPARTY_WEBP_PATH}/src/dec/alpha_dec.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dec/buffer_dec.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dec/frame_dec.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dec/idec_dec.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dec/io_dec.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dec/quant_dec.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dec/tree_dec.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dec/vp8_dec.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dec/vp8l_dec.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dec/webp_dec.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/demux/anim_decode.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/demux/demux.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/alpha_processing.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/alpha_processing_mips_dsp_r2.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/alpha_processing_neon.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/alpha_processing_sse2.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/alpha_processing_sse41.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/cost.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/cost_mips32.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/cost_mips_dsp_r2.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/cost_neon.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/cost_sse2.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/cpu.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/dec.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/dec_clip_tables.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/dec_mips32.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/dec_mips_dsp_r2.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/dec_msa.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/dec_neon.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/dec_sse2.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/dec_sse41.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/enc.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/enc_mips32.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/enc_mips_dsp_r2.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/enc_msa.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/enc_neon.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/enc_sse2.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/enc_sse41.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/filters.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/filters_mips_dsp_r2.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/filters_msa.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/filters_neon.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/filters_sse2.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/lossless.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/lossless_enc.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/lossless_enc_mips32.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/lossless_enc_mips_dsp_r2.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/lossless_enc_msa.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/lossless_enc_neon.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/lossless_enc_sse2.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/lossless_enc_sse41.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/lossless_mips_dsp_r2.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/lossless_msa.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/lossless_neon.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/lossless_sse2.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/rescaler.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/rescaler_mips32.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/rescaler_mips_dsp_r2.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/rescaler_msa.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/rescaler_neon.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/rescaler_sse2.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/ssim.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/ssim_sse2.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/upsampling.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/upsampling_mips_dsp_r2.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/upsampling_msa.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/upsampling_neon.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/upsampling_sse2.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/upsampling_sse41.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/yuv.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/yuv_mips32.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/yuv_mips_dsp_r2.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/yuv_neon.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/yuv_sse2.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/dsp/yuv_sse41.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/enc/alpha_enc.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/enc/analysis_enc.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/enc/backward_references_cost_enc.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/enc/backward_references_enc.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/enc/config_enc.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/enc/cost_enc.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/enc/filter_enc.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/enc/frame_enc.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/enc/histogram_enc.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/enc/iterator_enc.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/enc/near_lossless_enc.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/enc/picture_csp_enc.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/enc/picture_enc.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/enc/picture_psnr_enc.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/enc/picture_rescale_enc.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/enc/picture_tools_enc.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/enc/predictor_enc.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/enc/quant_enc.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/enc/syntax_enc.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/enc/token_enc.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/enc/tree_enc.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/enc/vp8l_enc.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/enc/webp_enc.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/mux/anim_encode.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/mux/muxedit.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/mux/muxinternal.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/mux/muxread.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/utils/bit_reader_utils.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/utils/bit_writer_utils.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/utils/color_cache_utils.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/utils/filters_utils.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/utils/huffman_encode_utils.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/utils/huffman_utils.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/utils/quant_levels_dec_utils.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/utils/quant_levels_utils.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/utils/random_utils.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/utils/rescaler_utils.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/utils/thread_utils.c"
+			"${__THIRDPARTY_WEBP_PATH}/src/utils/utils.c"
+	)
+endif()
+
+target_glob_sources(webp-lib PRIVATE "*.cpp")

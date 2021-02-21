@@ -267,6 +267,9 @@ def _build_gdnative_api_struct_source(api):
     return "\n".join(out)
 
 
+def cmake_build_gdnative_api_struct(target, source):
+    build_gdnative_api_struct(target, source, None)
+    
 def build_gdnative_api_struct(target, source, env):
 
     with open(source[0], "r") as fd:
@@ -336,7 +339,9 @@ def _build_gdnative_wrapper_code(api):
 
     return "\n".join(out)
 
-
+def cmake_build_gdnative_wrapper_code(target, source):
+    build_gdnative_wrapper_code(target, source, None)
+    
 def build_gdnative_wrapper_code(target, source, env):
     with open(source[0], "r") as fd:
         api = json.load(fd)
