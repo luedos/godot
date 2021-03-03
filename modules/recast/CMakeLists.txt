@@ -13,11 +13,12 @@ add_module_lib(recast-lib
 
 if(GODOT_BUILTIN_RECAST)	
 
-	set(__THIRDPARTY_RECAST_PATH "${GODOT_SOURCE_DIR}/recastnavigation/Recast")
+	set(__THIRDPARTY_RECAST_PATH "${GODOT_SOURCE_DIR}/thirdparty/recastnavigation/Recast")
 
 	target_include_directories(recast-env INTERFACE "${__THIRDPARTY_RECAST_PATH}/Include")
 
 	add_lib(thirdparty-recast-lib
+		OBJECT
 		PARENT_LIB
 			recast-lib
 		COMPONENTS

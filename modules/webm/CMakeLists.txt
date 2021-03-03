@@ -12,9 +12,13 @@ add_module_lib(webm-lib
 
 set(__THIRDPARTY_WEBM_PATH "${GODOT_SOURCE_DIR}/thirdparty/libsimplewebm")
 
-target_include_directories(webm-env INTERFACE "${__THIRDPARTY_WEBM_PATH}/libwebm")
+target_include_directories(webm-env INTERFACE 
+	"${__THIRDPARTY_WEBM_PATH}"
+	"${__THIRDPARTY_WEBM_PATH}/libwebm"
+)
 
 add_lib(thirdparty-webm-lib
+	OBJECT
 	PARENT_LIB
 		webm-lib
 	COMPONENTS

@@ -14,6 +14,7 @@ add_module_lib(opus-lib
 if(GODOT_BUILTIN_OPUS)
 
 	add_lib(thirdparty-opus-lib 
+		OBJECT
 		PARENT_LIB
 			opus-lib
 		COMPONENTS

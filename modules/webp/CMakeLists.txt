@@ -20,6 +20,7 @@ if(GODOT_BUILTIN_LIBWEBP)
 	)
 
 	add_lib(thirdparty-webp-lib
+		OBJECT
 		PARENT_LIB
 			webp-lib
 		COMPONENTS

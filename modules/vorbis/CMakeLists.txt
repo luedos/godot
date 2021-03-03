@@ -23,6 +23,7 @@ if(GODOT_BUILTIN_LIBVORBIS)
 	endif()
 
 	add_lib(thirdparty-vorbis-lib
+		OBJECT
 		PARENT_LIB
 			vorbis-lib
 		COMPONENTS

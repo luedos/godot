@@ -1,6 +1,5 @@
 
 add_lib(servers-lib
-	STANDALONE
 	PARENT_ENV
 		global-libs-list
 	COMPONENTS

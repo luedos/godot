@@ -11,6 +11,7 @@ add_module_lib(jpg-lib
 )
 
 add_lib(thirdparty-jpg-lib
+	OBJECT
 	PARENT_LIB
 		jpg-lib
 	COMPONENTS

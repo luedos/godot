@@ -4,7 +4,7 @@ add_lib(drivers-png-lib
 	PARENT_LIB
 		drivers-lib
 	COMPONENTS
-		global-env
+		drivers-env
 		warnings-env
 )
 
@@ -23,10 +23,11 @@ if(GODOT_BUILTIN_LIBPNG)
 	endif()
 
 	add_lib(thirdparty-drivers-png-lib
+		OBJECT
 		PARENT_LIB
 			drivers-lib 
 		COMPONENTS
-			global-env
+			drivers-env
 	)
 
 	target_sources(thirdparty-drivers-png-lib PRIVATE

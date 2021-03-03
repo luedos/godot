@@ -324,7 +324,7 @@ if(__WEBM_CPU_X86)
 		set(__ASM_CPU "X86_64")
 	endif()
 
-	target_compile_definitions(libvpx-env INTERFACE $<$<COMPILE_LANGUAGE:CXX>:"WEBM_X86ASM">)
+	target_compile_definitions(libvpx-env INTERFACE $<$<COMPILE_LANGUAGE:CXX>:WEBM_X86ASM>)
 
 	# we are doing this dirty way (god I hope this works)
 	foreach(__SOURCE_FILE IN LISTS 
@@ -351,29 +351,25 @@ if(__WEBM_CPU_X86)
 	endforeach()
 
 	#TODO: Find what the hell is "osxcross", and why it must be in env 
-	set(__IS_CLANG_OR_GCC_GEN_EXPR $<OR:
-		$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang>,
-		$<COMPILE_LANG_AND_ID:C,GNU,Clang,AppleClang>,
-		$<COMPILE_LANG_AND_ID:OBJCXX,GNU,Clang,AppleClang>,
-		$<COMPILE_LANG_AND_ID:OBJC,GNU,Clang,AppleClang>
-	>)
+	set(__IS_CLANG_OR_GCC_GEN_EXPR 
+        $<OR:$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang>,$<COMPILE_LANG_AND_ID:C,GNU,Clang,AppleClang>,$<COMPILE_LANG_AND_ID:OBJCXX,GNU,Clang,AppleClang>,$<COMPILE_LANG_AND_ID:OBJC,GNU,Clang,AppleClang>>)
 
 	inline_if(__IS_CPU_32_BITS __CPU_BITS EQUAL 32)
 
-	add_lib(libvpx-mmx-lib	PARENT_LIB libvpx-lib COMPONENTS libvpx-env)
-	target_compile_options(libvpx-mmx-lib PRIVATE $<$<AND:$<BOOL:${__IS_CPU_32_BITS}>, ${__IS_CLANG_OR_GCC_GEN_EXPR}>:"-mmmx">)
+	add_lib(libvpx-mmx-lib OBJECT PARENT_LIB libvpx-lib COMPONENTS libvpx-env)
+	target_compile_options(libvpx-mmx-lib PRIVATE $<$<AND:$<BOOL:${__IS_CPU_32_BITS}>,${__IS_CLANG_OR_GCC_GEN_EXPR}>:-mmmx>)
 	target_sources(libvpx-mmx-lib PRIVATE ${__LIBVPX_SOURCES_INTRIN_X86_MMX})
 
-	add_lib(libvpx-sse2-lib	PARENT_LIB libvpx-lib COMPONENTS libvpx-env)
-	target_compile_options(libvpx-sse2-lib PRIVATE $<$<AND:$<BOOL:${__IS_CPU_32_BITS}>, ${__IS_CLANG_OR_GCC_GEN_EXPR}>:"-msse2">)
+	add_lib(libvpx-sse2-lib OBJECT PARENT_LIB libvpx-lib COMPONENTS libvpx-env)
+	target_compile_options(libvpx-sse2-lib PRIVATE $<$<AND:$<BOOL:${__IS_CPU_32_BITS}>,${__IS_CLANG_OR_GCC_GEN_EXPR}>:-msse2>)
 	target_sources(libvpx-sse2-lib PRIVATE ${__LIBVPX_SOURCES_INTRIN_X86_SSE2})
 
-	add_lib(libvpx-ssse3-lib PARENT_LIB libvpx-lib COMPONENTS libvpx-env)
-	target_compile_options(libvpx-ssse3-lib PRIVATE $<${__IS_CLANG_OR_GCC_GEN_EXPR}:"-mssse3">)
+	add_lib(libvpx-ssse3-lib OBJECT PARENT_LIB libvpx-lib COMPONENTS libvpx-env)
+	target_compile_options(libvpx-ssse3-lib PRIVATE $<${__IS_CLANG_OR_GCC_GEN_EXPR}:-mssse3>)
 	target_sources(libvpx-ssse3-lib PRIVATE ${__LIBVPX_SOURCES_INTRIN_X86_SSSE3})
 
-	add_lib(libvpx-avx2-lib PARENT_LIB libvpx-lib COMPONENTS libvpx-env)
-	target_compile_options(libvpx-avx2-lib PRIVATE $<${__IS_CLANG_OR_GCC_GEN_EXPR}:"-mavx2">)
+	add_lib(libvpx-avx2-lib OBJECT PARENT_LIB libvpx-lib COMPONENTS libvpx-env)
+	target_compile_options(libvpx-avx2-lib PRIVATE $<${__IS_CLANG_OR_GCC_GEN_EXPR}:-mavx2>)
 	target_sources(libvpx-ssse3-lib PRIVATE ${__LIBVPX_SOURCES_INTRIN_X86_AVX2})
 
 	target_sources(libvpx-lib PRIVATE 
@@ -390,14 +386,14 @@ elseif(__WEBM_CPU_ARM)
 
 	if(GODOT_PLATFORM STREQUAL "iphone")
 
-		target_compile_options(libvpx-env INTERFACE $<${__IS_ASM_GEN_EXPR}:"-arch" "armv7">)
+		target_compile_options(libvpx-env INTERFACE $<${__IS_ASM_GEN_EXPR}:-arch;armv7>)
 
 	elseif((GODOT_PLATFORM STREQUAL "android" AND GODOT_ANDROID_ARCH STREQUAL "armv7")
 		OR GODOT_PLATFORM STREQUAL "x11"
 		OR GODOT_PLATFORM STREQUAL "server"
 	)
 
-		target_compile_options(libvpx-env INTERFACE $<${__IS_ASM_GEN_EXPR}:"-mfpu=neon">)
+		target_compile_options(libvpx-env INTERFACE $<${__IS_ASM_GEN_EXPR}:-mfpu=neon>)
 
 	elseif(GODOT_PLATFORM STREQUAL "uwp")
 
@@ -424,7 +420,7 @@ elseif(__WEBM_CPU_ARM)
 
 	endif()
 
-	target_compile_definitions(libvpx-env INTERFACE $<$<COMPILE_LANGUAGE:CXX>:"WEBM_ARMASM">)
+	target_compile_definitions(libvpx-env INTERFACE $<$<COMPILE_LANGUAGE:CXX>:WEBM_ARMASM>)
 
 	target_sources(libvpx-lib PRIVATE ${__LIBVPX_SOURCES_ARM})
 

@@ -92,7 +92,7 @@ function(__copy_path __MODE __SRC __DST)
 	)
 	set(__ONE_VALUE_ARGS "")
 	set(__MULTI_VALUE_ARGS "")
-	cmake_parse_arguments(__ARGS "${__OPTIONS_ARGS}" "${__ONE_VALUE_ARGS}" "${__MULTI_VALUE_ARGS}" ${ARGN})
+	cmake_parse_arguments(PARSE_ARGV 3 __ARGS "${__OPTIONS_ARGS}" "${__ONE_VALUE_ARGS}" "${__MULTI_VALUE_ARGS}")
 
 	string(GENEX_STRIP "${__SRC}" __GEN_STRIPPED)
 	if(NOT __SRC STREQUAL __GEN_STRIPPED) # then we have generator expression
@@ -104,14 +104,14 @@ function(__copy_path __MODE __SRC __DST)
 		set(__ARGS_FORCE_BUILD_TIME true)
 	endif()
 
-	if(NOT IS_ABSOLUTE __SRC)
+	if(NOT IS_ABSOLUTE "${__SRC}")
 		join_paths(__SRC "${CMAKE_CURRENT_SOURCE_DIR}" "${__SRC}")
 	else()
 		# need to normilize only in else statement, because join_paths normilises by default
 		normilize_path(__SRC "${__SRC}")
 	endif()
 
-	if(NOT IS_ABSOLUTE __DST)
+	if(NOT IS_ABSOLUTE "${__DST}")
 		join_paths(__DST "${CMAKE_BINARY_DIR}" "${__DST}")
 	else()
 		normilize_path(__DST "${__DST}")
@@ -146,7 +146,7 @@ else:")  # actual copy
 		)
 
 	else()
-		if(NOT EXISTS __SRC)
+		if(NOT EXISTS "${__SRC}")
 
 			if(NOT __ARGS_OPTIONAL)
 				message(FATAL_ERROR "Can't copy nonexistent ${__MODE} (${__SRC}).")
@@ -181,7 +181,7 @@ function(__find_file_in_dir __OUTPUT)
 		FILE_EXTENTIONS
 		FILE_PREFIXES
 	)
-	cmake_parse_arguments(__ARGS "${__OPTIONS_ARGS}" "${__ONE_VALUE_ARGS}" "${__MULTI_VALUE_ARGS}" ${ARGN})
+	cmake_parse_arguments(PARSE_ARGV 1 __ARGS "${__OPTIONS_ARGS}" "${__ONE_VALUE_ARGS}" "${__MULTI_VALUE_ARGS}")
 
 	if("${__ARGS_FILE_EXTENTIONS}" STREQUAL "")
 		list(APPEND __ARGS_FILE_EXTENTIONS "*") # aka none
@@ -214,7 +214,7 @@ function(__find_file_in_dir __OUTPUT)
 
 				join_paths(__PATH "${__ARGS_PATH}" "${__FILE_NAME}")
 
-				if(EXISTS __PATH AND NOT IS_DIRECTORY __PATH)
+				if(EXISTS "${__PATH}" AND NOT IS_DIRECTORY "${__PATH}")
 					if(__ARGS_RETURN_ONLY_CURNAME)
 						set("${__OUTPUT}" "${__CURNAME}" PARENT_SCOPE)
 					else()
@@ -313,18 +313,12 @@ endif()
 # if these are supported in the future, we won't be using static AOT for them as that would be
 # too restrictive for the editor. These builds would probably be made to only use the interpreter.
 set(__MONO_SINGLE_APPDOMAIN_GEN_EXPR 
-	$<AND: $<BOOL:${__IS_IOS}>, $<NOT:$<BOOL:${__IS_IOS_SIM}>>, $<NOT:${IS_TOOLS_GEN_EXPR}> >
+	$<AND:$<BOOL:${__IS_IOS}> $<NOT:$<BOOL:${__IS_IOS_SIM}>>,$<NOT:${IS_TOOLS_GEN_EXPR}>>
 )
 target_compile_definitions(mono-lib PRIVATE 
-	$<${__MONO_SINGLE_APPDOMAIN_GEN_EXPR}:
-		"GD_MONO_SINGLE_APPDOMAIN" > # <- actual define
+	$<${__MONO_SINGLE_APPDOMAIN_GEN_EXPR}:GD_MONO_SINGLE_APPDOMAIN>
 
-	$<$<AND: 
-		$<NOT:${__MONO_SINGLE_APPDOMAIN_GEN_EXPR}>,
-		$<OR:
-			${IS_TOOLS_ENABLED_GENERATOR_EXPR},
-			$<NOT:$<CONFIG:Release,MinSizeRel>> >
-	>: "GD_MONO_HOT_RELOAD" > # <- actual define
+	$<$<AND:$<NOT:${__MONO_SINGLE_APPDOMAIN_GEN_EXPR}>,$<NOT:$<${IS_RELEASE_GEN_EXPR}>>>:GD_MONO_HOT_RELOAD>
 )
 
 if(__IS_WINDOWS)
@@ -335,7 +329,7 @@ if(__IS_WINDOWS)
 		execute_python_method(mono_reg_utils cmake_find_mono_root_dir
 			MODULE_DIR "build_scripts"
 			PYTHON_ARGS 
-				RAW_VAR __BITS
+				RAW_VAR "__BITS"
 			OUTPUT_VARIABLE __MONO_ROOT
 		)
 	endif()
@@ -699,7 +693,7 @@ else()
 
 endif()
 
-parse_to_python_map(__FAKE_ENV_MAP 
+parse_to_python_map(__FAKE_ENV_MAP FROM_ARGS
 	STR_VAL "target" "$<$<CONFIG:Release,MinSizeRel>:release>$<$<CONFIG:Debug>:debug>$<$<CONFIG:RelWithDebInfo>:release_debug>"
 	STR_VAR "platform" "GODOT_PLATFORM"
 	RAW_VAR "bits" "__BITS"
@@ -716,7 +710,8 @@ set(__BUILD_SCRIPTS_COMMAND_PREFIX "android_dir='${__ANDROID_OUTPUT_DIR}'; impor
 		endif()
 
 		add_custom_command(TARGET mono-lib PRE_BUILD
-			COMMAND "python" "-c" $<IF:${IS_TOOLS_GEN_EXPR}, "pass", " ${__BUILD_SCRIPTS_COMMAND_PREFIX}.make_template_dir(env=${__FAKE_ENV_MAP}, mono_root='${__MONO_ROOT}', output_dir='${GODOT_BIN_DIRECTORY}')">
+			# if IS_TOOLS_GEN_EXPR we will simply exit from command
+			COMMAND "python" "-c" "$<${IS_TOOLS_GEN_EXPR}:exit(0)$<SEMICOLON>>${__BUILD_SCRIPTS_COMMAND_PREFIX}.make_template_dir(env=${__FAKE_ENV_MAP}, mono_root='${__MONO_ROOT}', output_dir='${GODOT_BIN_DIRECTORY}')"
 		)
 
 	elseif(__IS_ANDROID)
@@ -732,7 +727,8 @@ set(__BUILD_SCRIPTS_COMMAND_PREFIX "android_dir='${__ANDROID_OUTPUT_DIR}'; impor
 		)
 
 		add_custom_command(TARGET mono-lib PRE_BUILD
-			COMMAND "python" "-c" $<IF:${IS_TOOLS_GEN_EXPR}, "pass", "${__BUILD_SCRIPTS_COMMAND_PREFIX}.copy_mono_shared_libs(env=${__FAKE_ENV_MAP}, mono_root='${__MONO_ROOT}', target_mono_root_dir=None)">
+			# if IS_TOOLS_GEN_EXPR we will simply exit from command
+			COMMAND "python" "-c" "$<${IS_TOOLS_GEN_EXPR}:exit(0)$<SEMICOLON>>${__BUILD_SCRIPTS_COMMAND_PREFIX}.copy_mono_shared_libs(env=${__FAKE_ENV_MAP}, mono_root='${__MONO_ROOT}', target_mono_root_dir=None)"
 		)
 
 	elseif(__IS_JAVASCRIPT)

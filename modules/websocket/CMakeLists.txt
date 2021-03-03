@@ -14,7 +14,7 @@ if(GODOT_BUILTIN_WSLAY AND NOT GODOT_PLATFORM STREQUAL "javascript")
 
 	set(__THIRDPARTY_WSLAY_PATH "${GODOT_SOURCE_DIR}/thirdparty/wslay")
 
-	target_include_directories(ws-env INTERFACE "${__THIRDPARTY_WSLAY_PATH}/include")
+	target_include_directories(ws-env INTERFACE "${__THIRDPARTY_WSLAY_PATH}/includes")
 	target_compile_definitions(ws-env INTERFACE "HAVE_CONFIG_H")
 
 	if(GODOT_PLATFORM MATCHES "(windows|uwp)")
@@ -24,6 +24,7 @@ if(GODOT_BUILTIN_WSLAY AND NOT GODOT_PLATFORM STREQUAL "javascript")
 	endif()
 
 	add_lib(thirdparty-ws-lib
+		OBJECT
 		PARENT_LIB
 			ws-lib
 		COMPONENTS

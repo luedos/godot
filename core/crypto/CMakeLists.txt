@@ -19,6 +19,7 @@ endif()
 if(NOT mbedtls_IS_MODULE_ENABLED)
 
 	add_lib(thirdparty-core-crypto-lib
+		OBJECT
 		PARENT_LIB
 			core-crypto-lib
 		COMPONENTS

@@ -12,6 +12,23 @@ add_module_lib(gdnative-lib
 
 target_glob_sources(gdnative-lib PRIVATE "*.cpp")
 
+set(__GDNATIVE_API_TARGETS
+	"${CMAKE_CURRENT_SOURCE_DIR}/include/gdnative_api_struct.gen.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/gdnative_api_struct.gen.cpp"
+)
+
+add_python_generator_command(gdnative_builders cmake_build_gdnative_api_struct
+	SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/gdnative_api.json"
+	TARGET_FILES ${__GDNATIVE_API_TARGETS}
+	APPEND_SYS_PATH "${GODOT_SOURCE_DIR}"
+)
+add_custom_target(gdnative-gen
+	DEPENDS
+		${__GDNATIVE_API_TARGETS}
+)
+add_dependencies(gdnative-env gdnative-gen)
+target_sources(gdnative-lib PRIVATE ${__GDNATIVE_API_TARGETS})
+
 target_sources(gdnative-lib PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/gdnative.cpp")
 target_sources(gdnative-lib PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/register_types.cpp")
 target_glob_sources(gdnative-lib PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/android/*.cpp")
@@ -27,18 +44,6 @@ add_subdirectory(arvr)
 add_subdirectory(pluginscript)
 add_subdirectory(videodecoder)
 
-set(__GDNATIVE_API_TARGETS
-	"${CMAKE_CURRENT_SOURCE_DIR}/include/gdnative_api_struct.gen.h"
-	"${CMAKE_CURRENT_SOURCE_DIR}/gdnative_api_struct.gen.cpp"
-)
-
-add_python_generator_command(gdnative_builders cmake_build_gdnative_api_struct
-	SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/gdnative_api.json"
-	TARGET_FILES ${__GDNATIVE_API_TARGETS}
-)
-
-target_sources(gdnative-lib PRIVATE ${__GDNATIVE_API_TARGETS})
-
 # I'm not sure why is this here, because this is used only for one define (PTRCALL_ENABLED), and this define is setuped much erlier then this module will be processed... 
 # So I really don't know, why the hell is this here..
 set_target_properties(global-env PROPERTIES USE_PTRCALL true)
@@ -51,12 +56,25 @@ if(GODOT_GDNATIVE_WRAPPER)
 	)
 
 	add_lib(gdnative-wrapper-lib
+		OBJECT
 		PARENT_LIB
 			gdnative-lib
 		COMPONENTS
 			gdnative-env
 			warnings-env
+		SOURCES
+			${__GDNATIVE_WRAPPER_TARGETS}
+		OUTPUT_DIR
+			"${GODOT_BIN_DIRECTORY}"
+		OUTPUT_NAME
+			"gdnative_wrapper_code"
 	)
+
+	add_custom_target(gdnative-wrapper-gen
+		DEPENDS 
+			${__GDNATIVE_WRAPPER_TARGETS}
+	)
+	add_dependencies(gdnative-wrapper-lib gdnative-wrapper-gen)
 
 	target_include_directories(gdnative-wrapper-lib PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
 

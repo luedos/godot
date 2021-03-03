@@ -18,14 +18,10 @@ target_sources(gdscript-lib PRIVATE
 	$<${IS_TOOLS_GEN_EXPR}:${__EDITOR_FILES}> # if tools are enabled
 )
 target_sources(gdscript-lib PRIVATE
-	$<$<AND:
-		${IS_TOOLS_GEN_EXPR},  # if tools are enabled
-		${__IS_JSCONPC_AND_WEBSOCKET_GEN_EXPR}  # and both jsonrpc and websocket modules are enabled
-	>: ${__LANGUAGE_SERVER_FILES}> # we are adding language server files
+	# if tools are enabled and both jsonrpc and websocket modules are enabled
+	$<$<AND:${IS_TOOLS_GEN_EXPR},${__IS_JSCONPC_AND_WEBSOCKET_GEN_EXPR}>:${__LANGUAGE_SERVER_FILES}> # we are adding language server files
 )
 target_compile_definitions(gdscript-lib PRIVATE
-	$<$<AND:
-		${IS_TOOLS_GEN_EXPR},  # if tools are enabled
-		$<NOT:${__IS_JSCONPC_AND_WEBSOCKET_GEN_EXPR}>  # and any of jsonrpc and websocket modules are NOT enabled
-	>: "GDSCRIPT_NO_LSP"> # adding define
+	# if tools are enabled and any of jsonrpc and websocket modules are NOT enabled
+	$<$<AND:${IS_TOOLS_GEN_EXPR},$<NOT:${__IS_JSCONPC_AND_WEBSOCKET_GEN_EXPR}>>:GDSCRIPT_NO_LSP> # adding define
 )

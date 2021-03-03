@@ -19,6 +19,7 @@ target_include_directories(global-env INTERFACE "${__THIRDPARTY_SVG_PATH}")
 target_compile_definitions(global-env INTERFACE "SVG_ENABLED")
 
 add_lib(thirdparty-svg-lib
+	OBJECT
 	PARENT_LIB
 		svg-lib
 	COMPONENTS

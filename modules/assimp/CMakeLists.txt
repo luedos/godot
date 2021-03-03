@@ -15,9 +15,9 @@ if("true") # GODOT_BUILTIN_ASSIMP
 	set(__THIRDPARTY_ASSIMP_PATH "${GODOT_SOURCE_DIR}/thirdparty/assimp")
 
 	target_include_directories(assimp-env INTERFACE
-		"${__THIRDPARTY_ASSIMP_PATH}/thirdparty/assimp"
-		"${__THIRDPARTY_ASSIMP_PATH}/thirdparty/assimp/code"
-		"${__THIRDPARTY_ASSIMP_PATH}/thirdparty/assimp/include"
+		"${__THIRDPARTY_ASSIMP_PATH}"
+		"${__THIRDPARTY_ASSIMP_PATH}/code"
+		"${__THIRDPARTY_ASSIMP_PATH}/include"
 	)
 
 	target_compile_definitions(assimp-env INTERFACE
@@ -98,17 +98,18 @@ if("true") # GODOT_BUILTIN_ASSIMP
 	endif()
 
 	add_lib(thirdparty-assimp-lib
+		OBJECT
 		PARENT_LIB
 			assimp-lib
 		COMPONENTS
 			assimp-env
 	)
 
-	target_glob_sources(thirdparty-arkit-lib PRIVATE "${GODOT_SOURCE_DIR}/thirdparty/assimp/code/CApi/*.cpp")
-	target_glob_sources(thirdparty-arkit-lib PRIVATE "${GODOT_SOURCE_DIR}/thirdparty/assimp/code/Common/*.cpp")
-	target_glob_sources(thirdparty-arkit-lib PRIVATE "${GODOT_SOURCE_DIR}/thirdparty/assimp/code/PostProcessing/*.cpp")
-	target_glob_sources(thirdparty-arkit-lib PRIVATE "${GODOT_SOURCE_DIR}/thirdparty/assimp/code/Material/*.cpp")
-	target_glob_sources(thirdparty-arkit-lib PRIVATE "${GODOT_SOURCE_DIR}/thirdparty/assimp/code/FBX/*.cpp")
+	target_glob_sources(thirdparty-assimp-lib PRIVATE "${GODOT_SOURCE_DIR}/thirdparty/assimp/code/CApi/*.cpp")
+	target_glob_sources(thirdparty-assimp-lib PRIVATE "${GODOT_SOURCE_DIR}/thirdparty/assimp/code/Common/*.cpp")
+	target_glob_sources(thirdparty-assimp-lib PRIVATE "${GODOT_SOURCE_DIR}/thirdparty/assimp/code/PostProcessing/*.cpp")
+	target_glob_sources(thirdparty-assimp-lib PRIVATE "${GODOT_SOURCE_DIR}/thirdparty/assimp/code/Material/*.cpp")
+	target_glob_sources(thirdparty-assimp-lib PRIVATE "${GODOT_SOURCE_DIR}/thirdparty/assimp/code/FBX/*.cpp")
 
 endif()
 

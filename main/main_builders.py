@@ -52,7 +52,7 @@ def make_splash_editor(target, source, env):
 
 
 def cmake_make_app_icon(target, source):
-    make_app_icon(target, source, None):
+    make_app_icon(target, source, None)
 
 def make_app_icon(target, source, env):
     src = source[0]

@@ -1,13 +1,12 @@
 
-set(__POSSIBLE_PLATFORMS "haiku" "osx" "windows" "x11")
-
-if(GODOT_PLATFORM IN_LIST __POSSIBLE_PLATFORMS)
+if(GODOT_PLATFORM MATCHES "(haiku|osx|windows|x11)")
 
 	add_lib(thirdparty-drivers-glad-lib
+		OBJECT
 		PARENT_LIB
 			drivers-lib
 		COMPONENTS
-			global-env
+			drivers-env
 	)
 
 	set(__THIRDPARTY_GLAD_PATH "${GODOT_SOURCE_DIR}/thirdparty/glad")

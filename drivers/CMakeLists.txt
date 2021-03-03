@@ -1,45 +1,50 @@
 
+add_env(drivers-env
+	COMPONENTS
+		global-env
+)
+
 add_lib(drivers-lib
-	STANDALONE
 	PARENT_ENV
 		global-libs-list
 	COMPONENTS
-		global-env
+		drivers-env
 		warnings-env
 )
 
 # OS drivers
-add_subdirectory(unix) #TODO: implement
-add_subdirectory(windows) #TODO: implement
+add_subdirectory(unix)
+add_subdirectory(windows)
 
 # Sounds drivers
-add_subdirectory(alsa) #TODO: implement
-add_subdirectory(coreaudio) #TODO: implement
-add_subdirectory(pulseaudio) #TODO: implement
+add_subdirectory(alsa)
+add_subdirectory(coreaudio)
+add_subdirectory(pulseaudio)
 
 if(GODOT_PLATFORM STREQUAL "windows")
-	add_subdirectory(wasapi) #TODO: implement
+	add_subdirectory(wasapi)
 endif()
 
 if(GODOT_XAUDIO2)
-	add_subdirectory(xaudio2) #TODO: implement
+	add_subdirectory(xaudio2)
 endif()
 
 # Midi drivers
-add_subdirectory(alsamidi) #TODO: implement
-add_subdirectory(coremidi) #TODO: implement
-add_subdirectory(winmidi) #TODO: implement
+add_subdirectory(alsamidi)
+add_subdirectory(coremidi)
+add_subdirectory(winmidi)
 
 # Graphics drivers
 if(NOT GODOT_PLATFORM STREQUAL "server")
-	add_subdirectory(gles3) #TODO: implement
-	add_subdirectory(gles2) #TODO: implement
-	add_subdirectory(gl_context) #TODO: implement
+	add_subdirectory(gles3)
+	add_subdirectory(gles2)
+	add_subdirectory(gl_context)
 else()
-	add_subdirectory(dummy) #TODO: implement
+	add_subdirectory(dummy)
 endif()
 
 # Core dependencies
-add_subdirectory(png) #TODO: implement
+add_subdirectory(png)
 
 target_glob_sources(drivers-lib PRIVATE "*.cpp")
+

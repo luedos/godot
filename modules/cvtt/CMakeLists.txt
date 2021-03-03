@@ -12,6 +12,7 @@ add_module_lib(cvtt-lib
 )
 
 add_lib(thirdparty-cvtt-lib
+	OBJECT
 	PARENT_LIB
 		cvtt-lib
 	COMPONENTS

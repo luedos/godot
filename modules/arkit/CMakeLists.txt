@@ -6,6 +6,10 @@ add_module_lib(arkit-lib
 	COMPONENTS
 		modules-env
 		warnings-env
+	OUTPUT_DIR
+		"${GODOT_BIN_DIRECTORY}"
+	OUTPUT_NAME
+		"libgodot_arkit_module"
 )
 
 # (iOS) Enable module support

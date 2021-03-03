@@ -25,15 +25,11 @@ include(methods.cmake)
 # So first of all we transforming CMAKE_SYSTEM_NAME into GODOT_PLATFORM, 
 # because system name, and godot platform, is sometimes has different names for same thing.
 string(TOLOWER "${CMAKE_SYSTEM_NAME}" __SYSTEM_NAME)
-if(__SYSTEM_NAME STREQUAL "linux"
-	OR __SYSTEM_NAME STREQUAL "x11"
-	OR __SYSTEM_NAME STREQUAL "bsd"
-	OR __SYSTEM_NAME STREQUAL "linuxbsd")
+if(__SYSTEM_NAME MATCHES "(linux|x11|bsd|linuxbsd)")
 
 	set(GODOT_PLATFORM "x11") # linux case. x11 is godot name for linux
 
-elseif(__SYSTEM_NAME STREQUAL "windows"
-	OR __SYSTEM_NAME STREQUAL "win32")
+elseif(__SYSTEM_NAME MATCHES "(windows|win32)")
 
 	set(GODOT_PLATFORM "windows") # windows case
 
@@ -77,7 +73,6 @@ set(PLATFORMS_LIST "")
 
 file(GLOB __PLATFORM_DIRS 
 	LIST_DIRECTORIES true 
-	RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" 
 	"${CMAKE_CURRENT_SOURCE_DIR}/platform/*" # CMAKE_CURRENT_SOURCE_DIR added just to be more explicit 
 )
 
@@ -86,12 +81,13 @@ foreach(__DIR IN LISTS __PLATFORM_DIRS)
 	# local variables
 	unset(__PLATFORM_ID)
 
-	if(NOT IS_DIRECTORY __DIR)
+	if(NOT IS_DIRECTORY "${__DIR}")
 		continue()
 	endif()
 
 	if(NOT EXISTS "${__DIR}/detect.cmake")
-		message(WARNING "The platform \"${__DIR}\" is defined, but doesn't have detect.cmake in it, so it can't be processed..")
+		# message(WARNING "The platform \"${__DIR}\" is defined, but doesn't have detect.cmake in it, so it can't be processed..")
+		continue()
 	endif()
 
 	include("${__DIR}/detect.cmake")
@@ -136,8 +132,8 @@ endforeach()
 
 execute_python_method(methods save_active_platforms
 	PYTHON_ARGS 
-		ARR_VAR ACTIVE_PLATFORMS
-		ARR_VAR ACTIVE_PLATFORM_PATHS
+		ARR_VAR "ACTIVE_PLATFORMS"
+		ARR_VAR "ACTIVE_PLATFORM_PATHS"
 )
 
 ############### Creating default parameters ###############
@@ -205,14 +201,14 @@ set_bool_option		(GODOT_BUILTIN_XATLAS		true 	DESCRIPTION "Use the built-in xatl
 set_bool_option		(GODOT_BUILTIN_ZLIB			true 	DESCRIPTION "Use the built-in zlib library.")
 set_bool_option		(GODOT_BUILTIN_ZSTD			true 	DESCRIPTION "Use the built-in Zstd library.")
 
+set(IS_OPTIMIZED_GEN_EXPR 		$<CONFIG:Release,MinSizeRel,RelWithDebInfo,ToolsRelWithDebInfo>)
+set(IS_RELEASE_GEN_EXPR 		$<CONFIG:Release,MinSizeRel>)
+set(IS_DEBUG_INFO_GEN_EXPR 		$<CONFIG:Debug,RelWithDebInfo,ToolsDebug,ToolsRelWithDebInfo>)
+set(IS_DEBUG_GEN_EXPR 			$<CONFIG:Debug,ToolsDebug>)
+set(IS_OPT_DEBUG_GEN_EXPR 		$<CONFIG:RelWithDebInfo,ToolsRelWithDebInfo>)
+set(IS_TOOLS_GEN_EXPR 			$<CONFIG:ToolsDebug,ToolsRelWithDebInfo>)
 
-set(IS_OPTIMIZED_GEN_EXPR 		"$<CONFIG:Release,MinSizeRel,RelWithDebInfo,ToolsRelWithDebInfo>")
-set(IS_RELEASE_GEN_EXPR 		"$<CONFIG:Release,MinSizeRel>")
-set(IS_DEBUG_GEN_EXPR 			"$<CONFIG:Debug,RelWithDebInfo,ToolsDebug,ToolsRelWithDebInfo>")
-set(IS_OPTIMIZED_DEBUG_GEN_EXPR "$<CONFIG:RelWithDebInfo,ToolsRelWithDebInfo>")
-set(IS_TOOLS_GEN_EXPR 			"$<CONFIG:ToolsDebug,ToolsRelWithDebInfo>")
-
-if(NOT IS_ABSOLUTE GODOT_BIN_DIRECTORY)
+if(NOT IS_ABSOLUTE "${GODOT_BIN_DIRECTORY}")
 	join_paths(GODOT_BIN_DIRECTORY "${CMAKE_BINARY_DIR}" "${GODOT_BIN_DIRECTORY}")
 else()
 	normilize_path(GODOT_BIN_DIRECTORY "${GODOT_BIN_DIRECTORY}")
@@ -239,13 +235,17 @@ set_target_properties(global-env
 		X86_LIBTHEORA_OPT_VC false
 )
 
+target_include_directories(global-env INTERFACE
+	"${GODOT_SOURCE_DIR}"
+)
+
 # some thirdparty libs does not have warnings in them, so we will create separate environment to handle all warnings levels
 add_env(warnings-env)
 
 ############### Configuring platform ###############
 
 if(NOT GODOT_PLATFORM IN_LIST PLATFORMS_LIST)
-	message(FATAL_ERROR "Platform \"${GODOT_PLATFORM}\" can't be found in active platforms. Maybe current platform \"CMAKE_SYSTEM_NAME\" is not supported yet.")
+	message(FATAL_ERROR "Platform \"${GODOT_PLATFORM}\" can't be found in active platforms (${PLATFORMS_LIST}). Maybe current platform \"${CMAKE_SYSTEM_NAME}\" is not supported yet.")
 elseif(NOT ${GODOT_PLATFORM}_PLATFROM_CAN_BUILD)
 	message(FATAL_ERROR "Platform \"${GODOT_PLATFORM}\" exist, but can't be built.")
 endif()
@@ -304,7 +304,7 @@ set(MODULES_PATHS "") # all modules paths
 unset(__MODULE_VALID)
 unset(__MODULE_ID)
 
-foreach(__DIR IN LISTS __MODULE_DIRS)
+foreach(__DIR IN LISTS __MODULES_DIRS)
 	is_module("${__DIR}" __MODULE_VALID)
 	if(NOT __MODULE_VALID)
 		message(WARNING "Provided module by the path \"${__DIR}\" is not valid, and can't be processed..")
@@ -349,8 +349,8 @@ endforeach()
 # generating some files
 execute_python_method(methods cmake_write_modules
 	PYTHON_ARGS
-		ARR_VAR MODULES_IDS
-		ARR_VAR MODULES_PATHS
+		ARR_VAR "MODULES_IDS"
+		ARR_VAR "MODULES_PATHS"
 )
 
 
@@ -362,7 +362,7 @@ foreach(__MODULE_ID IN LISTS __EDITOR_MODULES_LIST)
 		
 		if(GODOT_BUILD_TOOLS)
 			set(GODOT_BUILD_TOOLS false)
-			message(WARNING "Because of build option '${${__MODULE_ID}_IS_MODULE_ENABLED}=false', and usage of multiconfigurational generator, the tools will be turened off.")
+			message(WARNING "Because of build option '${__MODULE_ID}_IS_MODULE_ENABLED=false', and usage of multiconfigurational generator, the tools will be turened off.")
 			break() # tools are already off, nothing to check
 		endif()
 
@@ -396,15 +396,21 @@ if(CMAKE_CONFIGURATION_TYPES)
 		endif()
 	endif()
 
+	message(STATUS "Possible configurations is: ${CMAKE_CONFIGURATION_TYPES}")
+
 else()
 
-	set(__ALLOWED_BUILD_TYPES "Debug" "Release" "MinSizeRel" "RelWithDebInfo" "ToolsDebug" "ToolsRelWithDebInfo")
+	set(__ALLOWED_BUILD_TYPES "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 	if(GODOT_BUILD_TOOLS)
 		list(APPEND __ALLOWED_BUILD_TYPES "ToolsDebug" "ToolsRelWithDebInfo")
 	endif()
 
 	if("${CMAKE_BUILD_TYPE}" STREQUAL "")
-		set(CMAKE_BUILD_TYPE Debug CACHE STRING "" FORCE)
+		if(GODOT_BUILD_TOOLS)
+			set(CMAKE_BUILD_TYPE "ToolsDebug" CACHE STRING "" FORCE)
+		else()
+			set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "" FORCE)
+		endif()
 	elseif(NOT CMAKE_BUILD_TYPE IN_LIST __ALLOWED_BUILD_TYPES)
 		message(FATAL_ERROR "Invalid build type ${CMAKE_BUILD_TYPE}. Possible build types are: ${__ALLOWED_BUILD_TYPES}")
 	endif()
@@ -438,8 +444,8 @@ if(GODOT_USE_PRECISE_MATH_CHECKS)
 endif()
 
 target_compile_definitions(global-env INTERFACE 
-	$<$<NOT:${IS_OPTIMIZED_GEN_EXPR}>: "DEBUG_MEMORY_ALLOC" "DISABLE_FORCED_INLINE" > # if we are in the full debug..
-	$<${IS_RELEASE_GEN_EXPR}: "NDEBUG" > # if we are the full release..
+	$<$<NOT:${IS_OPTIMIZED_GEN_EXPR}>:DEBUG_MEMORY_ALLOC;DISABLE_FORCED_INLINE> # if we are in the full debug..
+	$<${IS_RELEASE_GEN_EXPR}:NDEBUG> # if we are the full release..
 )
 
 if(GODOT_NO_EDITOR_SPLASH)
@@ -450,38 +456,35 @@ if(GODOT_DEPRECATED)
 	target_compile_definitions(global-env INTERFACE "DISABLE_DEPRECATED")
 endif()
 
-set(__ONLY_FOR_MSVC_GEN_EXPR $<OR:
-	$<COMPILE_LANG_AND_ID:CXX,MSVC>,
-	$<COMPILE_LANG_AND_ID:C,MSVC>,
-	$<COMPILE_LANG_AND_ID:OBJCXX,MSVC>,
-	$<COMPILE_LANG_AND_ID:OBJC,MSVC>
->)
-set(__ONLY_FOR_GCC_GEN_EXPR $<OR:
-	$<COMPILE_LANG_AND_ID:CXX,GNU>,
-	$<COMPILE_LANG_AND_ID:C,GNU>,
-	$<COMPILE_LANG_AND_ID:OBJCXX,GNU>,
-	$<COMPILE_LANG_AND_ID:OBJC,GNU>
->)
-set(__ONLY_FOR_GCC_7_GEN_EXPR $<OR: # if compiler for c/cxx is gcc and its version is >= 7.0.0
-	$<AND: $<COMPILE_LANG_AND_ID:CXX,GNU>, 		$<VERSION_GREATER_EQUAL:$<CXX_COMPILER_VERSION>,7.0.0> 		>,
-	$<AND: $<COMPILE_LANG_AND_ID:C,GNU>, 		$<VERSION_GREATER_EQUAL:$<C_COMPILER_VERSION>,7.0.0> 		>,
-	$<AND: $<COMPILE_LANG_AND_ID:OBJCXX,GNU>, 	$<VERSION_GREATER_EQUAL:$<OBJCXX_COMPILER_VERSION>,7.0.0> 	>,
-	$<AND: $<COMPILE_LANG_AND_ID:OBJC,GNU>, 	$<VERSION_GREATER_EQUAL:$<OBJC_COMPILER_VERSION>,7.0.0> 	>
->)
-set(__ONLY_FOR_GCC_9_GEN_EXPR $<OR: # if compiler for c/cxx is gcc and its version is >= 9.0.0
-	$<AND: $<COMPILE_LANG_AND_ID:CXX,GNU>, 		$<VERSION_GREATER_EQUAL:$<CXX_COMPILER_VERSION>,9.0.0> 		>,
-	$<AND: $<COMPILE_LANG_AND_ID:C,GNU>, 		$<VERSION_GREATER_EQUAL:$<C_COMPILER_VERSION>,9.0.0> 		>,
-	$<AND: $<COMPILE_LANG_AND_ID:OBJCXX,GNU>, 	$<VERSION_GREATER_EQUAL:$<OBJCXX_COMPILER_VERSION>,9.0.0> 	>,
-	$<AND: $<COMPILE_LANG_AND_ID:OBJC,GNU>, 	$<VERSION_GREATER_EQUAL:$<OBJC_COMPILER_VERSION>,9.0.0> 	>
->)
+set(__IS_MSVC_GEN_EXPR $<BOOL:${MSVC}>)
 
-target_compile_options(global-env INTERFACE $<${__ONLY_FOR_MSVC_GEN_EXPR}: /EHsc /utf8>)
+set(__IS_GCC_GEN_EXPR
+	$<OR:$<CXX_COMPILER_ID:GNU>,$<C_COMPILER_ID:GNU>,$<OBJCXX_COMPILER_ID:GNU>,$<OBJC_COMPILER_ID:GNU>>)
+
+# if compiler for c/cxx is gcc and its version is >= 7.0.0
+set(__CXX_GCC_7VER_GEN_EXPR 		$<AND:$<CXX_COMPILER_ID:GNU>,$<VERSION_GREATER_EQUAL:$<CXX_COMPILER_VERSION>,7.0.0>>)
+set(__C_GCC_7VER_GEN_EXPR 			$<AND:$<C_COMPILER_ID:GNU>,$<VERSION_GREATER_EQUAL:$<C_COMPILER_VERSION>,7.0.0>>)
+set(__OBJCXX_GCC_7VER_GEN_EXPR 		$<AND:$<OBJCXX_COMPILER_ID:GNU>,$<VERSION_GREATER_EQUAL:$<OBJCXX_COMPILER_VERSION>,7.0.0>>)
+set(__OBJC_GCC_7VER_GEN_EXPR 		$<AND:$<OBJC_COMPILER_ID:GNU>,$<VERSION_GREATER_EQUAL:$<OBJC_COMPILER_VERSION>,7.0.0>>)
+
+set(__GCC_7VER_GEN_EXPR 
+	$<OR:${__CXX_GCC_7VER_GEN_EXPR},${__C_GCC_7VER_GEN_EXPR},${__OBJCXX_GCC_7VER_GEN_EXPR},${__OBJC_GCC_7VER_GEN_EXPR}>)
+
+set(__CXX_GCC_9VER_GEN_EXPR 		$<AND:$<CXX_COMPILER_ID:GNU>,$<VERSION_GREATER_EQUAL:$<CXX_COMPILER_VERSION>,9.0.0>>)
+set(__C_GCC_9VER_GEN_EXPR 			$<AND:$<C_COMPILER_ID:GNU>,$<VERSION_GREATER_EQUAL:$<C_COMPILER_VERSION>,9.0.0>>)
+set(__OBJCXX_GCC_9VER_GEN_EXPR 		$<AND:$<OBJCXX_COMPILER_ID:GNU>,$<VERSION_GREATER_EQUAL:$<OBJCXX_COMPILER_VERSION>,9.0.0>>)
+set(__OBJC_GCC_9VER_GEN_EXPR 		$<AND:$<OBJC_COMPILER_ID:GNU>,$<VERSION_GREATER_EQUAL:$<OBJC_COMPILER_VERSION>,9.0.0>>)
+
+set(__GCC_9VER_GEN_EXPR 
+	$<OR:${__CXX_GCC_9VER_GEN_EXPR},${__C_GCC_9VER_GEN_EXPR},${__OBJCXX_GCC_9VER_GEN_EXPR},${__OBJC_GCC_9VER_GEN_EXPR}>)
+
+target_compile_options(global-env INTERFACE $<${__IS_MSVC_GEN_EXPR}:/EHsc;/utf-8>)
 
 # applying warnings level
 
 set(__MSVC_DISABLE_WARNINGS "/wd4267" "/wd4244" "/wd4305" "/wd4018" "/wd4800")
 set(__ALL_PLUS_WARNINGS "-Wwrite-strings")
-set(__OPTIONAL_SHADOW_LOCAL_WARNINGS $<${__ONLY_FOR_GCC_7_GEN_EXPR}: -Wshadow-local >)
+set(__OPTIONAL_SHADOW_LOCAL_WARNINGS $<${__GCC_7VER_GEN_EXPR}:-Wshadow-local>)
 
 if (GODOT_DEV)
 	set(GODOT_WARNINGS "extra")
@@ -491,47 +494,34 @@ endif()
 if (GODOT_WARNINGS STREQUAL "extra")
 
 	target_compile_options(warnings-env INTERFACE
-		$<IF:${__ONLY_FOR_MSVC_GENERATOR_EXPR},
-			# only for MSVC
-			/Wall, 
-			# anything other then MSVC
-			-Wall -Wextra -Wno-unused-parameter ${__ALL_PLUS_WARNINGS} ${__OPTIONAL_SHADOW_LOCAL_WARNINGS} # general parameters
-			$<$<COMPILE_LANGUAGE:CXX>: -Wctor-dtor-privacy -Wnon-virtual-dtor> # only for c++
-			$<${__ONLY_FOR_GCC_GEN_EXPR}: # only for gcc 
-				-Walloc-zero -Wduplicated-branches -Wduplicated-cond -Wstringop-overflow=4 -Wlogical-op # general
-				$<$<COMPILE_LANGUAGE:CXX>:-Wnoexcept -Wplacement-new=1> > # only for c++ 
-			$<${__ONLY_FOR_GCC_9_GEN_EXPR}: -Wattribute-alias=2> # only for gcc greater then 9.0.0
-		>)
+		# only for MSVC
+		$<${__IS_MSVC_GEN_EXPR}:/Wall>
+		# general parameters for not MSVC
+		$<$<NOT:${__IS_MSVC_GEN_EXPR}>:-Wall;-Wextra;-Wno-unused-parameter;${__ALL_PLUS_WARNINGS};${__OPTIONAL_SHADOW_LOCAL_WARNINGS}> 
+		# not MSVC, only for c++
+		$<$<AND:$<NOT:${__IS_MSVC_GEN_EXPR}>,$<COMPILE_LANGUAGE:CXX>>:-Wctor-dtor-privacy;-Wnon-virtual-dtor> 
+		# only for gcc
+		$<${__IS_GCC_GEN_EXPR}:-Walloc-zero;-Wduplicated-branches;-Wduplicated-cond;-Wstringop-overflow=4;-Wlogical-op>  
+		# only for gcc c++
+		$<$<COMPILE_LANG_AND_ID:CXX,GNU>-Wnoexcept;-Wplacement-new=1>  
+		# only for gcc greater then 9.0.0
+		$<${__GCC_9VER_GEN_EXPR}:-Wattribute-alias=2> 
+	)
 
 elseif(GODOT_WARNINGS STREQUAL "all")
 
 	target_compile_options(warnings-env INTERFACE
-		$<IF:${__ONLY_FOR_MSVC_GEN_EXPR},
-			# only for MSVC
-			/W3 ${__MSVC_DISABLE_WARNINGS}, 
-			# anything other then MSVC
-			-Wall ${__OPTIONAL_SHADOW_LOCAL_WARNINGS}
-		>)
+		$<IF:${__IS_MSVC_GEN_EXPR},/W3;${__MSVC_DISABLE_WARNINGS},-Wall;${__OPTIONAL_SHADOW_LOCAL_WARNINGS}>)
 
 elseif(GODOT_WARNINGS STREQUAL "moderate")
 
 	target_compile_options(warnings-env INTERFACE
-		$<IF:${__ONLY_FOR_MSVC_GEN_EXPR},
-			# only for MSVC
-			/W2 ${__MSVC_DISABLE_WARNINGS}, 
-			# anything other then MSVC
-			-Wall -Wno-unused ${__OPTIONAL_SHADOW_LOCAL_WARNINGS}
-		>)
+		$<IF:${__IS_MSVC_GEN_EXPR},/W2;${__MSVC_DISABLE_WARNINGS},-Wall;-Wno-unused;${__OPTIONAL_SHADOW_LOCAL_WARNINGS}>)
 
 else()
 	
 	target_compile_options(warnings-env INTERFACE
-		$<IF:${__ONLY_FOR_MSVC_GEN_EXPR},
-			# only for MSVC
-			/w, 
-			# anything other then MSVC
-			-w
-		>)
+		$<IF:${__IS_MSVC_GEN_EXPR},/w,-w>)
 
 endif()
 
@@ -540,19 +530,13 @@ endif()
 if(GODOT_WERROR)
 
 	target_compile_options(warnings-env INTERFACE
-		$<IF:${__ONLY_FOR_MSVC_GEN_EXPR},
-			# only for MSVC
-			/WX, 
-			# anything other then MSVC
-			-Werror
-		>)
+		$<IF:${__IS_MSVC_GEN_EXPR},/WX,-Werror>)
 
 else()
 
-	target_compile_options(warnings-env INTERFACE
-		$<$<NOT:${__ONLY_FOR_MSVC_GEN_EXPR}>: # only for non MSVC 
-			-Werror=return-type
-		>)
+	target_compile_options(warnings-env INTERFACE 
+		# only for non MSVC 			
+		$<$<NOT:${__IS_MSVC_GEN_EXPR}>:-Werror=return-type>)
 
 endif()
 
@@ -567,6 +551,8 @@ set(CLASSES_DOC_PATHS "")
 set(MODULES_ICONS_PATHS "")
 # just to be sure
 unset(__VERSION_STRING)
+# Actually enebled modules which can be built
+set(MODULES_LIST "") 
 
 foreach(__MODULE_ID IN LISTS MODULES_IDS)
 
@@ -588,10 +574,10 @@ foreach(__MODULE_ID IN LISTS MODULES_IDS)
 
 		cmake_language(CALL ${__MODULE_ID}_configure_module)
 
-		if(COMMAND ${__MODULE_NAME}_get_version_string)
+		if(COMMAND "${__MODULE_NAME}_get_version_string")
 			# getting additional version string from the module.
 			unset(__MODULE_VERSION_STRING)
-			cmake_language(CALL ${__MODULE_NAME}_get_version_string __MODULE_VERSION_STRING)
+			cmake_language(CALL "${__MODULE_NAME}_get_version_string" __MODULE_VERSION_STRING)
 			# if module was returned from module function
 			if(NOT "${__MODULE_VERSION_STRING}" STREQUAL "")
 				# add this string to the total version string
@@ -600,9 +586,9 @@ foreach(__MODULE_ID IN LISTS MODULES_IDS)
 		endif()
 
 		# configuring documentation
-		if(COMMAND ${__MODULE_ID}_get_doc_classes AND COMMAND ${__MODULE_ID}_get_doc_relative_path)
-			cmake_language(${__MODULE_ID}_get_doc_classes ${__MODULE_ID}_MODULE_DOC_CLASSES)
-			cmake_language(${__MODULE_ID}_get_doc_relative_path ${__MODULE_ID}_MODULE_DOC_RELATIVE_PATH)
+		if(COMMAND "${__MODULE_ID}_get_doc_classes" AND COMMAND "${__MODULE_ID}_get_doc_relative_path")
+			cmake_language(CALL "${__MODULE_ID}_get_doc_classes" ${__MODULE_ID}_MODULE_DOC_CLASSES)
+			cmake_language(CALL "${__MODULE_ID}_get_doc_relative_path" ${__MODULE_ID}_MODULE_DOC_RELATIVE_PATH)
 
 			join_paths(__DOC_ABS_PATH "${${__MODULE_ID}_MODULE_PATH}" "${${__MODULE_ID}_MODULE_DOC_RELATIVE_PATH}")
 			
@@ -624,8 +610,8 @@ foreach(__MODULE_ID IN LISTS MODULES_IDS)
 		endif()
 
 		# configuring icons
-		if(COMMAND ${__MODULE_ID}_get_relative_icon_path)
-			cmake_language(CALL ${__MODULE_ID}_get_relative_icon_path __ICON_DIR)
+		if(COMMAND "${__MODULE_ID}_get_relative_icon_path")
+			cmake_language(CALL "${__MODULE_ID}_get_relative_icon_path" __ICON_DIR)
 		else()
 			set(__ICON_DIR "icons")
 		endif()
@@ -633,13 +619,15 @@ foreach(__MODULE_ID IN LISTS MODULES_IDS)
 		join_paths(${__MODULE_ID}_ICONS_PATH "${${__MODULE_ID}_MODULE_PATH}" "${__ICON_DIR}")
 		list(APPEND MODULES_ICONS_PATHS "${${__MODULE_ID}_ICONS_PATH}")
 
+		list(APPEND MODULES_LIST "${__MODULE_ID}")
+
 	endif()
 
 endforeach()
 
 execute_python_method(methods update_version
 	PYTHON_ARGS
-		STR_VAR __VERSION_STRING
+		STR_VAR "__VERSION_STRING"
 )
 
 
@@ -648,8 +636,8 @@ execute_python_method(methods update_version
 # it is possible to set specific output name for targets, but only for specific ones..  
 set(EXTRA_SUFFIX "")
 
-if(COMMAND ${GODOT_PLATFORM}_get_program_suffix)
-	cmake_language(CALL ${GODOT_PLATFORM}_get_program_suffix ${GODOT_PLATFORM}_PROGRAM_SUFFIX)
+if(COMMAND "${GODOT_PLATFORM}_get_program_suffix")
+	cmake_language(CALL "${GODOT_PLATFORM}_get_program_suffix" ${GODOT_PLATFORM}_PROGRAM_SUFFIX)
 else()
 	set(${GODOT_PLATFORM}_PROGRAM_SUFFIX ${GODOT_PLATFORM})
 endif()
@@ -657,7 +645,7 @@ endif()
 set(EXTRA_SUFFIX "${EXTRA_SUFFIX}.${${GODOT_PLATFORM}_PROGRAM_SUFFIX}")
 
 set(EXTRA_SUFFIX "${EXTRA_SUFFIX}$<${IS_OPTIMIZED_GEN_EXPR}:.opt>") # extra suffix for all optimized versions
-set(EXTRA_SUFFIX "${EXTRA_SUFFIX}$<${IS_DEBUG_GEN_EXPR}:$<IF:${IS_TOOLS_GEN_EXPR},.tools,.debug>>") # extra suffix for all versions with debug info 
+set(EXTRA_SUFFIX "${EXTRA_SUFFIX}$<${IS_DEBUG_INFO_GEN_EXPR}:$<IF:${IS_TOOLS_GEN_EXPR},.tools,.debug>>") # extra suffix for all versions with debug info 
 
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
 	set(EXTRA_SUFFIX "${EXTRA_SUFFIX}.64")
@@ -683,7 +671,7 @@ if(__USE_PTRCALL)
 	target_compile_definitions(global-env INTERFACE "PTRCALL_ENABLED")
 endif()
 
-target_compile_definitions(global-env INTERFACE $<${IS_TOOLS_GEN_EXPR}:"TOOLS_ENABLED">)
+target_compile_definitions(global-env INTERFACE $<${IS_TOOLS_GEN_EXPR}:TOOLS_ENABLED>)
 
 if (GODOT_DISABLE_3D)
 	# tools can't be enabled here, because we turned them off previusly if this option is true
@@ -696,7 +684,7 @@ endif()
 
 if (GODOT_DISABLE_ADVANCE_GUI)
 	# tools can't be enabled here, because we turned them off previusly if this option is true
-	target_compile_definitions(global-env INTERFACE $<$<NOT:${IS_TOOLS_ENABLED_GENERATOR_EXPR}>:"ADVANCED_GUI_DISABLED">) 
+	target_compile_definitions(global-env INTERFACE $<$<NOT:${IS_TOOLS_GEN_EXPR}>:ADVANCED_GUI_DISABLED>) 
 endif()
 
 if (GODOT_MINIZIP)
@@ -705,6 +693,7 @@ endif()
 
 add_library(global-libs-list INTERFACE)
 
+
 add_subdirectory(core)
 add_subdirectory(servers)
 add_subdirectory(scene)
@@ -712,7 +701,6 @@ add_subdirectory(editor)
 add_subdirectory(drivers)
 
 add_subdirectory(platform)
-
 add_subdirectory(modules)
 add_subdirectory(main)
 

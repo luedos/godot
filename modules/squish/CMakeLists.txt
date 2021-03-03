@@ -17,6 +17,7 @@ if(GODOT_BUILTIN_SQUISH)
 	target_include_directories(squish-env INTERFACE "${__THIRDPARTY_SQUISH_PATH}")
 
 	add_lib(thirdparty-squish-lib
+		OBJECT
 		PARENT_LIB
 			squish-lib
 		COMPONENTS

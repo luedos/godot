@@ -1,6 +1,5 @@
 
 add_lib(scene-lib
-	STANDALONE
 	PARENT_ENV
 		global-libs-list
 	COMPONENTS
@@ -9,6 +8,7 @@ add_lib(scene-lib
 )
 
 add_lib(thirdparty-scene-lib
+	OBJECT
 	PARENT_LIB
 		scene-lib
 	COMPONENTS

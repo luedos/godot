@@ -11,6 +11,7 @@ add_module_lib(pvr-lib
 )
 
 add_lib(thirdparty-pvr-lib
+	OBJECT
 	PARENT_LIB
 		pvr-lib
 	COMPONENTS

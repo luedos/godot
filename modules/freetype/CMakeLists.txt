@@ -29,7 +29,7 @@ if(GODOT_BUILTIN_FREETYPE)
 	target_compile_definitions(freetype-env INTERFACE 
 		"FT2_BUILD_LIBRARY"
 		"FT_CONFIG_OPTION_USE_PNG"
-		$<$<CONFIG:Debug>:"ZLIB_DEBUG">
+		$<${IS_DEBUG_GEN_EXPR}:ZLIB_DEBUG>
 	)
 
 	if (GODOT_BUILTIN_LIBPNG)
@@ -37,6 +37,7 @@ if(GODOT_BUILTIN_FREETYPE)
 	endif()
 
 	add_lib(thirdparty-freetype-lib
+		OBJECT
 		PARENT_LIB
 			freetype-lib
 		COMPONENTS
@@ -45,6 +46,7 @@ if(GODOT_BUILTIN_FREETYPE)
 
 	if(GODOT_PLATFORM STREQUAL "javascript")
 		add_lib(tmp-freetype-lib
+			OBJECT
 			PARENT_LIB
 				freetype-lib
 			COMPONENTS

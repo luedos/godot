@@ -1,11 +1,10 @@
 
 execute_python_method(gen_methods generate_encryption_key_header
 	PYTHON_ARGS 
-		STR_VAL "$ENV{SCRIPT_AES256_ENCRYPTION_KEY}"
+		STR_ENV_VAR "SCRIPT_AES256_ENCRYPTION_KEY"
 )
 
 add_lib(core-lib 
-	STANDALONE
 	PARENT_ENV
 		global-libs-list
 	COMPONENTS
@@ -13,6 +12,7 @@ add_lib(core-lib
 		warnings-env
 )
 add_lib(thirdparty-core-lib 
+	OBJECT
 	PARENT_LIB 
 		core-lib
 	COMPONENTS
@@ -57,7 +57,7 @@ if(GODOT_BUILTIN_ZLIB)
 	# Needs to be available in main env too
 	target_include_directories(global-env INTERFACE "${__THIRDPARTY_ZLIB_DIR}")
 
-	target_compile_definitions(thirdparty-core-lib PRIVATE $<$<CONFIG:Debug>:"ZLIB_DEBUG">)	
+	target_compile_definitions(thirdparty-core-lib PRIVATE $<${IS_DEBUG_GEN_EXPR}:ZLIB_DEBUG>)	
 endif()
 
 # Minizip library, could be unbundled in theory
@@ -117,13 +117,15 @@ target_glob_sources(core-lib PRIVATE "*.cpp")
 
 # Certificates
 set(__CERTIFICATES_FILE_HEADER "${GODOT_SOURCE_DIR}/core/io/certs_compressed.gen.h")
-target_sources(core-lib PRIVATE "${__CERTIFICATES_FILE_HEADER}")
 
 add_python_generator_command(core_builders cmake_make_certs_header
 	TARGET_FILES "${__CERTIFICATES_FILE_HEADER}"
 	SOURCE_FILES "${GODOT_SOURCE_DIR}/thirdparty/certs/ca-certificates.crt"
-	STR_VAR "system_certs_path=GODOT_SYSTEM_CERTS_PATH"
-	BOOL_VAR "is_builtin_certs=GODOT_BUILTIN_CERTS"
+	PYTHON_ARGS
+		STR_VAR "system_certs_path=GODOT_SYSTEM_CERTS_PATH"
+		BOOL_VAR "is_builtin_certs=GODOT_BUILTIN_CERTS"
+	TARGET core-lib 
+	APPEND_SYS_PATH "${GODOT_SOURCE_DIR}"
 )
 
 # Make binders
@@ -132,40 +134,53 @@ set(__MAKE_BINDERS_FILES
 	"${CMAKE_CURRENT_SOURCE_DIR}/method_bind_ext.gen.inc" 
 	"${CMAKE_CURRENT_SOURCE_DIR}/method_bind_free_func.gen.inc"
 )
-target_sources(core-lib PRIVATE ${__MAKE_BINDERS_FILES})
 
 add_python_generator_command(make_binders cmake_run
 	TARGET_FILES ${__MAKE_BINDERS_FILES}
+	TARGET core-lib 
 )
 
 # Authors
 set(__AUTHORS_FILE_HEADER "${GODOT_SOURCE_DIR}/core/authors.gen.h")
-target_sources(core-lib PRIVATE ${__AUTHORS_FILE_HEADER})
 
 add_python_generator_command(core_builders cmake_make_authors_header
 	TARGET_FILES "${__AUTHORS_FILE_HEADER}"
 	SOURCE_FILES "${GODOT_SOURCE_DIR}/AUTHORS.md"
+	TARGET core-lib 
+	APPEND_SYS_PATH "${GODOT_SOURCE_DIR}"
 )
 
 # Donors
 set(__DONORS_FILE_HEADER "${GODOT_SOURCE_DIR}/core/donors.gen.h")
-target_sources(core-lib PRIVATE ${__DONORS_FILE_HEADER})
 
 add_python_generator_command(core_builders cmake_make_donors_header
 	TARGET_FILES "${__DONORS_FILE_HEADER}"
 	SOURCE_FILES "${GODOT_SOURCE_DIR}/DONORS.md"
+	TARGET core-lib 
+	APPEND_SYS_PATH "${GODOT_SOURCE_DIR}"
 )
 
 # License
 set(__LICENSE_FILE_HEADER "${GODOT_SOURCE_DIR}/core/license.gen.h")
-target_sources(core-lib PRIVATE ${__LICENSE_FILE_HEADER})
 
 add_python_generator_command(core_builders cmake_make_license_header
 	TARGET_FILES "${__LICENSE_FILE_HEADER}"
 	SOURCE_FILES 
 		"${GODOT_SOURCE_DIR}/COPYRIGHT.txt"
 		"${GODOT_SOURCE_DIR}/LICENSE.txt"
+	TARGET core-lib 
+	APPEND_SYS_PATH "${GODOT_SOURCE_DIR}"
 )
+
+add_custom_target(core-gen 
+	DEPENDS
+		${__CERTIFICATES_FILE_HEADER}
+		${__MAKE_BINDERS_FILES}
+		${__AUTHORS_FILE_HEADER}
+		${__DONORS_FILE_HEADER}
+		${__LICENSE_FILE_HEADER}
+)
+add_dependencies(core-lib core-gen)
 
 add_subdirectory(os)
 add_subdirectory(math)

@@ -1,67 +1,95 @@
 
-macro(inline_if __OUTPUT)
+function(fix_if_expression __OUTPUT __EXPRESSION)
 
-	if(${ARGN})
-		set(${__OUTPUT} true)
-	else()
-		set(${__OUTPUT} false)
+	string(REPLACE ";;" ";\"\";" __EXPRESSION "${__EXPRESSION}")
+	if("${__EXPRESSION}" MATCHES "^;.+")
+		set(__EXPRESSION "\"\"${__EXPRESSION}")
 	endif()
 
-endmacro()
-
-macro(ternary_if __OUTPUT __TRUE __FALSE)
-
-	if(${ARGN})
-		set(${__OUTPUT} ${__TRUE})
-	else()
-		set(${__OUTPUT} ${__FALSE})
+	if("${__EXPRESSION}" MATCHES ".+;$")
+		set(__EXPRESSION "${__EXPRESSION}\"\"")
 	endif()
 
-endmacro()
+	set(${__OUTPUT} "${__EXPRESSION}" PARENT_SCOPE)
+
+endfunction()
+
+function(assert __MESSAGE)
+
+	fix_if_expression(__EXPRESSION "${ARGN}")
+
+	if(NOT (${__EXPRESSION}))
+
+		message(FATAL_ERROR "${__MESSAGE}")
+
+	endif()
+
+endfunction()
+
+function(assert_if_empty __ARG_NAME)
+
+	assert("The value of \"${__ARG_NAME}\" is empty." 
+		NOT "${${__ARG_NAME}}" STREQUAL ""
+	)
+
+endfunction()
+
+function(inline_if __OUTPUT)
+
+	fix_if_expression(__EXPRESSION "${ARGN}")
+
+	if(${__EXPRESSION})
+		set("${__OUTPUT}" true PARENT_SCOPE)
+	else()
+		set("${__OUTPUT}" false PARENT_SCOPE)
+	endif()
+
+endfunction()
+
+function(ternary_if __OUTPUT __TRUE __FALSE)
+
+	fix_if_expression(__EXPRESSION "${ARGN}")
+
+	if(${__EXPRESSION})
+		set("${__OUTPUT}" ${__TRUE} PARENT_SCOPE)
+	else()
+		set("${__OUTPUT}" ${__FALSE} PARENT_SCOPE)
+	endif()
+
+endfunction()
 
 function(set_string_option __NAME __VALUE)
-	# local vars
-	set(__OPT_DESCRIPTION "")
-	set(__OPT_ENUM "")
-
 	set(__OPTIONS "")
 	set(__VALUES DESCRIPTION)
 	set(__MULTIVALUE ENUM)
-	cmake_parse_arguments(__OPT "${__OPTIONS}" "${__VALUES}" "${__MULTIVALUE}" ${ARGN})
+	cmake_parse_arguments(PARSE_ARGV 2 __ARGS "${__OPTIONS}" "${__VALUES}" "${__MULTIVALUE}")
 
-	set("${__NAME}" "${__VALUE}" CACHE STRING "${__OPT_DESCRIPTION}")
+	set("${__NAME}" "${__VALUE}" CACHE STRING "${__ARGS_DESCRIPTION}")
 
-	if (__OPT_ENUM)
-		set_property(CACHE "${__NAME}" PROPERTY STRINGS ${__OPT_ENUM})
+	if (__ARGS_ENUM)
+		set_property(CACHE "${__NAME}" PROPERTY STRINGS ${__ARGS_ENUM})
 	endif()
 endfunction()
 
 function(set_path_option __NAME __VALUE)
-	# local vars
-	set(__OPT_DESCRIPTION "")
-	set(__OPT_FILE "")
-
 	set(__OPTIONS FILE)
 	set(__VALUES DESCRIPTION)
 	set(__MULTIVALUE "")
-	cmake_parse_arguments(__OPT "${__OPTIONS}" "${__VALUES}" "${__MULTIVALUE}" ${ARGN})
-	if (__OPT_FILE)
-		set("${__NAME}" "${__VALUE}" CACHE FILEPATH "${__OPT_DESCRIPTION}")
+	cmake_parse_arguments(PARSE_ARGV 2 __ARGS "${__OPTIONS}" "${__VALUES}" "${__MULTIVALUE}")
+	if (__ARGS_FILE)
+		set("${__NAME}" "${__VALUE}" CACHE FILEPATH "${__ARGS_DESCRIPTION}")
 	else()
-		set("${__NAME}" "${__VALUE}" CACHE PATH "${__OPT_DESCRIPTION}")
+		set("${__NAME}" "${__VALUE}" CACHE PATH "${__ARGS_DESCRIPTION}")
 	endif()
 endfunction()
 
 function(set_bool_option __NAME __VALUE)
-	# local vars
-	set(__OPT_DESCRIPTION "")
-
 	set(__OPTIONS "")
 	set(__VALUES DESCRIPTION)
 	set(__MULTIVALUE "")
-	cmake_parse_arguments(__OPT "${__OPTIONS}" "${__VALUES}" "${__MULTIVALUE}" ${ARGN})
+	cmake_parse_arguments(PARSE_ARGV 2 __ARGS "${__OPTIONS}" "${__VALUES}" "${__MULTIVALUE}")
 
-	set("${__NAME}" "${__VALUE}" CACHE BOOL "${__OPT_DESCRIPTION}")
+	set("${__NAME}" "${__VALUE}" CACHE BOOL "${__ARGS_DESCRIPTION}")
 
 endfunction()
 
@@ -72,12 +100,12 @@ function(normilize_path __OUTPUT __PATH)
 
 	set(__ONE_VALUE_ARGS "")
 	set(__MULTI_VALUE_ARGS "")
-	cmake_parse_arguments(__ARGS "${__OPTIONS_ARGS}" "${__ONE_VALUE_ARGS}" "${__MULTI_VALUE_ARGS}" ${ARGN})
+	cmake_parse_arguments(PARSE_ARGV 2 __ARGS "${__OPTIONS_ARGS}" "${__ONE_VALUE_ARGS}" "${__MULTI_VALUE_ARGS}")
 
 	# normilize only slashes
 	file(TO_CMAKE_PATH "${__PATH}" __LOCAL_OUTPUT)
 
-	if (IS_ABSOLUTE __LOCAL_OUTPUT)
+	if (IS_ABSOLUTE "${__LOCAL_OUTPUT}")
 		set(__ARGS_ABSOLUTE true)
 	endif()
 
@@ -118,7 +146,7 @@ endfunction()
 function(join_paths __OUTPUT __FIRST_PATH __SECOND_PATH)
 
 	function(__join_paths __OUTPUT __FIRST_PATH_INNER __SECOND_PATH_INNER)
-		if(IS_ABSOLUTE __SECOND_PATH_INNER)
+		if(IS_ABSOLUTE "${__SECOND_PATH_INNER}")
 			message(FATAL_ERROR "Can't join absolute path \"${__SECOND_PATH_INNER}\".")
 		endif()
 		
@@ -147,6 +175,21 @@ function(target_glob_sources __TARGET __SCOPE __GLOB_EXPR)
 	target_sources("${__TARGET}" "${__SCOPE}" ${__SOURCES})
 endfunction()
 
+function(target_generated_sources __TARGET __SCOPE)
+
+	assert_if_empty(__TARGET)
+	assert_if_empty(__SCOPE)
+
+	if(NOT "${ARGN}" STREQUAL "")
+		target_sources("${__TARGET}" "${__SCOPE}" ${ARGN})
+		set_source_files_properties(${ARGN}
+			TARGET_DIRECTORY "${__TARGET}"
+			PROPERTIES GENERATED TRUE
+		)
+	endif()
+
+endfunction()
+
 function(get_top_directory __PATH __OUTPUT)
 	# local variables
 	unset(__FOLDER_NAME)
@@ -160,7 +203,7 @@ function(get_top_directory __PATH __OUTPUT)
 endfunction()
 
 function(is_module __PATH __OUTPUT)
-	if (IS_DIRECTORY __PATH AND EXISTS "${__PATH}/CMakeLists.txt")
+	if (IS_DIRECTORY "${__PATH}" AND EXISTS "${__PATH}/CMakeLists.txt")
 		set(${__OUTPUT} true PARENT_SCOPE)
 	else()
 		set(${__OUTPUT} false PARENT_SCOPE)
@@ -209,7 +252,7 @@ function(clone_target_properties __SOURCE __TARGET)
 	set(__MULTI_VALUE_ARGS 
 		PROPERTIES # Which properties to clone
 	)
-	cmake_parse_arguments(__ARGS "${__OPTIONS_ARGS}" "${__ONE_VALUE_ARGS}" "${__MULTI_VALUE_ARGS}" ${ARGN})
+	cmake_parse_arguments(PARSE_ARGV 2 __ARGS "${__OPTIONS_ARGS}" "${__ONE_VALUE_ARGS}" "${__MULTI_VALUE_ARGS}")
 
 	set(__PROP_TYPE INTERFACE PRIVATE)
 
@@ -247,14 +290,24 @@ function(clone_target_properties __SOURCE __TARGET)
 	endforeach()
 endfunction()
 
-function(parse_to_python_map __OUTPUT)
+function(parse_to_python_map __OUTPUT __INPUT_TYPE)
 	
+	if(NOT __INPUT_TYPE MATCHES "(FROM_ARGS|FROM_LISTS)")
+		message(FATAL_ERROR "Incorrect input type for parse_to_python_map (${__INPUT_TYPE}), must be FROM_ITEMS|FROM_LISTS.")
+	endif()
+
+	if(__INPUT_TYPE STREQUAL "FROM_ARGS")
+		set(__INPUT_LISTS ARGN)
+	else()
+		set(__INPUT_LISTS ${ARGN})
+	endif()
+
 	unset(__ARG_TYPE)
 	unset(__ARG_KEY)
 
 	set(__PYTHON_MAP "{")
 
-	foreach(__ARG IN LISTS ARGN)
+	foreach(__ARG IN LISTS ${__INPUT_LISTS})
 
 		if(NOT DEFINED __ARG_TYPE)
 			set(__ARG_TYPE "${__ARG}")
@@ -304,6 +357,83 @@ function(parse_to_python_map __OUTPUT)
 
 endfunction()
 
+function(parse_to_python_var __OUTPUT __TYPE __VAR)
+
+	set(__OPTIONS_ARGS 
+		""
+	)
+	set(__ONE_VALUE_ARGS 
+		ARRAY_SEPARATOR
+	)
+	set(__MULTI_VALUE_ARGS 
+		""
+	)
+	cmake_parse_arguments(PARSE_ARGV 3 __ARGS "${__OPTIONS_ARGS}" "${__ONE_VALUE_ARGS}" "${__MULTI_VALUE_ARGS}")
+
+	if("${__ARGS_ARRAY_SEPARATOR}" STREQUAL "")
+		set(__ARGS_ARRAY_SEPARATOR ", ")
+	endif()
+
+	unset(__VAR_PREFIX)
+
+	if(__VAR MATCHES "^[A-Za-z0-9_]+=.+")
+
+		string(REGEX REPLACE "^([A-Za-z0-9_]+)=.+" "\\1" __VAR_NAME "${__VAR}")
+		string(REGEX REPLACE "^[A-Za-z0-9_]+=(.+)" "\\1" __VAR "${__VAR}")
+		set(__VAR_PREFIX "${__VAR_NAME}=")
+
+	endif()
+
+	if(__TYPE MATCHES ".+_ENV_VAR$")
+
+		set(__VAR_VALUE "$ENV{${__VAR}}")
+
+	elseif(__TYPE MATCHES ".+_CACHE_VAR$")
+
+		set(__VAR_VALUE "$CACHE{${__VAR}}")
+
+	elseif(__TYPE MATCHES ".+_VAR")
+
+		set(__VAR_VALUE "${${__VAR}}")
+
+	elseif(__TYPE MATCHES ".+_VAL")
+
+		set(__VAR_VALUE "${__VAR}")
+
+	else()
+		message(WARNING "Incorrect variable type was provided to the python arguments parser (${__TYPE})")
+		set("${__OUTPUT}" "" PARENT_SCOPE)
+		return()
+	endif()
+
+	if(__TYPE MATCHES "^STR_.+")
+		set("${__OUTPUT}" "${__VAR_PREFIX}'${__VAR_VALUE}'" PARENT_SCOPE)
+	elseif(__TYPE MATCHES "^RAW_.+")
+		set("${__OUTPUT}" "${__VAR_PREFIX}${__VAR_VALUE}" PARENT_SCOPE)
+	elseif(__TYPE MATCHES "^BOOL_.*VAR$") # only var for bool
+		if(__VAR_VALUE)
+			set("${__OUTPUT}" "${__VAR_PREFIX}True" PARENT_SCOPE)
+		else()
+			set("${__OUTPUT}" "${__VAR_PREFIX}False" PARENT_SCOPE)
+		endif()
+	elseif(__TYPE MATCHES "^ARR_.*VAR$") # only var for arr
+
+		if("${__VAR_VALUE}" STREQUAL "")
+			set(__VAR_VALUE "[]")
+		else()
+			list(JOIN __VAR_VALUE "'${__ARGS_ARRAY_SEPARATOR}'" __VAR_VALUE)
+			set(__VAR_VALUE "['${__VAR_VALUE}']")
+		endif()
+
+		set("${__OUTPUT}" "${__VAR_PREFIX}${__VAR_VALUE}" PARENT_SCOPE)
+
+	else()
+		message(WARNING "Incorrect variable type was provided to the python arguments parser (${__TYPE})")
+		set("${__OUTPUT}" "" PARENT_SCOPE)			
+	endif()
+
+endfunction()
+
 # parses specific list of variables into python function arguments.
 # function signature is parse_to_python_args(<output_var> [<type> <var> [<type> <var> [...]]])
 # where: <type> is the type of the argument, and <var> is value of the argument. Next Types supported:
@@ -314,63 +444,44 @@ endfunction()
 # RAW_VAR: same as RAW_VAL but with actual variable (RAW_VAR variable -> ${variable})
 # ARR_VAR: variable which will be transformed into array (ARR_VAR variable -> str('${variable}').split(';'))
 # Also, the <var> can be passed in the form of 'name=var'. This way the <var> will be splited into <name> and <var> before evaluation, and passed into python as kwarg (e.g. STR_VAL 'name=value' -> name='value')
-function(parse_to_python_args __OUTPUT)
+function(parse_to_python_function_args __OUTPUT __INPUT_TYPE)
 
+	if(NOT __INPUT_TYPE MATCHES "(FROM_ARGS|FROM_LISTS)")
+		message(FATAL_ERROR "Incorrect input type for parse_to_python_function_args (${__INPUT_TYPE}), must be FROM_ITEMS|FROM_LISTS.")
+	endif()
+
+	if(__INPUT_TYPE STREQUAL "FROM_ARGS")
+		set(__INPUT_LISTS ARGN)
+	else()
+		set(__INPUT_LISTS ${ARGN})
+	endif()
+
+	set(__PYTHON_ARGS "")
 	unset(__ARG_TYPE)
-	unset(__ARG_PREFIX)
+	set(__FIRST TRUE)
 
-	foreach(__ARG IN LISTS ARGN)
-
+	foreach(__ITEM IN LISTS ${__INPUT_LISTS})
+		
 		if(NOT DEFINED __ARG_TYPE)
-			set(__ARG_TYPE "${__ARG}")
+			set(__ARG_TYPE "${__ITEM}")
 			continue()
 		endif()
 
 		if(__FIRST)
-			set(__FIRST false)
+			set(__FIRST FALSE)
 		else()
 			set(__PYTHON_ARGS "${__PYTHON_ARGS}, ")
 		endif()
 
-		string(REPLACE "=" ";" __ARG_LIST "${__ARG}")
-		list(LENGTH __ARG_LIST __ARG_LIST_LEN)
+		parse_to_python_var(__ARG "${__ARG_TYPE}" "${__ITEM}")
 
-		if(__ARG_LIST_LEN GREATER_EQUAL 2)
-			list(SUBLIST __ARG_LIST 0 1 __ARG_NAME)
-			list(SUBLIST __ARG_LIST 1 -1 __ARG)
-
-			set(__ARG_PREFIX "${__ARG_NAME}=") 
-		endif()
-
-		if(__ARG_TYPE STREQUAL "STR_VAL")
-			set(__PYTHON_ARGS "${__PYTHON_ARGS} ${__ARG_PREFIX}'${__ARG}'")
-		elseif(__ARG_TYPE STREQUAL "RAW_VAL")
-			set(__PYTHON_ARGS "${__PYTHON_ARGS} ${__ARG_PREFIX}${__ARG}")
-		elseif(__ARG_TYPE STREQUAL "STR_VAR")
-			set(__PYTHON_ARGS "${__PYTHON_ARGS} ${__ARG_PREFIX}'${${__ARG}}'")
-		elseif(__ARG_TYPE STREQUAL "BOOL_VAR")
-			if("${${__ARG}}")
-				set(__PYTHON_ARGS "${__PYTHON_ARGS} ${__ARG_PREFIX}True")
-			else()
-				set(__PYTHON_ARGS "${__PYTHON_ARGS} ${__ARG_PREFIX}False")
-			endif()
-		elseif(__ARG_TYPE STREQUAL "RAW_VAR")
-			set(__PYTHON_ARGS "${__PYTHON_ARGS} ${__ARG_PREFIX}${${__ARG}}")
-		elseif(__ARG_TYPE STREQUAL "ARR_VAR")
-			set(__PYTHON_ARGS "${__PYTHON_ARGS} ${__ARG_PREFIX}str('${${__ARG}}').split(';')")
-		else()
-			message(WARNING "Incorrect variable type was provided to the python arguments parser (${__ARG_TYPE})")
-		endif()
-
+		set(__PYTHON_ARGS "${__PYTHON_ARGS}${__ARG}")
+		
 		unset(__ARG_TYPE)
-		unset(__ARG_PREFIX)
+
 	endforeach()
 
-	if(DEFINED __ARG_TYPE)		
-		message(WARNING "Last variable of type \"${__ARG_TYPE}\" provided to the python arguments parser did not has a value.")
-	endif()
-
-	set(${__OUTPUT} "${__PYTHON_ARGS}" PARENT_SCOPE)
+	set("${__OUTPUT}" "${__PYTHON_ARGS}" PARENT_SCOPE)
 
 endfunction()
 
@@ -380,9 +491,9 @@ function(compose_python_method_call __OUTPUT __FUNCTION_NAME)
 		FROM_MODULE # module which need to be imported, and from which function must be called 
 	)
 	set(__MULTI_VALUE_ARGS 
-		PYTHON_ARGS # works by the rules of the parse_to_python_args
+		PYTHON_ARGS # works by the rules of the parse_to_python_function_args_from_lists
 	)
-	cmake_parse_arguments(__ARGS "${__OPTIONS_ARGS}" "${__ONE_VALUE_ARGS}" "${__MULTI_VALUE_ARGS}" ${ARGN})
+	cmake_parse_arguments(PARSE_ARGV 2 __ARGS "${__OPTIONS_ARGS}" "${__ONE_VALUE_ARGS}" "${__MULTI_VALUE_ARGS}")
 
 	set(__FUNCTION_CALL "")
 	if(NOT "${__ARGS_FROM_MODULE}" STREQUAL "")
@@ -398,7 +509,7 @@ function(compose_python_method_call __OUTPUT __FUNCTION_NAME)
 		set(__FUNCTION_CALL "import ${__MODULE} as ${__MODULE_NAME}; ${__MODULE_NAME}.")
 	endif()
 
-	parse_to_python_args(__FUNCTION_ARGS ${__ARGS_PYTHON_ARGS})
+	parse_to_python_function_args(__FUNCTION_ARGS FROM_LISTS __ARGS_PYTHON_ARGS)
 
 	set(__FUNCTION_CALL "${__FUNCTION_CALL}${__FUNCTION_NAME}(${__FUNCTION_ARGS})")
 
@@ -407,35 +518,33 @@ function(compose_python_method_call __OUTPUT __FUNCTION_NAME)
 endfunction()
 
 function(add_python_generator_command __MODULE __FUNCTION)
+
+	assert_if_empty(__FUNCTION)
+
 	set(__OPTIONS_ARGS 
 		USE_PYTHON3 # explicitly tell to use python3
 		BUILTIN_MODULE # by default add_python_generator_command adds file ${__MODULE}.py as a dependency. If this option is turned on, this behavior will be omitted.
+		VERBOSE # do we need to output to the console that this method being executed (mostly for debug purpuses)
 	)
 	set(__ONE_VALUE_ARGS 
 		MODULE_DIR # relative directory of the module
 		WORKING_DIR # working directory of the command. If none, then used CMAKE_CURRENT_SOURCE_DIR
+		BY_FILE # generate command as python file in binary dir. This is usefull if command is really big
+		TARGET # optionally add target files as sources for specific target 
 	)
 	set(__MULTI_VALUE_ARGS 
 		SOURCE_FILES # Source files to be used
 		TARGET_FILES # Target files expected to be produced by this comand
 		PYTHON_ARGS # works by the rules of the parse_to_python_args
+		APPEND_SYS_PATH # it is possible to append some sys paths before calling the method
 	)
-	cmake_parse_arguments(__ARGS "${__OPTIONS_ARGS}" "${__ONE_VALUE_ARGS}" "${__MULTI_VALUE_ARGS}" ${ARGN})
+	cmake_parse_arguments(PARSE_ARGV 2 __ARGS "${__OPTIONS_ARGS}" "${__ONE_VALUE_ARGS}" "${__MULTI_VALUE_ARGS}")
 
 	if(NOT "${__ARGS_MODULE_DIR}" STREQUAL "")
 		string(REGEX REPLACE "[/\\]$" "" __SUB_MODULES "${__ARGS_MODULE_DIR}")
 		string(REGEX REPLACE "[/\\]" "." __SUB_MODULES "${__SUB_MODULES}")
 		set(__MODULE "${__SUB_MODULES}.{__MODULE}")
 	endif()
-
-	# Each generator function expected to have at lease 2 parameters,
-	# so automatically add target and source files as first two arguments to the function call, and everything else after that 
-	set(__ARGS_PYTHON_ARGS ARR_VAR "__ARGS_TARGET_FILES" ARR_VAR "__ARGS_SOURCE_FILES" ${__ARGS_PYTHON_ARGS})
-
-	compose_python_method_call(__METHOD_CALL "${__FUNCTION}" 
-		FROM_MODULE "${__MODULE}"
-		PYTHON_ARGS ${__ARGS_PYTHON_ARGS}
-	)
 
 	if ("${__ARGS_WORKING_DIR}" STREQUAL "")
 		set(__ARGS_WORKING_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
@@ -452,12 +561,111 @@ function(add_python_generator_command __MODULE __FUNCTION)
 		list(APPEND __DEPENDS "${__MODULE_ABS_DIR}")
 	endif()
 
+	list(PREPEND __ARGS_PYTHON_ARGS ARR_VAR "__ARGS_TARGET_FILES" ARR_VAR "__ARGS_SOURCE_FILES")
+
+	if(NOT "${__ARGS_BY_FILE}" STREQUAL "")
+
+		set(__PYTHON_FILE_CODE "")
+
+		set(__PYTHON_FILE_CODE "${__PYTHON_FILE_CODE}\nimport os\nos.chdir('${__ARGS_WORKING_DIR}')\n")
+
+		if(NOT "${__ARGS_APPEND_SYS_PATH}" STREQUAL "")
+			set(__PYTHON_FILE_CODE "${__PYTHON_FILE_CODE}import sys\nsys.path = sys.path + str('${__ARGS_APPEND_SYS_PATH}').split(';')\n\n")
+		endif()
+
+		set(__ARG_ID "0")
+		set(__METHOD_CALL_ARGS "")
+		unset(__VAR_TYPE)
+		foreach(__VAR IN LISTS __ARGS_PYTHON_ARGS)
+
+			if(NOT DEFINED __VAR_TYPE)
+				set(__VAR_TYPE "${__VAR}")
+				continue()
+			endif()
+
+			if(__VAR MATCHES "^[^'\"]+=.+")
+
+				string(REGEX REPLACE "^([A-Za-z0-9_]+)=.+" "\\1" __VAR_NAME "${__VAR}")
+				string(REGEX REPLACE "^[A-Za-z0-9_]+=(.+)" "\\1" __VAR "${__VAR}")
+
+				list(APPEND __METHOD_CALL_ARGS RAW_VAL "${__VAR_NAME}=arg${__ARG_ID}")
+				set(__PYTHON_FILE_CODE "${__PYTHON_FILE_CODE}# ${__VAR_NAME} function argument\n")
+
+			else()
+
+				list(APPEND __METHOD_CALL_ARGS RAW_VAL "arg${__ARG_ID}")
+
+			endif()
+
+			parse_to_python_var(__VAR_VALUE "${__VAR_TYPE}" "${__VAR}" ARRAY_SEPARATOR ",\n")
+			set(__PYTHON_FILE_CODE "${__PYTHON_FILE_CODE}arg${__ARG_ID}=${__VAR_VALUE}\n")
+			
+			math(EXPR __ARG_ID "${__ARG_ID} + 1")
+
+			unset(__VAR_TYPE)
+
+		endforeach()
+
+		compose_python_method_call(__METHOD_CALL "${__FUNCTION}" 
+			FROM_MODULE "${__MODULE}"
+			PYTHON_ARGS ${__METHOD_CALL_ARGS}
+		)
+
+		set(__PYTHON_FILE_CODE "${__PYTHON_FILE_CODE}${__METHOD_CALL}\n")
+
+		set(__ARGS_WORKING_DIR "${CMAKE_CURRENT_BINARY_DIR}/generators")
+
+		set(__GENERATOR_FILE "${__ARGS_WORKING_DIR}/${__ARGS_BY_FILE}_generator.py")
+		list(APPEND __DEPENDS "${__GENERATOR_FILE}")
+		file(WRITE "${__GENERATOR_FILE}" "${__PYTHON_FILE_CODE}")
+		set(__COMMAND "import ${__ARGS_BY_FILE}_generator")
+
+	else()
+
+		compose_python_method_call(__COMMAND "${__FUNCTION}" 
+			FROM_MODULE "${__MODULE}"
+			PYTHON_ARGS ${__ARGS_PYTHON_ARGS}
+		)
+
+		if(NOT "${__ARGS_APPEND_SYS_PATH}" STREQUAL "")
+
+			set(__COMMAND "import sys; sys.path = sys.path + str('${__ARGS_APPEND_SYS_PATH}').split(';'); ${__COMMAND}")
+
+		endif()
+
+	endif()
+
+	if(__ARGS_VERBOSE)
+
+		message(STATUS "========== Adding python generator command =========")
+		message(STATUS "Target files: ${__ARGS_TARGET_FILES}")
+		message(STATUS "Source files: ${__ARGS_SOURCE_FILES}")
+		message(STATUS "Working dir: ${__ARGS_WORKING_DIR}")
+		message(STATUS "Depends on: ${__DEPENDS}")
+		message(STATUS "Command: ${__METHOD_CALL}")
+		message(STATUS "====================================================")
+
+	endif()
+
 	add_custom_command(
 		OUTPUT ${__ARGS_TARGET_FILES}
+		COMMAND "${__PYTHON}" "-c" "${__COMMAND}"
 		DEPENDS ${__DEPENDS}
-		COMMAND ${__PYTHON} "-c" "${__METHOD_CALL}"
 		WORKING_DIRECTORY "${__ARGS_WORKING_DIR}"
 	)
+
+	if(NOT "${__ARGS_TARGET}" STREQUAL "" AND NOT "${__ARGS_TARGET_FILES}" STREQUAL "")
+
+		target_sources("${__ARGS_TARGET}" PRIVATE
+			${__ARGS_TARGET_FILES}
+		)
+
+		set_source_files_properties(${__ARGS_TARGET_FILES}
+			TARGET_DIRECTORY "${__ARGS_TARGET}"
+			PROPERTIES GENERATED TRUE
+		)
+
+	endif()
 
 endfunction()
 
@@ -467,6 +675,7 @@ function(execute_python_method __MODULE __FUNCTION)
 		ECHO_OUTPUT_VARIABLE
 		ECHO_ERROR_VARIABLE
 		OPTIONAL # do we need to throw an error, if this command fails? If no, specify this option. 
+		VERBOSE # do we need to output to the console that this method being executed (mostly for debug purpuses)
 	)
 	set(__ONE_VALUE_ARGS 
 		MODULE_DIR # relative directory of the module
@@ -476,19 +685,26 @@ function(execute_python_method __MODULE __FUNCTION)
 	)
 	set(__MULTI_VALUE_ARGS 
 		PYTHON_ARGS # works by the rules of the parse_to_python_args
+		APPEND_SYS_PATH # it is possible to append some sys paths before calling the method
 	)
-	cmake_parse_arguments(__ARGS "${__OPTIONS_ARGS}" "${__ONE_VALUE_ARGS}" "${__MULTI_VALUE_ARGS}" ${ARGN})
+	cmake_parse_arguments(PARSE_ARGV 2 __ARGS "${__OPTIONS_ARGS}" "${__ONE_VALUE_ARGS}" "${__MULTI_VALUE_ARGS}")
 
 	if(NOT "${__ARGS_MODULE_DIR}" STREQUAL "")
 		string(REGEX REPLACE "[/\\]$" "" __SUB_MODULES "${__ARGS_MODULE_DIR}")
 		string(REGEX REPLACE "[/\\]" "." __SUB_MODULES "${__SUB_MODULES}")
-		set(__MODULE "${__SUB_MODULES}.{__MODULE}")
+		set(__MODULE "${__SUB_MODULES}.${__MODULE}")
 	endif()
 
 	compose_python_method_call(__METHOD_CALL "${__FUNCTION}" 
 		FROM_MODULE "${__MODULE}"
 		PYTHON_ARGS ${__ARGS_PYTHON_ARGS}
 	)
+
+	if(NOT "${__ARGS_APPEND_SYS_PATH}" STREQUAL "")
+
+		set(__METHOD_CALL "import sys; sys.path = sys.path + str('${__ARGS_APPEND_SYS_PATH}').split(';'); ${__METHOD_CALL}")
+
+	endif()
 
 	if ("${__ARGS_WORKING_DIR}" STREQUAL "")
 		set(__ARGS_WORKING_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
@@ -515,12 +731,21 @@ function(execute_python_method __MODULE __FUNCTION)
 		list(APPEND __ADDITIONAL_ARGS ECHO_ERROR_VARIABLE)
 	endif()
 	if(NOT __ARGS_OPTIONAL)
-		list(APPEND __ADDITIONAL_ARGS COMMAND_ERROR_IS_FATAL ALL)
+		list(APPEND __ADDITIONAL_ARGS COMMAND_ERROR_IS_FATAL ANY)
+	endif()
+
+	if(__ARGS_VERBOSE)
+
+		message(STATUS "============== Executing python method =============")
+		message(STATUS "Working dir: ${__ARGS_WORKING_DIR}")
+		message(STATUS "Command: ${__METHOD_CALL}")
+		message(STATUS "====================================================")
+
 	endif()
 
 	execute_process(
 		COMMAND "${__PYTHON}" "-c" "${__METHOD_CALL}"
-		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+		WORKING_DIRECTORY "${__ARGS_WORKING_DIR}"
 		${__ADDITIONAL_ARGS}
 	)
 
@@ -536,13 +761,14 @@ endfunction()
 function(add_lib __NAME)
 
 	set(__OPTIONS_ARGS 
-		STANDALONE # is this library shuld be actual library (by default all libraries here are object libraries, a.k.a. scopes for source files)
+		OBJECT # is library need to be object one (static by default)
 		EXCLUDE_FROM_ALL # works only with standalone
 	)
 	set(__ONE_VALUE_ARGS
 		PARENT_LIB # lib this library will link to
 		PARENT_ENV # other possibility is to link agains environment
 		OUTPUT_DIR # directory of the output library
+		OUTPUT_NAME # force different output name (by default is name of target without -lib prefix and with added EXTRA_SUFFIX to the end of it)
 	)
 	set(__MULTI_VALUE_ARGS 
 		COMPONENTS # all libraries/environments which will be connected to this library.
@@ -550,7 +776,7 @@ function(add_lib __NAME)
 		LIBS_CLONE
 		SOURCES
 	)
-	cmake_parse_arguments(__ARGS "${__OPTIONS_ARGS}" "${__ONE_VALUE_ARGS}" "${__MULTI_VALUE_ARGS}" ${ARGN})
+	cmake_parse_arguments(PARSE_ARGV 1 __ARGS "${__OPTIONS_ARGS}" "${__ONE_VALUE_ARGS}" "${__MULTI_VALUE_ARGS}")
 
 	if(__ARGS_EXCLUDE_FROM_ALL)
 		set(__EXCLUDE_FROM_ALL EXCLUDE_FROM_ALL)
@@ -558,17 +784,22 @@ function(add_lib __NAME)
 		unset(__EXCLUDE_FROM_ALL)
 	endif()
 
-	if(__ARGS_STANDALONE)
+	if(NOT __ARGS_OBJECT)
 		add_library("${__NAME}" STATIC ${__EXCLUDE_FROM_ALL} ${__ARGS_SOURCES})
 
 		# if it's not standalone (a.k.a. STATIC) where is no need for the setiing of the output parameters
 		
-		# seting output name
-		string(REGEX REPLACE "-lib$" "" __LIB_NAME "${__NAME}")
-		set_target_properties("${__NAME}" PROPERTIES 
-			OUTPUT_NAME "${EXTRA_SUFFIX}${__LIB_NAME}"
-			COMPILE_PDB_NAME "${EXTRA_SUFFIX}${__LIB_NAME}"
-		)
+		if ("${__ARGS_OUTPUT_NAME}" STREQUAL "")
+			# seting output name
+			string(REGEX REPLACE "-lib$" "" __LIB_NAME "${__NAME}")
+			set_target_properties("${__NAME}" PROPERTIES 
+				OUTPUT_NAME "${__LIB_NAME}${EXTRA_SUFFIX}"
+			)
+		else()
+			set_target_properties("${__NAME}" PROPERTIES 
+				OUTPUT_NAME "${__ARGS_OUTPUT_NAME}"
+			)
+		endif()
 
 		if(NOT "${__ARGS_OUTPUT_DIR}" STREQUAL "")
 			if(NOT IS_ABSOLUTE __ARGS_OUTPUT_DIR)
@@ -636,7 +867,7 @@ function(add_exe __NAME)
 		COMPONENTS # all libraries/environments which will be connected to this exe.
 		SOURCES
 	)
-	cmake_parse_arguments(__ARGS "${__OPTIONS_ARGS}" "${__ONE_VALUE_ARGS}" "${__MULTI_VALUE_ARGS}" ${ARGN})
+	cmake_parse_arguments(PARSE_ARGV 1 __ARGS "${__OPTIONS_ARGS}" "${__ONE_VALUE_ARGS}" "${__MULTI_VALUE_ARGS}")
 
 	if(__ARGS_EXCLUDE_FROM_ALL)
 		set(__EXCLUDE_FROM_ALL EXCLUDE_FROM_ALL)
@@ -648,12 +879,11 @@ function(add_exe __NAME)
 
 	string(REGEX REPLACE "-exe$" "" __EXE_NAME "${__NAME}")
 	set_target_properties("${__NAME}" PROPERTIES 
-		RUNTIME_OUTPUT_NAME "${EXTRA_SUFFIX}${__EXE_NAME}"
-		COMPILE_PDB_NAME "${EXTRA_SUFFIX}${__EXE_NAME}"
+		OUTPUT_NAME "${__EXE_NAME}${EXTRA_SUFFIX}"
 	)
 
 	if(NOT "${__ARGS_OUTPUT_DIR}" STREQUAL "")
-		if(NOT IS_ABSOLUTE __ARGS_OUTPUT_DIR)
+		if(NOT IS_ABSOLUTE "${__ARGS_OUTPUT_DIR}")
 			join_paths(__ARGS_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}" "${__ARGS_OUTPUT_DIR}")
 		endif()
 	
@@ -678,7 +908,7 @@ function(add_env __NAME)
 		COMPONENTS
 		ENVS_CLONE
 	)
-	cmake_parse_arguments(__ARGS "${__OPTIONS_ARGS}" "${__ONE_VALUE_ARGS}" "${__MULTI_VALUE_ARGS}" ${ARGN})
+	cmake_parse_arguments(PARSE_ARGV 1 __ARGS "${__OPTIONS_ARGS}" "${__ONE_VALUE_ARGS}" "${__MULTI_VALUE_ARGS}")
 
 	add_library("${__NAME}" INTERFACE)
 
@@ -721,7 +951,7 @@ function(extract_file_from_list __LIST_VAR __FILE)
 		RETURN # name of the variable to which extracted file will be returned.
 	)
 	set(__MULTI_VALUE_ARGS "")
-	cmake_parse_arguments(__ARGS "${__OPTIONS_ARGS}" "${__ONE_VALUE_ARGS}" "${__MULTI_VALUE_ARGS}" ${ARGN})
+	cmake_parse_arguments(PARSE_ARGV 2 __ARGS "${__OPTIONS_ARGS}" "${__ONE_VALUE_ARGS}" "${__MULTI_VALUE_ARGS}")
 
 	normilize_path(__FILE "${__FILE}")
 	string(REGEX REPLACE "([][+.*()^])" "\\\\\\1" __REGEX "${__FILE}")

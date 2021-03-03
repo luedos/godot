@@ -1,5 +1,9 @@
 get_filename_component(__PLATFORM_NAME "${CMAKE_CURRENT_LIST_DIR}" NAME)
 
+function(${__PLATFORM_NAME}_create_custom_options)
+
+endfunction()
+
 function(${__PLATFORM_NAME}_get_platform_name __OUTPUT)
 	set("${__OUTPUT}" "Windows" PARENT_SCOPE)
 endfunction()
@@ -21,53 +25,26 @@ function(${__PLATFORM_NAME}_configure_platform)
 	target_include_directories(global-env INTERFACE "${GODOT_SOURCE_DIR}/platform/windows")
 
 	if(MSVC)
-		
-	else()
-	endif()
-
-
-	if(MSVC)
 
 		#TODO: need to do exctensive testing for all these options, because I'm sure that half of them cmake sets by default
 		target_link_options(global-env INTERFACE 
-			$<$<CONFIG:Release,MinSizeRel>:
-				"/SUBSYSTEM:WINDOWS"
-				"/ENTRY:mainCRTStartup"
-				"/OPT:REF"
-			>
-			$<$<CONFIG:RelWithDebInfo,ToolsRelWithDebInfo>:
-				"/SUBSYSTEM:CONSOLE"
-				"/OPT:REF"
-			>
-			$<$<CONFIG:Debug,ToolsDebug>:
-				"/SUBSYSTEM:CONSOLE"
-				"/DEBUG"
-			>
+			$<${IS_RELEASE_GEN_EXPR}:/SUBSYSTEM:WINDOWS;/ENTRY:mainCRTStartup;/OPT:REF>
+			$<${IS_OPT_DEBUG_GEN_EXPR}:/SUBSYSTEM:CONSOLE;/OPT:REF>
+			$<${IS_DEBUG_GEN_EXPR}:/SUBSYSTEM:CONSOLE;/DEBUG>
 			"/STACK:8388608"
 		)
 
 		target_compile_options(global-env INTERFACE
-			$<$<CONFIG:Release>:
-				"/O2"
-			>
-			$<$<CONFIG:MinSizeRel>:
-				"/O1"
-			>
-			$<$<CONFIG:RelWithDebInfo,ToolsRelWithDebInfo>:
-				"/O2"
-			>
-			$<$<CONFIG:Debug,ToolsDebug>:
-				"/Z7"
-				"/Od"
-				"/EHsc"
-			>
+			$<$<CONFIG:Release>:/O2>
+			$<$<CONFIG:MinSizeRel>:/O1>
+			$<${IS_OPT_DEBUG_GEN_EXPR}:/O2>
+			$<${IS_DEBUG_GEN_EXPR}:/Z7;/Od;/EHsc>
 			"/MT"
 			"/Gd"
 			"/GR"
 			"/nologo"
-			$<$<COMPILE_LANGUAGE:CXX>: # assume all sources are C++
-				"/TP"
-			>
+			# assume all sources are C++
+			$<$<COMPILE_LANGUAGE:CXX>:/TP>
 		)
 
 		if(MSVC_VERSION GREATER_EQUAL "1910") # vs2015 and later
@@ -77,9 +54,7 @@ function(${__PLATFORM_NAME}_configure_platform)
 		endif()
 
 		target_compile_definitions(global-env INTERFACE
-			$<$<CONFIG:RelWithDebInfo,ToolsRelWithDebInfo,Debug,ToolsDebug>:
-				"DEBUG_ENABLED"
-			>			
+			$<${IS_DEBUG_INFO_GEN_EXPR}:DEBUG_ENABLED>			
 			"WINDOWS_ENABLED"
 			"OPENGL_ENABLED"
 			"WASAPI_ENABLED"
@@ -132,43 +107,21 @@ function(${__PLATFORM_NAME}_configure_platform)
 	else()
 		
 		target_link_options(global-env INTERFACE 
-			$<$<CONFIG:Release,MinSizeRel>:				
-				"-Wl,--subsystem,windows"
-			>
-			$<IF:
-				$<EQUAL:${CMAKE_SIZEOF_VOID_P},4>,
-				"-static" "-static-libgcc" "-static-libstdc++",
-				"-static"
-			>			
+			$<${IS_RELEASE_GEN_EXPR}:"-Wl$<COMMA>--subsystem$<COMMA>windows">
+			$<IF:$<EQUAL:${CMAKE_SIZEOF_VOID_P},4>,-static;-static-libgcc;-static-libstdc++,-static>			
 			"-Wl,--stack,8388608"
 		)
 
 		target_compile_options(global-env INTERFACE
-			$<$<CONFIG:Release>:
-				"-msse2"
-				$<IF:
-					$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>,
-					"-O3",
-					"-O2"
-				>
-			>
-			$<$<CONFIG:MinSizeRel>:
-				"-Os"
-			>
-			$<$<CONFIG:RelWithDebInfo,ToolsRelWithDebInfo>:
-				"-O2"
-				"-g2"
-			>
-			$<$<CONFIG:Debug,ToolsDebug>:
-				"-g3"
-			>
+			$<$<CONFIG:Release>:-msse2;$<IF:$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>,-O3,-O2>>
+			$<$<CONFIG:MinSizeRel>:-Os>
+			$<${IS_OPT_DEBUG_GEN_EXPR}:-O2;-g2>
+			$<${IS_DEBUG_GEN_EXPR}:-g3>
 			"-mwindows"			
 		)
 
 		target_compile_definitions(global-env INTERFACE
-			$<$<CONFIG:RelWithDebInfo,ToolsRelWithDebInfo,Debug,ToolsDebug>:
-				"DEBUG_ENABLED"
-			>			
+			$<${IS_DEBUG_INFO_GEN_EXPR}:DEBUG_ENABLED>			
 			"WINDOWS_ENABLED"
 			"OPENGL_ENABLED"
 			"WASAPI_ENABLED"
@@ -208,21 +161,4 @@ function(${__PLATFORM_NAME}_configure_platform)
 		set_target_properties(global-env PROPERTIES X86_LIBTHEORA_OPT_GCC false)
 	endif()
 
-endfunction()
-
-
-
-
-
-
-function(${__PLATFORM_NAME}_configure_module)
-	# does nothing
-endfunction()
-
-function(${__MODULE_NAME}_get_module_can_build __OUTPUT)
-	if (GODOT_PLATFORM STREQUAL "iphone")
-		set(${__OUTPUT} true PARENT_SCOPE)
-	else()
-		set(${__OUTPUT} false PARENT_SCOPE)
-	endif()
 endfunction()
