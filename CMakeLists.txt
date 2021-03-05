@@ -166,7 +166,7 @@ set_bool_option		(GODOT_GDNATIVE_WRAPPER		false	DESCRIPTION	"")
 # verbose 	# Enable verbose output for the compilation
 # progress 	# Show a progress indicator during compilation
 set_string_option	(GODOT_WARNINGS				"all" 	DESCRIPTION "Level of compilation warnings (\"extra\", \"all\", \"moderate\", \"no\")" ENUM "extra" "all" "moderate" "no")
-set_bool_option		(GODOT_WERROR 				true 	DESCRIPTION "Treat compiler warnings as errors.")
+set_bool_option		(GODOT_WERROR 				false 	DESCRIPTION "Treat compiler warnings as errors.")
 set_bool_option		(GODOT_DEV 					false 	DESCRIPTION "If yes, alias for verbose=yes warnings=extra werror=yes")
 set_string_option	(GODOT_EXTRA_SUFFIX			"" 		DESCRIPTION "Custom extra suffix added to the base filename of all generated binary files.")
 # vsproj 	# NO NEED
@@ -574,10 +574,10 @@ foreach(__MODULE_ID IN LISTS MODULES_IDS)
 
 		cmake_language(CALL ${__MODULE_ID}_configure_module)
 
-		if(COMMAND "${__MODULE_NAME}_get_version_string")
+		if(COMMAND "${__MODULE_ID}_get_version_string")
 			# getting additional version string from the module.
 			unset(__MODULE_VERSION_STRING)
-			cmake_language(CALL "${__MODULE_NAME}_get_version_string" __MODULE_VERSION_STRING)
+			cmake_language(CALL "${__MODULE_ID}_get_version_string" __MODULE_VERSION_STRING)
 			# if module was returned from module function
 			if(NOT "${__MODULE_VERSION_STRING}" STREQUAL "")
 				# add this string to the total version string

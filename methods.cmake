@@ -58,6 +58,41 @@ function(ternary_if __OUTPUT __TRUE __FALSE)
 
 endfunction()
 
+function(check_for_gen_expr __OUTPUT __STRING)
+
+	string(GENEX_STRIP "${__STRING}" __STRIPED_STRING)
+
+	if(__STRIPED_STRING STREQUAL __STRING)
+		# no generator expression was stripped in the first place
+		set("${__OUTPUT}" false PARENT_SCOPE)
+	else()
+		# something was stripped, so generator expression existed
+		set("${__OUTPUT}" true PARENT_SCOPE)
+	endif()
+
+endfunction()
+
+function(extract_items_with_gen_expr __INPUT_LIST __OUTPUT_CLEAN_LIST __OUTPUT_GEN_EXPR_LIST)
+
+	set(__LOCAL_CLEAN_LIST "")
+	set(__LOCAL_GEN_EXPR_LIST "")
+
+	foreach(__ITEM IN LISTS ${__INPUT_LIST})
+		
+		check_for_gen_expr(__HAS_GEN_EXPR "${__ITEM}")
+		if(__HAS_GEN_EXPR)
+			list(APPEND __LOCAL_GEN_EXPR_LIST "${__ITEM}")
+		else()
+			list(APPEND __LOCAL_CLEAN_LIST "${__ITEM}")
+		endif()
+
+	endforeach()
+
+	set("${__OUTPUT_CLEAN_LIST}" "${__LOCAL_CLEAN_LIST}" PARENT_SCOPE)
+	set("${__OUTPUT_GEN_EXPR_LIST}" "${__LOCAL_GEN_EXPR_LIST}" PARENT_SCOPE)
+
+endfunction()
+
 function(set_string_option __NAME __VALUE)
 	set(__OPTIONS "")
 	set(__VALUES DESCRIPTION)
@@ -290,73 +325,6 @@ function(clone_target_properties __SOURCE __TARGET)
 	endforeach()
 endfunction()
 
-function(parse_to_python_map __OUTPUT __INPUT_TYPE)
-	
-	if(NOT __INPUT_TYPE MATCHES "(FROM_ARGS|FROM_LISTS)")
-		message(FATAL_ERROR "Incorrect input type for parse_to_python_map (${__INPUT_TYPE}), must be FROM_ITEMS|FROM_LISTS.")
-	endif()
-
-	if(__INPUT_TYPE STREQUAL "FROM_ARGS")
-		set(__INPUT_LISTS ARGN)
-	else()
-		set(__INPUT_LISTS ${ARGN})
-	endif()
-
-	unset(__ARG_TYPE)
-	unset(__ARG_KEY)
-
-	set(__PYTHON_MAP "{")
-
-	foreach(__ARG IN LISTS ${__INPUT_LISTS})
-
-		if(NOT DEFINED __ARG_TYPE)
-			set(__ARG_TYPE "${__ARG}")
-			continue()
-		endif()
-
-		if(NOT DEFINED __ARG_KEY)
-			set(__ARG_KEY "${__ARG}")
-			continue()
-		endif()
-
-		if(__FIRST)
-			set(__FIRST false)
-		else()
-			set(__PYTHON_MAP "${__PYTHON_MAP}, ")
-		endif()
-
-		if(__ARG_TYPE STREQUAL "STR_VAL")
-			set(__PYTHON_MAP "${__PYTHON_MAP} '${__ARG_KEY}':'${__ARG}'")
-		elseif(__ARG_TYPE STREQUAL "RAW_VAL")
-			set(__PYTHON_MAP "${__PYTHON_MAP} '${__ARG_KEY}':${__ARG}")
-		elseif(__ARG_TYPE STREQUAL "STR_VAR")
-			set(__PYTHON_MAP "${__PYTHON_MAP} '${__ARG_KEY}':'${${__ARG}}'")
-		elseif(__ARG_TYPE STREQUAL "BOOL_VAR")
-			if("${${__ARG}}")
-				set(__PYTHON_MAP "${__PYTHON_MAP} '${__ARG_KEY}':True")
-			else()
-				set(__PYTHON_MAP "${__PYTHON_MAP} '${__ARG_KEY}':False")
-			endif()
-		elseif(__ARG_TYPE STREQUAL "RAW_VAR")
-			set(__PYTHON_MAP "${__PYTHON_MAP} '${__ARG_KEY}':${${__ARG}}")
-		elseif(__ARG_TYPE STREQUAL "ARR_VAR")
-			set(__PYTHON_MAP "${__PYTHON_MAP} '${__ARG_KEY}':str('${${__ARG}}').split(';')")
-		else()
-			message(WARNING "Incorrect variable type was provided to the python map parser (${__ARG_TYPE})")
-		endif()
-
-		unset(__ARG_TYPE)
-		unset(__ARG_KEY)
-	endforeach()
-
-	if(DEFINED __ARG_TYPE)		
-		message(WARNING "Last variable of type \"${__ARG_TYPE}\" provided to the python map parser did not has a value.")
-	endif()
-
-	set(${__OUTPUT} "${__PYTHON_MAP} }" PARENT_SCOPE)
-
-endfunction()
-
 function(parse_to_python_var __OUTPUT __TYPE __VAR)
 
 	set(__OPTIONS_ARGS 
@@ -431,6 +399,58 @@ function(parse_to_python_var __OUTPUT __TYPE __VAR)
 		message(WARNING "Incorrect variable type was provided to the python arguments parser (${__TYPE})")
 		set("${__OUTPUT}" "" PARENT_SCOPE)			
 	endif()
+
+endfunction()
+
+function(parse_to_python_map __OUTPUT __INPUT_TYPE)
+	
+	if(NOT __INPUT_TYPE MATCHES "(FROM_ARGS|FROM_LISTS)")
+		message(FATAL_ERROR "Incorrect input type for parse_to_python_map (${__INPUT_TYPE}), must be FROM_ITEMS|FROM_LISTS.")
+	endif()
+
+	if(__INPUT_TYPE STREQUAL "FROM_ARGS")
+		set(__INPUT_LISTS ARGN)
+	else()
+		set(__INPUT_LISTS ${ARGN})
+	endif()
+
+	unset(__ARG_TYPE)
+	unset(__ARG_KEY)
+	set(__FIRST true)
+
+	set(__PYTHON_MAP "{")
+
+	foreach(__ARG IN LISTS ${__INPUT_LISTS})
+
+		if(NOT DEFINED __ARG_TYPE)
+			set(__ARG_TYPE "${__ARG}")
+			continue()
+		endif()
+
+		if(NOT DEFINED __ARG_KEY)
+			set(__ARG_KEY "${__ARG}")
+			continue()
+		endif()
+
+		if(__FIRST)
+			set(__FIRST false)
+		else()
+			set(__PYTHON_MAP "${__PYTHON_MAP}, ")
+		endif()
+
+		parse_to_python_var(__ARG_VALUE "${__ARG_TYPE}" "${__ARG}")
+
+		set(__PYTHON_MAP "${__PYTHON_MAP} '${__ARG_KEY}':${__ARG_VALUE}")
+
+		unset(__ARG_TYPE)
+		unset(__ARG_KEY)
+	endforeach()
+
+	if(DEFINED __ARG_TYPE)		
+		message(WARNING "Last variable of type \"${__ARG_TYPE}\" provided to the python map parser did not has a value.")
+	endif()
+
+	set(${__OUTPUT} "${__PYTHON_MAP} }" PARENT_SCOPE)
 
 endfunction()
 
@@ -522,19 +542,24 @@ function(add_python_generator_command __MODULE __FUNCTION)
 	assert_if_empty(__FUNCTION)
 
 	set(__OPTIONS_ARGS 
+		SILENCE_GEN_EXPR_BYPRODUCTS_WARNINGS # silence warning if byproducts has gen expr in them and cmake version is less then 3.20.0
 		USE_PYTHON3 # explicitly tell to use python3
 		BUILTIN_MODULE # by default add_python_generator_command adds file ${__MODULE}.py as a dependency. If this option is turned on, this behavior will be omitted.
-		VERBOSE # do we need to output to the console that this method being executed (mostly for debug purpuses)
 	)
 	set(__ONE_VALUE_ARGS 
 		MODULE_DIR # relative directory of the module
 		WORKING_DIR # working directory of the command. If none, then used CMAKE_CURRENT_SOURCE_DIR
 		BY_FILE # generate command as python file in binary dir. This is usefull if command is really big
-		TARGET # optionally add target files as sources for specific target 
+		SOURCES_DEPENDENT_TARGET # optionally add target files as sources for specific target 
+		GEN_EXPR_DEPENDENT
+		CREATE_CUSTOM_TARGET
 	)
 	set(__MULTI_VALUE_ARGS 
 		SOURCE_FILES # Source files to be used
 		TARGET_FILES # Target files expected to be produced by this comand
+		SYMBOLIC_TARGETS # The posibility to add some target sources with SYMBOLIC property turned on
+		SYMBOLIC_SOURCES # The posibility to add some sources with SYMBOLIC property turned on
+		CUSTOM_VARS # some custom variables which will be appended in front of the command before actually executing command itself (could be usefull if you want to use BY_FILE option, but some things in your output is gen expr dependent)
 		PYTHON_ARGS # works by the rules of the parse_to_python_args
 		APPEND_SYS_PATH # it is possible to append some sys paths before calling the method
 	)
@@ -543,7 +568,7 @@ function(add_python_generator_command __MODULE __FUNCTION)
 	if(NOT "${__ARGS_MODULE_DIR}" STREQUAL "")
 		string(REGEX REPLACE "[/\\]$" "" __SUB_MODULES "${__ARGS_MODULE_DIR}")
 		string(REGEX REPLACE "[/\\]" "." __SUB_MODULES "${__SUB_MODULES}")
-		set(__MODULE "${__SUB_MODULES}.{__MODULE}")
+		set(__MODULE "${__SUB_MODULES}.${__MODULE}")
 	endif()
 
 	if ("${__ARGS_WORKING_DIR}" STREQUAL "")
@@ -561,16 +586,70 @@ function(add_python_generator_command __MODULE __FUNCTION)
 		list(APPEND __DEPENDS "${__MODULE_ABS_DIR}")
 	endif()
 
-	list(PREPEND __ARGS_PYTHON_ARGS ARR_VAR "__ARGS_TARGET_FILES" ARR_VAR "__ARGS_SOURCE_FILES")
+	# if sources files has gen expr, we will put them into seperate variable infront of the command
+	check_for_gen_expr(__SOURCE_FILES_HAS_GEN_EXPR "${__ARGS_SOURCE_FILES}")
+	if(__SOURCE_FILES_HAS_GEN_EXPR)
+
+		list(PREPEND __ARGS_CUSTOM_VARS ARR_VAR "var_source_files=__ARGS_SOURCE_FILES")
+		list(PREPEND __ARGS_PYTHON_ARGS RAW_VAL "source=var_source_files")
+
+	else()
+
+		list(PREPEND __ARGS_PYTHON_ARGS ARR_VAR "source=__ARGS_SOURCE_FILES")
+
+	endif()
+
+	# if target files has gen expr, we will put them into seperate variable infront of the command
+	check_for_gen_expr(__TARGET_FILES_HAS_GEN_EXPR "${__ARGS_TARGET_FILES}")
+	if(__TARGET_FILES_HAS_GEN_EXPR)
+
+		list(PREPEND __ARGS_CUSTOM_VARS ARR_VAR "var_target_files=__ARGS_TARGET_FILES")
+		list(PREPEND __ARGS_PYTHON_ARGS RAW_VAL "target=var_target_files")
+
+	else()
+
+		list(PREPEND __ARGS_PYTHON_ARGS ARR_VAR "target=__ARGS_TARGET_FILES")
+
+	endif()
+
+	#===================== Parsing custom variables =======================
+	set(__CUSTOM_VAR_INIT "")
+	set(__CUSTOM_VARS_LIST "")
+	unset(__VAR_TYPE)
+	set(__VAR_ID "0")
+	foreach(__CUSTOM_VAR IN LISTS __ARGS_CUSTOM_VARS)
+		
+		if(NOT DEFINED __VAR_TYPE)
+			set(__VAR_TYPE "${__CUSTOM_VAR}")
+			continue()
+		endif()
+
+		if(NOT __CUSTOM_VAR MATCHES "^[A-Za-z0-9_]+=.+")
+			message(WARNING "Custom variable number ${__VAR_ID} of the command does't have a name (${__CUSTOM_VAR}), the name for this variable will be 'var${__VAR_ID}'")
+			set(__CUSTOM_VAR "var${__VAR_ID}=${__CUSTOM_VAR}")
+		endif()
+
+		string(REGEX REPLACE "^([A-Za-z0-9_]+)=.+" "\\1" __VAR_NAME "${__CUSTOM_VAR}")
+		list(APPEND __CUSTOM_VARS_LIST "${__VAR_NAME}")
+
+		parse_to_python_var(__CUSTOM_VAR_VALUE "${__VAR_TYPE}" "${__CUSTOM_VAR}")
+		set(__CUSTOM_VAR_INIT "${__CUSTOM_VAR_INIT}${__CUSTOM_VAR_VALUE}; ")
+		unset(__VAR_TYPE)
+	endforeach()
+
+	#===================== Parsing actual command =======================
 
 	if(NOT "${__ARGS_BY_FILE}" STREQUAL "")
 
-		set(__PYTHON_FILE_CODE "")
+		#===================== Parsing script file, and arguments for the command call =======================
+		list(JOIN __CUSTOM_VARS_LIST ", " __CASTOM_VAR_ARGS_LIST)
 
-		set(__PYTHON_FILE_CODE "${__PYTHON_FILE_CODE}\nimport os\nos.chdir('${__ARGS_WORKING_DIR}')\n")
+		set(__PYTHON_FILE_CODE "def run(${__CASTOM_VAR_ARGS_LIST}):")
+
+		set(__PYTHON_FILE_CODE "${__PYTHON_FILE_CODE}\n\timport os\n\tos.chdir('${__ARGS_WORKING_DIR}')\n\t")
 
 		if(NOT "${__ARGS_APPEND_SYS_PATH}" STREQUAL "")
-			set(__PYTHON_FILE_CODE "${__PYTHON_FILE_CODE}import sys\nsys.path = sys.path + str('${__ARGS_APPEND_SYS_PATH}').split(';')\n\n")
+			set(__PYTHON_FILE_CODE "${__PYTHON_FILE_CODE}import sys\n\tsys.path = sys.path + str('${__ARGS_APPEND_SYS_PATH}').split(';')\n\n\t")
 		endif()
 
 		set(__ARG_ID "0")
@@ -583,13 +662,13 @@ function(add_python_generator_command __MODULE __FUNCTION)
 				continue()
 			endif()
 
-			if(__VAR MATCHES "^[^'\"]+=.+")
+			if(__VAR MATCHES "^[A-Za-z0-9_]+=.+")
 
 				string(REGEX REPLACE "^([A-Za-z0-9_]+)=.+" "\\1" __VAR_NAME "${__VAR}")
 				string(REGEX REPLACE "^[A-Za-z0-9_]+=(.+)" "\\1" __VAR "${__VAR}")
 
 				list(APPEND __METHOD_CALL_ARGS RAW_VAL "${__VAR_NAME}=arg${__ARG_ID}")
-				set(__PYTHON_FILE_CODE "${__PYTHON_FILE_CODE}# ${__VAR_NAME} function argument\n")
+				set(__PYTHON_FILE_CODE "${__PYTHON_FILE_CODE}# ${__VAR_NAME} function argument\n\t")
 
 			else()
 
@@ -597,8 +676,8 @@ function(add_python_generator_command __MODULE __FUNCTION)
 
 			endif()
 
-			parse_to_python_var(__VAR_VALUE "${__VAR_TYPE}" "${__VAR}" ARRAY_SEPARATOR ",\n")
-			set(__PYTHON_FILE_CODE "${__PYTHON_FILE_CODE}arg${__ARG_ID}=${__VAR_VALUE}\n")
+			parse_to_python_var(__VAR_VALUE "${__VAR_TYPE}" "${__VAR}" ARRAY_SEPARATOR ",\n\t")
+			set(__PYTHON_FILE_CODE "${__PYTHON_FILE_CODE}arg${__ARG_ID}=${__VAR_VALUE}\n\t")
 			
 			math(EXPR __ARG_ID "${__ARG_ID} + 1")
 
@@ -611,16 +690,18 @@ function(add_python_generator_command __MODULE __FUNCTION)
 			PYTHON_ARGS ${__METHOD_CALL_ARGS}
 		)
 
-		set(__PYTHON_FILE_CODE "${__PYTHON_FILE_CODE}${__METHOD_CALL}\n")
+		set(__PYTHON_FILE_CODE "${__PYTHON_FILE_CODE}${__METHOD_CALL}\n\t")
 
 		set(__ARGS_WORKING_DIR "${CMAKE_CURRENT_BINARY_DIR}/generators")
 
 		set(__GENERATOR_FILE "${__ARGS_WORKING_DIR}/${__ARGS_BY_FILE}_generator.py")
 		list(APPEND __DEPENDS "${__GENERATOR_FILE}")
 		file(WRITE "${__GENERATOR_FILE}" "${__PYTHON_FILE_CODE}")
-		set(__COMMAND "import ${__ARGS_BY_FILE}_generator")
+		set(__COMMAND "${__CUSTOM_VAR_INIT}import ${__ARGS_BY_FILE}_generator;${__ARGS_BY_FILE}_generator.run(${__CASTOM_VAR_ARGS_LIST})")
 
 	else()
+
+		#===================== Parsing whole command =======================
 
 		compose_python_method_call(__COMMAND "${__FUNCTION}" 
 			FROM_MODULE "${__MODULE}"
@@ -629,39 +710,86 @@ function(add_python_generator_command __MODULE __FUNCTION)
 
 		if(NOT "${__ARGS_APPEND_SYS_PATH}" STREQUAL "")
 
-			set(__COMMAND "import sys; sys.path = sys.path + str('${__ARGS_APPEND_SYS_PATH}').split(';'); ${__COMMAND}")
+			set(__COMMAND "import sys; sys.path = sys.path + str('${__ARGS_APPEND_SYS_PATH}').split(';'); ${__CUSTOM_VAR_INIT}${__COMMAND}")
 
 		endif()
 
 	endif()
 
-	if(__ARGS_VERBOSE)
+	if(NOT "${__ARGS_GEN_EXPR_DEPENDENT}" STREQUAL "")
+		set(__COMMAND "$<$<NOT:${__ARGS_GEN_EXPR_DEPENDENT}>:exit(0);>${__COMMAND}")
+	endif()
 
+	extract_items_with_gen_expr(__ARGS_TARGET_FILES __CLEAN_TARGETS __GEN_EXPR_TARGETS)
+	# we are not using gen expr files if we are less then 3.20.0 because BYPRODUCTS in custom target and OUTPUT in custom command can use gen expr only after 3.20.0
+	ternary_if(__TARGET_FILES_LIST_NAME
+		"__ARGS_TARGET_FILES"
+		"__CLEAN_TARGETS"
+		"${CMAKE_VERSION}" VERSION_GREATER_EQUAL "3.20.0" 
+	)
+
+	foreach(__SYMBOLIC_SRC IN LISTS __ARGS_SYMBOLIC_TARGETS)
+		set_property(SOURCE "${__SYMBOLIC_SRC}"	PROPERTY SYMBOLIC TRUE)
+	endforeach()
+
+	if(VERBOSE)
 		message(STATUS "========== Adding python generator command =========")
 		message(STATUS "Target files: ${__ARGS_TARGET_FILES}")
 		message(STATUS "Source files: ${__ARGS_SOURCE_FILES}")
 		message(STATUS "Working dir: ${__ARGS_WORKING_DIR}")
 		message(STATUS "Depends on: ${__DEPENDS}")
-		message(STATUS "Command: ${__METHOD_CALL}")
+		message(STATUS "Command: ${__COMMAND}")
 		message(STATUS "====================================================")
+	endif()
+
+	if("${__ARGS_CREATE_CUSTOM_TARGET}" STREQUAL "")
+		if(NOT __ARGS_SILENCE_GEN_EXPR_BYPRODUCTS_WARNINGS 
+			AND CMAKE_VERSION VERSION_LESS "3.20.0" 
+			AND NOT "${__GEN_EXPR_TARGETS}" STREQUAL "")
+
+			list(JOIN __GEN_EXPR_TARGETS "\n\t" __GEN_EXPR_TARGETS_FORMATED)
+			message(WARNING "Custom command OUTPUT files supports generator expression only since 3.20.0 version. Next files were cut off from OUTPUTs of the custom command:\n\t${__GEN_EXPR_TARGETS_FORMATED}")
+		endif()
+
+		if("${${__TARGET_FILES_LIST_NAME}}" STREQUAL "" AND "${__ARGS_SYMBOLIC_TARGETS}" STREQUAL "")
+			message(FATAL_ERROR "No output files were provided to the custom target.")
+		endif()
+
+		add_custom_command(
+			OUTPUT ${${__TARGET_FILES_LIST_NAME}} ${__ARGS_SYMBOLIC_TARGETS}
+			COMMAND "${__PYTHON}" "-c" "${__COMMAND}"
+			DEPENDS ${__DEPENDS} ${__ARGS_SYMBOLIC_SOURCES}
+			WORKING_DIRECTORY "${__ARGS_WORKING_DIR}"
+			COMMENT "Executing python method: ${__FUNCTION}"
+		)
+
+	else()
+		if(NOT __ARGS_SILENCE_GEN_EXPR_BYPRODUCTS_WARNINGS 
+			AND CMAKE_VERSION VERSION_LESS "3.20.0" 
+			AND NOT "${__GEN_EXPR_TARGETS}" STREQUAL "")
+
+			list(JOIN __GEN_EXPR_TARGETS "\n\t" __GEN_EXPR_TARGETS_FORMATED)
+			message(WARNING "Custom target BYPRODUCTS files supports generator expression only since 3.20.0 version. Next files were cut off from BYPRODUCTs of the custom target:\n\t${__GEN_EXPR_TARGETS_FORMATED}")
+		endif()
+
+		add_custom_target("${__ARGS_CREATE_CUSTOM_TARGET}"
+			COMMAND "${__PYTHON}" "-c" "${__COMMAND}"
+			DEPENDS ${__DEPENDS} ${__ARGS_SYMBOLIC_SOURCES}
+			BYPRODUCTS ${${__TARGET_FILES_LIST_NAME}} ${__ARGS_SYMBOLIC_TARGETS}
+			WORKING_DIRECTORY "${__ARGS_WORKING_DIR}"
+			COMMENT "Executing python method: ${__FUNCTION}"
+		)
 
 	endif()
 
-	add_custom_command(
-		OUTPUT ${__ARGS_TARGET_FILES}
-		COMMAND "${__PYTHON}" "-c" "${__COMMAND}"
-		DEPENDS ${__DEPENDS}
-		WORKING_DIRECTORY "${__ARGS_WORKING_DIR}"
-	)
+	if(NOT "${__ARGS_SOURCES_DEPENDENT_TARGET}" STREQUAL "" AND NOT "${__ARGS_TARGET_FILES}" STREQUAL "")
 
-	if(NOT "${__ARGS_TARGET}" STREQUAL "" AND NOT "${__ARGS_TARGET_FILES}" STREQUAL "")
-
-		target_sources("${__ARGS_TARGET}" PRIVATE
+		target_sources("${__ARGS_SOURCES_DEPENDENT_TARGET}" PRIVATE
 			${__ARGS_TARGET_FILES}
 		)
 
 		set_source_files_properties(${__ARGS_TARGET_FILES}
-			TARGET_DIRECTORY "${__ARGS_TARGET}"
+			TARGET_DIRECTORY "${__ARGS_SOURCES_DEPENDENT_TARGET}"
 			PROPERTIES GENERATED TRUE
 		)
 

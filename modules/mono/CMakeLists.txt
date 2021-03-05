@@ -1,8 +1,5 @@
-
 #TODO: some commands were moved here from configure time to compile time.
 # research everything again and find if some files is not included by globing because of that. 
-
-find_package(PkgConfig)
 
 add_module_lib(mono-lib
 	COMPONENTS
@@ -23,7 +20,7 @@ endif()
 if(GODOT_MONO_GLUE)
 	target_compile_definitions(mono-lib PRIVATE "MONO_GLUE_ENABLED")
 
-	if(NOT EXISTS "glue/mono_glue.gen.cpp")
+	if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/glue/mono_glue.gen.cpp")
 		message(FATAL_ERROR "Mono glue sources not found. Did you forget to run '--generate-mono-glue'?")
 	endif()
 endif()
@@ -35,24 +32,14 @@ inline_if(__IS_ANDROID 		GODOT_PLATFORM STREQUAL "android")
 inline_if(__IS_JAVASCRIPT 	GODOT_PLATFORM STREQUAL "javascript")
 inline_if(__IS_IOS	 		GODOT_PLATFORM STREQUAL "iphone")
 inline_if(__IS_DESKTOP 		
-	GODOT_PLATFORM STREQUAL "windows"
-	OR GODOT_PLATFORM STREQUAL "osx"
-	OR GODOT_PLATFORM STREQUAL "x11"
-	OR GODOT_PLATFORM STREQUAL "server"
-	OR GODOT_PLATFORM STREQUAL "uwp"
-	OR GODOT_PLATFORM STREQUAL "haiku"
+	GODOT_PLATFORM MATCHES "(windows|osx|x11|server|uwp|haiku)"
 )
 inline_if(__IS_UNIX_LIKE
-	GODOT_PLATFORM STREQUAL "osx"
-	OR GODOT_PLATFORM STREQUAL "x11"
-	OR GODOT_PLATFORM STREQUAL "server"
-	OR GODOT_PLATFORM STREQUAL "android"
-	OR GODOT_PLATFORM STREQUAL "haiku"
-	OR GODOT_PLATFORM STREQUAL "iphone"
+	GODOT_PLATFORM MATCHES "(osx|x11|server|android|haiku|iphone)"
 )
 
 inline_if(__IS_IOS_SIM 		__IS_IOS AND (CMAKE_SYSTEM_PROCESSOR STREQUAL "x86" OR CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64"))
-inline_if(__MODULE_SUPPORTS_TOOLS NOT (__IS_ANDROID OR __IS_JAVASCRIPT OR __IS_IOS))
+inline_if(__MODULE_SUPPORTS_TOOLS NOT GODOT_PLATFORM MATCHES "(android|javascript|iphone)")
 
 
 # basiaclly defining a map
@@ -74,7 +61,7 @@ set(__MONO_LIB_NAMES "mono-2.0-sgen" "monosgen-2.0")
 # mode can be TREE (a.k.a. DIRECTORY) or FILE
 function(__copy_path __MODE __SRC __DST)
 
-	if(NOT __MODE STREQUAL "FILE" AND NOT __MODE STREQUAL "TREE")
+	if(NOT __MODE MATCHES "(FILE|TREE)")
 		message(FATAL_ERROR "__copy_path mode incorrect (${__MODE}), must be FILE or TREE")
 	endif()
 
@@ -120,25 +107,17 @@ function(__copy_path __MODE __SRC __DST)
 	if(__ARGS_FORCE_BUILD_TIME)
 
 		if(__IS_FILE)
-			set(__COMMAND "import os; from shutil import copy;\nsrc='${__SRC}'; dst='${__DST}';dst_folder=os.path.dirname(dst);") # initial data
-			set(__COMMAND "${__COMMAND}
-if os.path.isfile(src):
-	if not os.path.exists(dst_folder):
-		os.makedirs(dst_folder)
-	copy(src, dst)
-else:")  # actual copy
+			set(__COMMAND "import os; from shutil import copy;src='${__SRC}'; dst='${__DST}';dst_folder=os.path.dirname(dst);") # initial data
+			set(__COMMAND "${__COMMAND} (os.makedirs(dst_folder) if not os.path.exists(dst_folder) else None, copy(src, dst)) if os.path.isfile(src) else ")  # actual copy
 		else()
-			set(__COMMAND "import os; from distutils.dir_util import copy_tree;\nsrc='${__SRC}'; dst='${__DST}';") # initial data
-			set(__COMMAND "${__COMMAND}
-if os.path.exists(src):
-	copy_tree(src, dst)
-else:")  # actual copy
+			set(__COMMAND "import os; from distutils.dir_util import copy_tree;src='${__SRC}'; dst='${__DST}';") # initial data
+			set(__COMMAND "${__COMMAND} copy_tree(src, dst) if os.path.exists(src) else ")  # actual copy
 		endif()
 
 		if(__ARGS_OPTIONAL)
-			set(__COMMAND "${__COMMAND}\n\tNone")
+			set(__COMMAND "${__COMMAND} None")
 		else()
-			set(__COMMAND "${__COMMAND}\n\tassert false, f'${__MODE} ({src}) does not exist'") # last things if the got to "else" part of the command
+			set(__COMMAND "${__COMMAND} (print(f'${__MODE} ({src}) does not exist'), exit(-1))") # last things if the got to "else" part of the command
 		endif()
 
 		add_custom_command(TARGET mono-lib PRE_BUILD 
@@ -251,26 +230,21 @@ function(__check_keyword_compile __OUTPUT __KEYWORD)
 		}"
 		__SUCCESS
 	)
-	if (__SUCCESS)
-		message(STATUS "success")
-	else()
-		message(STATUS "not success")
-	endif()
 	set(${__OUTPUT} "${__SUCCESS}" PARENT_SCOPE)
 endfunction()
 
-__check_keyword_compile(__CXX11_TREAD_LOCAL "thread_local")
+__check_keyword_compile(__CXX11_THREAD_LOCAL "thread_local")
 
-if(__CXX11_TREAD_LOCAL)
+if(__CXX11_THREAD_LOCAL)
 	target_compile_definitions(mono-lib PRIVATE "HAVE_CXX11_THREAD_LOCAL")
 else()
 	if(MSVC)
-		__check_compile(__DECLSPEC_COMPILE "__declspec(thread)")
+		__check_keyword_compile(__DECLSPEC_COMPILE "__declspec(thread)")
 		if(__DECLSPEC_COMPILE)
 			target_compile_definitions(mono-lib PRIVATE "HAVE_DECLSPEC_THREAD")
 		endif()
 	else()
-		__check_compile(__GCC__THREAD_COMPILE "__thread")
+		__check_keyword_compile(__GCC__THREAD_COMPILE "__thread")
 		if(__GCC__THREAD_COMPILE)
 			target_compile_definitions(mono-lib PRIVATE "HAVE_GCC___THREAD")
 		endif()
@@ -313,12 +287,12 @@ endif()
 # if these are supported in the future, we won't be using static AOT for them as that would be
 # too restrictive for the editor. These builds would probably be made to only use the interpreter.
 set(__MONO_SINGLE_APPDOMAIN_GEN_EXPR 
-	$<AND:$<BOOL:${__IS_IOS}> $<NOT:$<BOOL:${__IS_IOS_SIM}>>,$<NOT:${IS_TOOLS_GEN_EXPR}>>
+	$<AND:$<BOOL:${__IS_IOS}>,$<NOT:$<BOOL:${__IS_IOS_SIM}>>,$<NOT:${IS_TOOLS_GEN_EXPR}>>
 )
 target_compile_definitions(mono-lib PRIVATE 
 	$<${__MONO_SINGLE_APPDOMAIN_GEN_EXPR}:GD_MONO_SINGLE_APPDOMAIN>
 
-	$<$<AND:$<NOT:${__MONO_SINGLE_APPDOMAIN_GEN_EXPR}>,$<NOT:$<${IS_RELEASE_GEN_EXPR}>>>:GD_MONO_HOT_RELOAD>
+	$<$<AND:$<NOT:${__MONO_SINGLE_APPDOMAIN_GEN_EXPR}>,$<NOT:${IS_RELEASE_GEN_EXPR}>>:GD_MONO_HOT_RELOAD>
 )
 
 if(__IS_WINDOWS)
@@ -384,7 +358,11 @@ if(__IS_WINDOWS)
 
 		else()
 			join_paths(__MONO_STATIC_LIB_FILE_PATH "${__MONO_LIB_PATH}" "${__MONO_STATIC_LIB_FILE}")
-			target_link_options(global-env INTERFACE "-Wl,-whole-archive ${__MONO_STATIC_LIB_FILE_PATH} -Wl,-no-whole-archive")
+			target_link_options(global-env INTERFACE 
+				"-Wl,-whole-archive" 
+				"${__MONO_STATIC_LIB_FILE_PATH}" 
+				"-Wl,-no-whole-archive"
+			)
 
 			target_link_libraries(global-env INTERFACE
 				"psapi"
@@ -426,13 +404,16 @@ if(__IS_WINDOWS)
 			message(FATAL_ERROR "Could not find mono shared library in: ${__MONO_BIN_PATH}")
 		endif()
 
-		file(COPY "${__MONO_BIN_PATH}/${__MONO_DLL_FILE}" DESTINATION "${GODOT_BIN_DIRECTORY}/${__MONO_DLL_FILE}")
+		__copy_path(FILE 
+			"${__MONO_BIN_PATH}/${__MONO_DLL_FILE}" 
+			"${GODOT_BIN_DIRECTORY}/${__MONO_DLL_FILE}"
+		)
 
 	endif()
 
 else()
 
-	inline_if(__IS_APPLE	 		GODOT_PLATFORM STREQUAL "iphone" OR GODOT_PLATFORM STREQUAL "osx")
+	inline_if(__IS_APPLE	 		GODOT_PLATFORM MATCHES "(iphone|osx)")
 	inline_if(__IS_MACOS			__IS_APPLE AND NOT __IS_IOS)
 
 	ternary_if(__SHAREDLIB_EXT 
@@ -470,27 +451,35 @@ else()
 	if("${__MONO_ROOT}" STREQUAL "" AND GODOT_MONO_STATIC)
 		# God I hope this works..
 
-		pkg_check_modules(__MONO_PKG monosgen-2)
+		# if pkg config wasn't searched (or found) yet, search for it
+		if(NOT PKG_CONFIG_FOUND)
+			find_package(PkgConfig)
+		endif()
 
-		foreach(__DIR IN LISTS __MONO_PKG_LIBRARY_DIRS)
-
-			__find_file_in_dir(__NAME_FOUND
-				PATH "${__DIR}"
-				FILE_NAMES ${__MONO_LIB_NAMES}
-				FILE_PREFIXES "lib"
-				FILE_EXTENTIONS ${__SHAREDLIB_EXT}
-				RETURN_ONLY_CURNAME
-			)
-
-			join_paths(__MONO_INCLUDE_DIR "${__DIR}" "../include/mono-2.0")
-			if(NOT "${__NAME_FOUND}" STREQUAL "" AND IS_DIRECTORY "${__MONO_INCLUDE_DIR}")
-
-				join_paths(__MONO_ROOT "${__DIR}" "..")
-				break()
-
-			endif()
-
-		endforeach()
+		# if it wasn't found even now, we have nothing to do
+		if(PKG_CONFIG_FOUND)
+			pkg_check_modules(__MONO_PKG monosgen-2)
+	
+			foreach(__DIR IN LISTS __MONO_PKG_LIBRARY_DIRS)
+	
+				__find_file_in_dir(__NAME_FOUND
+					PATH "${__DIR}"
+					FILE_NAMES ${__MONO_LIB_NAMES}
+					FILE_PREFIXES "lib"
+					FILE_EXTENTIONS ${__SHAREDLIB_EXT}
+					RETURN_ONLY_CURNAME
+				)
+	
+				join_paths(__MONO_INCLUDE_DIR "${__DIR}" "../include/mono-2.0")
+				if(NOT "${__NAME_FOUND}" STREQUAL "" AND IS_DIRECTORY "${__MONO_INCLUDE_DIR}")
+	
+					join_paths(__MONO_ROOT "${__DIR}" "..")
+					break()
+	
+				endif()
+	
+			endforeach()
+		endif()
 
 		if("${__MONO_ROOT}" STREQUAL "")
 			message(FATAL_ERROR "Building with GODOT_MONO_STATIC=true, but failed to find the mono prefix with pkg-config; specify one manually with the 'GODOT_MONO_PREFIX' parameter")
@@ -541,7 +530,10 @@ else()
 				else()
 
 					function(__copy_mono_lib __LIB_NAME)
-						file(COPY "${__MONO_LIB_PATH}/${__LIB_NAME}.a" DESTINATION "${GODOT_BIN_DIRECTORY}/${__LIB_NAME}.iphone.${CMAKE_SYSTEM_PROCESSOR}.a")
+						__copy_path(FILE 
+							"${__MONO_LIB_PATH}/${__LIB_NAME}.a" 
+							"${GODOT_BIN_DIRECTORY}/${__LIB_NAME}.iphone.${CMAKE_SYSTEM_PROCESSOR}.a"
+						)
 					endfunction()
 
 					# Copy Mono libraries to the output folder. These are meant to be bundled with
@@ -565,7 +557,11 @@ else()
 					message(FATAL_ERROR "Assert!")
 				endif()
 
-				target_link_options(global-env INTERFACE "-Wl,-whole-archive" "${__MONO_LIB_FILE}" "-Wl,-no-whole-archive")
+				target_link_options(global-env INTERFACE 
+					"-Wl,-whole-archive"
+					"${__MONO_LIB_FILE}"
+					"-Wl,-no-whole-archive"
+				)
 
 			endif()
 
@@ -644,32 +640,41 @@ else()
 		# TODO: Add option to force using pkg-config
 		print("Mono root directory not found. Using pkg-config instead..")
 
-		pkg_check_modules(__MONO_PKG monosgen-2)
+		if(NOT PKG_CONFIG_FOUND)
+			find_package(PkgConfig)
+		endif()
 
-		target_link_libraries(global-env INTERFACE ${__MONO_PKG_LIBRARIES})
-		target_link_directories(global-env INTERFACE ${__MONO_PKG_LIBRARY_DIRS})
-		target_link_options(global-env INTERFACE ${__MONO_PKG_LDFLAGS_OTHER})
+		if(PKG_CONFIG_FOUND)
 
-		target_include_directories(mono-lib PRIVATE ${__MONO_PKG_INCLUDE_DIRS})
-		target_compile_options(mono-lib PRIVATE ${__MONO_PKG_CFLAGS_OTHER})
+			pkg_check_modules(__MONO_PKG monosgen-2)
+	
+			target_link_libraries(global-env INTERFACE ${__MONO_PKG_LIBRARIES})
+			target_link_directories(global-env INTERFACE ${__MONO_PKG_LIBRARY_DIRS})
+			target_link_options(global-env INTERFACE ${__MONO_PKG_LDFLAGS_OTHER})
+	
+			target_include_directories(mono-lib PRIVATE ${__MONO_PKG_INCLUDE_DIRS})
+			target_compile_options(mono-lib PRIVATE ${__MONO_PKG_CFLAGS_OTHER})
+	
+			foreach(__DIR IN LISTS __MONO_PKG_LIBRARY_DIRS)
+				
+				__find_file_in_dir(__FILE_FOUND 
+					PATH "${__DIR}"
+					FILE_NAMES ${__MONO_LIB_NAMES}
+					FILE_PREFIXES "lib"
+					FILE_EXTENTIONS ${__SHAREDLIB_EXT}
+				)
+	
+				if(NOT "${__FILE_FOUND}" STREQUAL "")
+	
+					set(__MONO_LIB_PATH "${__DIR}")
+					set(__MONO_SO_FILE "${__FILE_FOUND}")
+					break()
+	
+				endif()
+	
+			endforeach()
 
-		foreach(__DIR IN LISTS __MONO_PKG_LIBRARY_DIRS)
-			
-			__find_file_in_dir(__FILE_FOUND 
-				PATH "${__DIR}"
-				FILE_NAMES ${__MONO_LIB_NAMES}
-				FILE_PREFIXES "lib"
-				FILE_EXTENTIONS ${__SHAREDLIB_EXT}
-			)
-
-			if(NOT "${__FILE_FOUND}" STREQUAL "")
-
-				set(__MONO_LIB_PATH "${__DIR}")
-				set(__MONO_SO_FILE "${__FILE_FOUND}")
-
-			endif()
-
-		endforeach()
+		endif()
 
 		if("${__MONO_SO_FILE}" STREQUAL "")
 			message(FATAL_ERROR "Could not find mono shared library in: ${__MONO_PKG_LIBRARY_DIRS}")
@@ -694,48 +699,49 @@ else()
 endif()
 
 parse_to_python_map(__FAKE_ENV_MAP FROM_ARGS
-	STR_VAL "target" "$<$<CONFIG:Release,MinSizeRel>:release>$<$<CONFIG:Debug>:debug>$<$<CONFIG:RelWithDebInfo>:release_debug>"
+	STR_VAL "target" "$<${IS_RELEASE_GEN_EXPR}:release>$<${IS_DEBUG_GEN_EXPR}:debug>$<${IS_OPT_DEBUG_GEN_EXPR}:release_debug>"
 	STR_VAR "platform" "GODOT_PLATFORM"
 	RAW_VAR "bits" "__BITS"
 )
 
 set(__BUILD_SCRIPTS_COMMAND_PREFIX "android_dir='${__ANDROID_OUTPUT_DIR}'; import build_scripts.cmake_mono_configure_utils as cmake_mono_configure_utils; cmake_mono_configure_utils")
 
+# this 'if' statement left here only to sign that everything within it must work only with tools disabled
 # if(NOT GODOT_BUILD_TOOLS)
 
-	if(__IS_DESKTOP)
+if(__IS_DESKTOP)
 
-		if("${__MONO_ROOT}" STREQUAL "")
-			pkg_get_variable(__MONO_ROOT "mono-2" "prefix")
-		endif()
-
-		add_custom_command(TARGET mono-lib PRE_BUILD
-			# if IS_TOOLS_GEN_EXPR we will simply exit from command
-			COMMAND "python" "-c" "$<${IS_TOOLS_GEN_EXPR}:exit(0)$<SEMICOLON>>${__BUILD_SCRIPTS_COMMAND_PREFIX}.make_template_dir(env=${__FAKE_ENV_MAP}, mono_root='${__MONO_ROOT}', output_dir='${GODOT_BIN_DIRECTORY}')"
-		)
-
-	elseif(__IS_ANDROID)
-
-		set(__CONFIG_FILE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/build_scripts/mono_android_config.xml")
-		set(__CONFIG_OUTPUT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/mono_gd")
-
-		execute_python_method(make_android_mono_config generate_compressed_config
-			MODULE_DIR build_scripts
-			PYTHON_ARGS
-				STR_VAR "__CONFIG_FILE_PATH"
-				STR_VAR "__CONFIG_OUTPUT_PATH"
-		)
-
-		add_custom_command(TARGET mono-lib PRE_BUILD
-			# if IS_TOOLS_GEN_EXPR we will simply exit from command
-			COMMAND "python" "-c" "$<${IS_TOOLS_GEN_EXPR}:exit(0)$<SEMICOLON>>${__BUILD_SCRIPTS_COMMAND_PREFIX}.copy_mono_shared_libs(env=${__FAKE_ENV_MAP}, mono_root='${__MONO_ROOT}', target_mono_root_dir=None)"
-		)
-
-	elseif(__IS_JAVASCRIPT)
-		# No data directory for this platform
-	elseif(__IS_IOS)
-		# No data directory for this platform
+	if("${__MONO_ROOT}" STREQUAL "")
+		pkg_get_variable(__MONO_ROOT "mono-2" "prefix")
 	endif()
+
+	add_custom_command(TARGET mono-lib PRE_BUILD
+		# if IS_TOOLS_GEN_EXPR we will simply exit from command
+		COMMAND "python" "-c" "$<${IS_TOOLS_GEN_EXPR}:exit(0)$<SEMICOLON>>${__BUILD_SCRIPTS_COMMAND_PREFIX}.make_template_dir(env=${__FAKE_ENV_MAP}, mono_root='${__MONO_ROOT}', output_dir='${GODOT_BIN_DIRECTORY}')"
+	)
+
+elseif(__IS_ANDROID)
+
+	set(__CONFIG_FILE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/build_scripts/mono_android_config.xml")
+	set(__CONFIG_OUTPUT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/mono_gd")
+
+	execute_python_method(make_android_mono_config generate_compressed_config
+		MODULE_DIR build_scripts
+		PYTHON_ARGS
+			STR_VAR "__CONFIG_FILE_PATH"
+			STR_VAR "__CONFIG_OUTPUT_PATH"
+	)
+
+	add_custom_command(TARGET mono-lib PRE_BUILD
+		# if IS_TOOLS_GEN_EXPR we will simply exit from command
+		COMMAND "python" "-c" "$<${IS_TOOLS_GEN_EXPR}:exit(0)$<SEMICOLON>>${__BUILD_SCRIPTS_COMMAND_PREFIX}.copy_mono_shared_libs(env=${__FAKE_ENV_MAP}, mono_root='${__MONO_ROOT}', target_mono_root_dir=None)"
+	)
+
+elseif(__IS_JAVASCRIPT)
+	# No data directory for this platform
+elseif(__IS_IOS)
+	# No data directory for this platform
+endif()
 
 # endif()
 
@@ -746,24 +752,160 @@ if(GODOT_COPY_MONO_ROOT)
 			pkg_get_variable(__MONO_ROOT "mono-2" "prefix")
 		endif()
 
+		set(__COMMAND "android_dir='${__ANDROID_OUTPUT_DIR}'; import build_scripts.cmake_mono_configure_utils; ") # initial setup
+		set(__COMMAND "${__COMMAND} cmake_mono_configure_utils.copy_mono_root_files(env=${__FAKE_ENV_MAP}, mono_root='${__MONO_ROOT}', output_dir='${GODOT_BIN_DIRECTORY}') ") # calling copy_mono_root_files if tools are enabled
+		set(__COMMAND "${__COMMAND} if $<IF:${IS_TOOLS_GEN_EXPR},True,False> else ") # else ...
+		set(__COMMAND "${__COMMAND} print('Ignoring option: GODOT_COPY_MONO_ROOT; only available for builds with GODOT_BUILD_TOOLS enabled.')") # just printing that we are ignoring this parameter 
+		
 		add_custom_command(TARGET mono-lib PRE_BUILD
-			COMMAND "python" "-c" "
-android_dir='${__ANDROID_OUTPUT_DIR}'; import build_scripts.cmake_mono_configure_utils;
-if $<IF:${IS_TOOLS_GEN_EXPR},True,False>:
-	cmake_mono_configure_utils.copy_mono_root_files(env=${__FAKE_ENV_MAP}, mono_root='${__MONO_ROOT}', output_dir='GODOT_BIN_DIRECTORY')
-else:
-	print('Ignoring option: GODOT_COPY_MONO_ROOT; only available for builds with GODOT_BUILD_TOOLS enabled.')"
-)
+			COMMAND "python" "-c" "${__COMMAND}")
 
 	endif()
 
 endif()
 
 
-
 #TODO: Finish with some kind of ms solution generation...
 
+if(GODOT_BUILD_TOOLS AND GODOT_MONO_GLUE AND GODOT_BUILD_CIL)
 
+	set(__LAST_TARGET "")
+	set(__LAST_SYMBOLIC_SRC "")
+
+	#====================== Api Solution Build =======================
+	set(__TARGET_FILENAMES
+		"GodotSharp.dll"
+		"GodotSharp.pdb"
+		"GodotSharp.xml"
+		"GodotSharpEditor.dll"
+		"GodotSharpEditor.pdb"
+		"GodotSharpEditor.xml"
+	)
+
+	set(__SYMBOLIC_SOURCES "")
+
+	foreach(__CONFIG "Debug" "Release")
+		
+		parse_to_python_map(__FAKE_ENV_MAP FROM_ARGS
+			RAW_VAL "target" "target_var"
+			STR_VAR "platform" "GODOT_PLATFORM"
+			RAW_VAR "bits" "__BITS"
+			RAW_VAL "tools" "tools_var"
+			STR_VAR "mono_prefix" "GODOT_MONO_PREFIX"
+			STR_VAL "module_dir" "${CMAKE_CURRENT_SOURCE_DIR}"
+			STR_VAR "solution_build_config" "__CONFIG"
+			BOOL_VAR "verbose" "VERBOSE"
+		)
+
+		set(__EDITOR_API_DIR "${GODOT_BIN_DIRECTORY}/GodotSharp/Api/${__CONFIG}")
+
+		set(__TARGETS "")
+
+		foreach(__FILE IN LISTS __TARGET_FILENAMES)
+			list(APPEND __TARGETS "${__EDITOR_API_DIR}/${__FILE}")
+		endforeach()
+
+		string(TOLOWER "${__CONFIG}" __CONFIG_LOWER)
+		set(__CUSTOM_TARGET_NAME "mono-${__CONFIG_LOWER}-api-solution-gen")
+		set(__SYMBOLIC_SRC "mono-api-solution-${__CONFIG_LOWER}-symbolic-source")
+
+		add_python_generator_command(api_solution_build build_api_solution
+			TARGET_FILES ${__TARGETS}
+			# SYMBOLIC_TARGETS "${__SYMBOLIC_SRC}"
+			# SYMBOLIC_SOURCES "${__LAST_SYMBOLIC_SRC}"
+			MODULE_DIR "build_scripts"
+			WORKING_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
+			CREATE_CUSTOM_TARGET "${__CUSTOM_TARGET_NAME}"
+			GEN_EXPR_DEPENDENT "${IS_TOOLS_GEN_EXPR}"
+			SILENCE_GEN_EXPR_BYPRODUCTS_WARNINGS # we are not really consered about loosing some byproducts
+			BY_FILE "api_solution_${__CONFIG_LOWER}"
+			CUSTOM_VARS
+				RAW_VAL "tools_var=$<IF:${IS_TOOLS_GEN_EXPR},True,False>"
+				STR_VAL "target_var=$<${IS_RELEASE_GEN_EXPR}:release>$<${IS_DEBUG_GEN_EXPR}:debug>$<${IS_OPT_DEBUG_GEN_EXPR}:release_debug>"
+			PYTHON_ARGS
+				RAW_VAR "env=__FAKE_ENV_MAP"
+		)
+
+		set(__LAST_SYMBOLIC_SRC "${__SYMBOLIC_SRC}")
+		list(APPEND __SYMBOLIC_SOURCES "${__SYMBOLIC_SRC}")
+
+		# This is comment from SCons version, I'm not sure we need to do the same in cmake, but just to be sure
+        # Make the Release build of the API solution depend on the Debug build.
+        # We do this in order to prevent SCons from building them in parallel,
+        # which can freak out MSBuild. In many cases, one of the builds would
+        # hang indefinitely requiring a key to be pressed for it to continue.
+		if(NOT "${__LAST_TARGET}" STREQUAL "")
+			add_dependencies("${__CUSTOM_TARGET_NAME}" "${__LAST_TARGET}")
+		endif()
+
+		set(__LAST_TARGET "${__CUSTOM_TARGET_NAME}")
+
+	endforeach()
+
+	#====================== Godot Tools Build =======================
+
+	set(__EDITOR_TOOLS_DIR "${GODOT_BIN_DIRECTORY}/GodotSharp/Tools")
+
+	set(__TARGETS 
+		"${__EDITOR_TOOLS_DIR}/GodotTools.dll"
+		"$<${IS_DEBUG_GEN_EXPR}:${__EDITOR_TOOLS_DIR}/GodotTools.pdb>"
+	)
+
+	parse_to_python_map(__FAKE_ENV_MAP FROM_ARGS
+		RAW_VAL "target" "target_var"
+		STR_VAR "platform" "GODOT_PLATFORM"
+		RAW_VAR "bits" "__BITS"
+		RAW_VAL "tools" "tools_var"
+		STR_VAR "mono_prefix" "GODOT_MONO_PREFIX"
+		STR_VAL "module_dir" "${CMAKE_CURRENT_SOURCE_DIR}"
+		BOOL_VAR "verbose" "VERBOSE"
+		RAW_VAL "output_dir" "binary_dir_var"
+		STR_VAR "root_dir" "GODOT_SOURCE_DIR"
+	)
+
+	set(__CUSTOM_TARGET_NAME "mono-tools-solution-gen")
+	set(__SYMBOLIC_SRC "mono-tools-solution-symbolic-source")
+	add_python_generator_command(godot_tools_build build_godot_tools
+		TARGET_FILES ${__TARGETS}
+		# SYMBOLIC_TARGETS "${__SYMBOLIC_SRC}"
+		# SYMBOLIC_SOURCES "${__LAST_SYMBOLIC_SRC}"
+		MODULE_DIR "build_scripts"
+		WORKING_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
+		CREATE_CUSTOM_TARGET "${__CUSTOM_TARGET_NAME}"
+		SILENCE_GEN_EXPR_BYPRODUCTS_WARNINGS
+		BY_FILE "tools_solution"
+		GEN_EXPR_DEPENDENT "${IS_TOOLS_GEN_EXPR}"
+		CUSTOM_VARS
+			RAW_VAL "tools_var=$<IF:${IS_TOOLS_GEN_EXPR},True,False>"
+			STR_VAL "target_var=$<${IS_RELEASE_GEN_EXPR}:release>$<${IS_DEBUG_GEN_EXPR}:debug>$<${IS_OPT_DEBUG_GEN_EXPR}:release_debug>"
+			STR_VAL "binary_dir_var=${GODOT_BIN_DIRECTORY}"
+		PYTHON_ARGS
+			RAW_VAR "env=__FAKE_ENV_MAP"
+	)
+	
+	list(APPEND __SYMBOLIC_SOURCES "${__SYMBOLIC_SRC}")
+	set(__LAST_SYMBOLIC_SRC "${__SYMBOLIC_SRC}")
+
+	if(NOT "${__LAST_TARGET}" STREQUAL "")
+		add_dependencies("${__CUSTOM_TARGET_NAME}" "${__LAST_TARGET}")
+	endif()
+	set(__LAST_TARGET "${__CUSTOM_TARGET_NAME}")
+
+	#================================================================
+
+
+	# if(NOT "${__SYMBOLIC_SOURCES}" STREQUAL "")
+	# 	add_custom_target(mono-solution-gen
+	# 		DEPENDS
+	# 			${__SYMBOLIC_SOURCES}
+	# 	)
+	# 	add_dependencies(mono-lib mono-solution-gen)
+	# endif()
+
+	add_dependencies(mono-lib "${__LAST_TARGET}")
+	# target_sources(mono-lib PRIVATE ${__SYMBOLIC_SOURCES})
+
+endif()
 
 target_glob_sources(mono-lib PRIVATE "*.cpp")
 target_glob_sources(mono-lib PRIVATE "glue/*.cpp")
@@ -781,7 +923,7 @@ target_glob_sources(mono-lib PRIVATE "utils/*.cpp")
 target_glob_sources(mono-lib PRIVATE "mono_gd/support/*.cpp")
 
 
-if(GODOT_PLATFORM STREQUAL "osx" OR GODOT_PLATFORM STREQUAL "iphone")
+if(GODOT_PLATFORM MATCHES "(osx|iphone)")
 	target_glob_sources(mono-lib PRIVATE "mono_gd/support/*.mm")
 	target_glob_sources(mono-lib PRIVATE "mono_gd/support/*.m")
 endif()

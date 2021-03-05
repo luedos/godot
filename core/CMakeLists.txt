@@ -124,7 +124,7 @@ add_python_generator_command(core_builders cmake_make_certs_header
 	PYTHON_ARGS
 		STR_VAR "system_certs_path=GODOT_SYSTEM_CERTS_PATH"
 		BOOL_VAR "is_builtin_certs=GODOT_BUILTIN_CERTS"
-	TARGET core-lib 
+	SOURCES_DEPENDENT_TARGET core-lib 
 	APPEND_SYS_PATH "${GODOT_SOURCE_DIR}"
 )
 
@@ -137,7 +137,7 @@ set(__MAKE_BINDERS_FILES
 
 add_python_generator_command(make_binders cmake_run
 	TARGET_FILES ${__MAKE_BINDERS_FILES}
-	TARGET core-lib 
+	SOURCES_DEPENDENT_TARGET core-lib 
 )
 
 # Authors
@@ -146,7 +146,7 @@ set(__AUTHORS_FILE_HEADER "${GODOT_SOURCE_DIR}/core/authors.gen.h")
 add_python_generator_command(core_builders cmake_make_authors_header
 	TARGET_FILES "${__AUTHORS_FILE_HEADER}"
 	SOURCE_FILES "${GODOT_SOURCE_DIR}/AUTHORS.md"
-	TARGET core-lib 
+	SOURCES_DEPENDENT_TARGET core-lib 
 	APPEND_SYS_PATH "${GODOT_SOURCE_DIR}"
 )
 
@@ -156,7 +156,7 @@ set(__DONORS_FILE_HEADER "${GODOT_SOURCE_DIR}/core/donors.gen.h")
 add_python_generator_command(core_builders cmake_make_donors_header
 	TARGET_FILES "${__DONORS_FILE_HEADER}"
 	SOURCE_FILES "${GODOT_SOURCE_DIR}/DONORS.md"
-	TARGET core-lib 
+	SOURCES_DEPENDENT_TARGET core-lib 
 	APPEND_SYS_PATH "${GODOT_SOURCE_DIR}"
 )
 
@@ -168,7 +168,7 @@ add_python_generator_command(core_builders cmake_make_license_header
 	SOURCE_FILES 
 		"${GODOT_SOURCE_DIR}/COPYRIGHT.txt"
 		"${GODOT_SOURCE_DIR}/LICENSE.txt"
-	TARGET core-lib 
+	SOURCES_DEPENDENT_TARGET core-lib 
 	APPEND_SYS_PATH "${GODOT_SOURCE_DIR}"
 )
 

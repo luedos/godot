@@ -2,9 +2,6 @@
 
 import os
 
-from SCons.Script import Dir
-
-
 def build_api_solution(source, target, env):
     # source and target elements are of type SCons.Node.FS.File, hence why we convert them to str
 
@@ -59,6 +56,8 @@ def build(env_mono):
     ]
 
     depend_cmd = []
+
+    from SCons.Script import Dir
 
     for build_config in ["Debug", "Release"]:
         output_dir = Dir("#bin").abspath
