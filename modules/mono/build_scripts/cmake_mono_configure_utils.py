@@ -3,8 +3,19 @@ import os.path
 import sys
 import subprocess
 
+def find_file_in_dir(directory, names, prefixes=[""], extensions=[""]):
+    for extension in extensions:
+        if extension and not extension.startswith("."):
+            extension = "." + extension
+        for prefix in prefixes:
+            for curname in names:
+                filename = prefix + curname + extension
+                if os.path.isfile(os.path.join(directory, filename)):
+                    return filename
+    return ""
+
 def get_android_out_dir(env):
-    return android_dir # will be defiend through cmake
+    return env["android_output_dir"] # will be defiend through cmake
 
 def is_desktop(platform):
     return platform in ["windows", "osx", "x11", "server", "uwp", "haiku"]

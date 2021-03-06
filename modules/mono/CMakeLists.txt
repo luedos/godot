@@ -702,9 +702,10 @@ parse_to_python_map(__FAKE_ENV_MAP FROM_ARGS
 	STR_VAL "target" "$<${IS_RELEASE_GEN_EXPR}:release>$<${IS_DEBUG_GEN_EXPR}:debug>$<${IS_OPT_DEBUG_GEN_EXPR}:release_debug>"
 	STR_VAR "platform" "GODOT_PLATFORM"
 	RAW_VAR "bits" "__BITS"
+	STR_VAL "android_output_dir" "${__ANDROID_OUTPUT_DIR}"
 )
 
-set(__BUILD_SCRIPTS_COMMAND_PREFIX "android_dir='${__ANDROID_OUTPUT_DIR}'; import build_scripts.cmake_mono_configure_utils as cmake_mono_configure_utils; cmake_mono_configure_utils")
+set(__BUILD_SCRIPTS_COMMAND_PREFIX "import build_scripts.cmake_mono_configure_utils as cmake_mono_configure_utils; cmake_mono_configure_utils")
 
 # this 'if' statement left here only to sign that everything within it must work only with tools disabled
 # if(NOT GODOT_BUILD_TOOLS)
@@ -712,12 +713,19 @@ set(__BUILD_SCRIPTS_COMMAND_PREFIX "android_dir='${__ANDROID_OUTPUT_DIR}'; impor
 if(__IS_DESKTOP)
 
 	if("${__MONO_ROOT}" STREQUAL "")
-		pkg_get_variable(__MONO_ROOT "mono-2" "prefix")
+		if(NOT PKG_CONFIG_FOUND)
+			find_package(PkgConfig)
+		endif()
+	
+		if(PKG_CONFIG_FOUND)
+			pkg_get_variable(__MONO_ROOT "mono-2" "prefix")
+		endif()
 	endif()
 
 	add_custom_command(TARGET mono-lib PRE_BUILD
 		# if IS_TOOLS_GEN_EXPR we will simply exit from command
-		COMMAND "python" "-c" "$<${IS_TOOLS_GEN_EXPR}:exit(0)$<SEMICOLON>>${__BUILD_SCRIPTS_COMMAND_PREFIX}.make_template_dir(env=${__FAKE_ENV_MAP}, mono_root='${__MONO_ROOT}', output_dir='${GODOT_BIN_DIRECTORY}')"
+		COMMAND "python" "-c" "$<${IS_TOOLS_GEN_EXPR}:exit(0);>${__BUILD_SCRIPTS_COMMAND_PREFIX}.make_template_dir(env=${__FAKE_ENV_MAP}, mono_root='${__MONO_ROOT}', output_dir='${GODOT_BIN_DIRECTORY}')"
+		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
 	)
 
 elseif(__IS_ANDROID)
@@ -734,7 +742,8 @@ elseif(__IS_ANDROID)
 
 	add_custom_command(TARGET mono-lib PRE_BUILD
 		# if IS_TOOLS_GEN_EXPR we will simply exit from command
-		COMMAND "python" "-c" "$<${IS_TOOLS_GEN_EXPR}:exit(0)$<SEMICOLON>>${__BUILD_SCRIPTS_COMMAND_PREFIX}.copy_mono_shared_libs(env=${__FAKE_ENV_MAP}, mono_root='${__MONO_ROOT}', target_mono_root_dir=None)"
+		COMMAND "python" "-c" "$<${IS_TOOLS_GEN_EXPR}:exit(0);>${__BUILD_SCRIPTS_COMMAND_PREFIX}.copy_mono_shared_libs(env=${__FAKE_ENV_MAP}, mono_root='${__MONO_ROOT}', target_mono_root_dir=None)"
+		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
 	)
 
 elseif(__IS_JAVASCRIPT)
@@ -749,23 +758,29 @@ if(GODOT_COPY_MONO_ROOT)
 
 	if(GODOT_BUILD_TOOLS)
 		if("${__MONO_ROOT}" STREQUAL "")
-			pkg_get_variable(__MONO_ROOT "mono-2" "prefix")
+			if(NOT PKG_CONFIG_FOUND)
+				find_package(PkgConfig)
+			endif()
+	
+			if(PKG_CONFIG_FOUND)
+				pkg_get_variable(__MONO_ROOT "mono-2" "prefix")
+			endif()
 		endif()
 
-		set(__COMMAND "android_dir='${__ANDROID_OUTPUT_DIR}'; import build_scripts.cmake_mono_configure_utils; ") # initial setup
+		set(__COMMAND "android_dir='${__ANDROID_OUTPUT_DIR}'; import build_scripts.cmake_mono_configure_utils as cmake_mono_configure_utils; ") # initial setup
 		set(__COMMAND "${__COMMAND} cmake_mono_configure_utils.copy_mono_root_files(env=${__FAKE_ENV_MAP}, mono_root='${__MONO_ROOT}', output_dir='${GODOT_BIN_DIRECTORY}') ") # calling copy_mono_root_files if tools are enabled
 		set(__COMMAND "${__COMMAND} if $<IF:${IS_TOOLS_GEN_EXPR},True,False> else ") # else ...
 		set(__COMMAND "${__COMMAND} print('Ignoring option: GODOT_COPY_MONO_ROOT; only available for builds with GODOT_BUILD_TOOLS enabled.')") # just printing that we are ignoring this parameter 
 		
 		add_custom_command(TARGET mono-lib PRE_BUILD
-			COMMAND "python" "-c" "${__COMMAND}")
+			COMMAND "python" "-c" "${__COMMAND}"
+			WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+			COMMENT "Copying mono_root from \"${__MONO_ROOT}\".."
+		)
 
 	endif()
 
 endif()
-
-
-#TODO: Finish with some kind of ms solution generation...
 
 if(GODOT_BUILD_TOOLS AND GODOT_MONO_GLUE AND GODOT_BUILD_CIL)
 
@@ -892,7 +907,6 @@ if(GODOT_BUILD_TOOLS AND GODOT_MONO_GLUE AND GODOT_BUILD_CIL)
 	set(__LAST_TARGET "${__CUSTOM_TARGET_NAME}")
 
 	#================================================================
-
 
 	# if(NOT "${__SYMBOLIC_SOURCES}" STREQUAL "")
 	# 	add_custom_target(mono-solution-gen
