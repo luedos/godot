@@ -1,19 +1,30 @@
 
-function(generate_python_map __OUTPUT __KEYS_VAR __VALUES_SUFFIX)
+function(__generate_python_class_map __OUTPUT __CLASSES_LIST __VALUES_SUFFIX)
+
+	file(TO_CMAKE_PATH "${GODOT_SOURCE_DIR}" __ROOT_PATH)
+	string(REGEX REPLACE "([][+.*()^])" "\\\\\\1" __REGEX_ROOT_PATH "${__ROOT_PATH}")
+
 	set(__PYTHON_DOC_MAP "{")
 	set(__FIRST true)
-	foreach(__CLASS IN LISTS ${__KEYS_VAR})
-		if(NOT __FIRST)
-			set(__PYTHON_DOC_MAP "${__PYTHON_DOC_MAP},")
-		else()
+	foreach(__CLASS IN LISTS ${__CLASSES_LIST})
+		if(__FIRST)
 			set(__FIRST false)
+		else()
+			set(__PYTHON_DOC_MAP "${__PYTHON_DOC_MAP},")
 		endif()
 
-		set(__PYTHON_DOC_MAP "${__PYTHON_DOC_MAP} '${__CLASS}':'${${__CLASS}${__VALUES_SUFFIX}}'")
+		# All classes paths are usually absolute paths, but build in paths we need to make relative
+		file(TO_CMAKE_PATH "${${__CLASS}${__VALUES_SUFFIX}}" __CLASS_PATH)
+		if(__CLASS_PATH MATCHES "^${__REGEX_ROOT_PATH}.*")
+			file(RELATIVE_PATH __CLASS_PATH "${__ROOT_PATH}" "${__CLASS_PATH}")
+		endif()
+
+		set(__PYTHON_DOC_MAP "${__PYTHON_DOC_MAP} '${__CLASS}':'${__CLASS_PATH}'")
 	endforeach()
 
 	set(__PYTHON_DOC_MAP "${__PYTHON_DOC_MAP} }")
 	set(${__OUTPUT} "${__PYTHON_DOC_MAP}" PARENT_SCOPE)
+
 endfunction()
 
 # Important note: even if GODOT_BUILD_TOOLS option is true, it still can become false in build time.
@@ -56,7 +67,7 @@ if(GODOT_BUILD_TOOLS)
 	endforeach()
 
 	# generating map for the python, from all godot docs.
-	generate_python_map(__PYTHON_CLASS_MAP MODULES_CLASSES _CLASS_PATH)
+	__generate_python_class_map(__PYTHON_CLASS_MAP MODULES_CLASSES _CLASS_PATH)
 	execute_python_method(editor_builders cmake_make_doc_data_class_path
 		PYTHON_ARGS
 			STR_VAL "to_path=${GODOT_SOURCE_DIR}/editor/doc"

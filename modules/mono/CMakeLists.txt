@@ -228,9 +228,9 @@ function(__check_keyword_compile __OUTPUT __KEYWORD)
 		{ 
 			return foo; 
 		}"
-		__SUCCESS
+		"${__OUTPUT}_OUTPUT"
 	)
-	set(${__OUTPUT} "${__SUCCESS}" PARENT_SCOPE)
+	set(${__OUTPUT} "${${__OUTPUT}_OUTPUT}" PARENT_SCOPE)
 endfunction()
 
 __check_keyword_compile(__CXX11_THREAD_LOCAL "thread_local")
