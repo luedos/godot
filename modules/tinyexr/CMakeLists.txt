@@ -21,9 +21,11 @@ add_lib(thirdparty-tinyexr-lib
 	PARENT_LIB
 		tinyexr-lib
 	COMPONENTS
-		tinyexr-env	
-	SOURCES
-		"${__THIRDPARTY_TINYEXR_PATH}/tinyexr.cc"
+		tinyexr-env
+)
+
+target_sources_from_path(thirdparty-tinyexr-lib PRIVATE "${__THIRDPARTY_TINYEXR_PATH}"
+	"tinyexr.cc"
 )
 
 target_include_directories(tinyexr-env INTERFACE "${__THIRDPARTY_TINYEXR_PATH}")

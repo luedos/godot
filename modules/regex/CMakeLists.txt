@@ -27,34 +27,34 @@ if(GODOT_BUILTIN_PCRE2)
 	endif()
 
 	set(__THIRDPARTY_PCRE2_SOURCES
-		"${__THIRDPARTY_PCRE2_PATH}/pcre2_auto_possess.c"
-		"${__THIRDPARTY_PCRE2_PATH}/pcre2_chartables.c"
-		"${__THIRDPARTY_PCRE2_PATH}/pcre2_compile.c"
-		"${__THIRDPARTY_PCRE2_PATH}/pcre2_config.c"
-		"${__THIRDPARTY_PCRE2_PATH}/pcre2_context.c"
-		"${__THIRDPARTY_PCRE2_PATH}/pcre2_convert.c"
-		"${__THIRDPARTY_PCRE2_PATH}/pcre2_dfa_match.c"
-		"${__THIRDPARTY_PCRE2_PATH}/pcre2_error.c"
-		"${__THIRDPARTY_PCRE2_PATH}/pcre2_extuni.c"
-		"${__THIRDPARTY_PCRE2_PATH}/pcre2_find_bracket.c"
-		"${__THIRDPARTY_PCRE2_PATH}/pcre2_jit_compile.c"
+		"pcre2_auto_possess.c"
+		"pcre2_chartables.c"
+		"pcre2_compile.c"
+		"pcre2_config.c"
+		"pcre2_context.c"
+		"pcre2_convert.c"
+		"pcre2_dfa_match.c"
+		"pcre2_error.c"
+		"pcre2_extuni.c"
+		"pcre2_find_bracket.c"
+		"pcre2_jit_compile.c"
 		# "pcre2_jit_match.c", "pcre2_jit_misc.c", # these files are included in pcre2_jit_compile.c.
-		"${__THIRDPARTY_PCRE2_PATH}/pcre2_maketables.c"
-		"${__THIRDPARTY_PCRE2_PATH}/pcre2_match.c"
-		"${__THIRDPARTY_PCRE2_PATH}/pcre2_match_data.c"
-		"${__THIRDPARTY_PCRE2_PATH}/pcre2_newline.c"
-		"${__THIRDPARTY_PCRE2_PATH}/pcre2_ord2utf.c"
-		"${__THIRDPARTY_PCRE2_PATH}/pcre2_pattern_info.c"
-		"${__THIRDPARTY_PCRE2_PATH}/pcre2_script_run.c"
-		"${__THIRDPARTY_PCRE2_PATH}/pcre2_serialize.c"
-		"${__THIRDPARTY_PCRE2_PATH}/pcre2_string_utils.c"
-		"${__THIRDPARTY_PCRE2_PATH}/pcre2_study.c"
-		"${__THIRDPARTY_PCRE2_PATH}/pcre2_substitute.c"
-		"${__THIRDPARTY_PCRE2_PATH}/pcre2_substring.c"
-		"${__THIRDPARTY_PCRE2_PATH}/pcre2_tables.c"
-		"${__THIRDPARTY_PCRE2_PATH}/pcre2_ucd.c"
-		"${__THIRDPARTY_PCRE2_PATH}/pcre2_valid_utf.c"
-		"${__THIRDPARTY_PCRE2_PATH}/pcre2_xclass.c"
+		"pcre2_maketables.c"
+		"pcre2_match.c"
+		"pcre2_match_data.c"
+		"pcre2_newline.c"
+		"pcre2_ord2utf.c"
+		"pcre2_pattern_info.c"
+		"pcre2_script_run.c"
+		"pcre2_serialize.c"
+		"pcre2_string_utils.c"
+		"pcre2_study.c"
+		"pcre2_substitute.c"
+		"pcre2_substring.c"
+		"pcre2_tables.c"
+		"pcre2_ucd.c"
+		"pcre2_valid_utf.c"
+		"pcre2_xclass.c"
 	)
 
 	function(prec2_builtin __WIDTH)
@@ -66,9 +66,10 @@ if(GODOT_BUILTIN_PCRE2)
 			PARENT_LIB
 				regex-lib
 			COMPONENTS
-				regex-env	
-			SOURCES
-				${__THIRDPARTY_PCRE2_SOURCES}
+				regex-env
+		)
+		target_sources_from_path("${__LIB_NAME}" PRIVATE "${__THIRDPARTY_PCRE2_PATH}"
+			${__THIRDPARTY_PCRE2_SOURCES}
 		)
 
 		target_compile_definitions("${__LIB_NAME}" PRIVATE "PCRE2_CODE_UNIT_WIDTH=${__WIDTH}")

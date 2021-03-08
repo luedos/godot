@@ -30,22 +30,22 @@ if(GODOT_BUILTIN_LIBPNG)
 			drivers-env
 	)
 
-	target_sources(thirdparty-drivers-png-lib PRIVATE
-		"${__THIRDPARTY_LIBPNG_PATH}/png.c"
-		"${__THIRDPARTY_LIBPNG_PATH}/pngerror.c"
-		"${__THIRDPARTY_LIBPNG_PATH}/pngget.c"
-		"${__THIRDPARTY_LIBPNG_PATH}/pngmem.c"
-		"${__THIRDPARTY_LIBPNG_PATH}/pngpread.c"
-		"${__THIRDPARTY_LIBPNG_PATH}/pngread.c"
-		"${__THIRDPARTY_LIBPNG_PATH}/pngrio.c"
-		"${__THIRDPARTY_LIBPNG_PATH}/pngrtran.c"
-		"${__THIRDPARTY_LIBPNG_PATH}/pngrutil.c"
-		"${__THIRDPARTY_LIBPNG_PATH}/pngset.c"
-		"${__THIRDPARTY_LIBPNG_PATH}/pngtrans.c"
-		"${__THIRDPARTY_LIBPNG_PATH}/pngwio.c"
-		"${__THIRDPARTY_LIBPNG_PATH}/pngwrite.c"
-		"${__THIRDPARTY_LIBPNG_PATH}/pngwtran.c"
-		"${__THIRDPARTY_LIBPNG_PATH}/pngwutil.c"
+	target_sources_from_path(thirdparty-drivers-png-lib PRIVATE "${__THIRDPARTY_LIBPNG_PATH}"
+		"png.c"
+		"pngerror.c"
+		"pngget.c"
+		"pngmem.c"
+		"pngpread.c"
+		"pngread.c"
+		"pngrio.c"
+		"pngrtran.c"
+		"pngrutil.c"
+		"pngset.c"
+		"pngtrans.c"
+		"pngwio.c"
+		"pngwrite.c"
+		"pngwtran.c"
+		"pngwutil.c"
 	)
 
 	if(NEON_ENABLED AND NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
@@ -55,11 +55,11 @@ if(GODOT_BUILTIN_LIBPNG)
 		# https://cmake.org/pipermail/cmake/2011-November/047512.html
 		# https://stackoverflow.com/questions/38293535/generic-rule-from-makefile-to-cmake
 		
-		target_sources(thirdparty-drivers-png-lib PRIVATE
-			"${__THIRDPARTY_LIBPNG_PATH}/arm/arm_init.c"
-			"${__THIRDPARTY_LIBPNG_PATH}/arm/filter_neon_intrinsics.c"
-			"${__THIRDPARTY_LIBPNG_PATH}/arm/filter_neon.S"
-			"${__THIRDPARTY_LIBPNG_PATH}/arm/palette_neon_intrinsics.c"
+		target_sources_from_path(thirdparty-drivers-png-lib PRIVATE "${__THIRDPARTY_LIBPNG_PATH}"
+			"arm/arm_init.c"
+			"arm/filter_neon_intrinsics.c"
+			"arm/filter_neon.S"
+			"arm/palette_neon_intrinsics.c"
 		)
 		set_property(SOURCE "${__THIRDPARTY_LIBPNG_PATH}/arm/filter_neon.S" PROPERTY LANGUAGE C)
 	endif()

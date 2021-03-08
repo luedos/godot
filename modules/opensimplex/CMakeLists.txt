@@ -20,8 +20,9 @@ add_lib(thirdparty-opensimplex-lib
 		opensimplex-lib
 	COMPONENTS
 		opensimplex-env
-	SOURCES
-		"${__THIRDPARTY_OPENSIMPLEX_PATH}/open-simplex-noise.c"
+)
+target_sources_from_path(thirdparty-opensimplex-lib PRIVATE "${__THIRDPARTY_OPENSIMPLEX_PATH}"
+	"open-simplex-noise.c"
 )
 
 target_glob_sources(opensimplex-lib PRIVATE "*.cpp")

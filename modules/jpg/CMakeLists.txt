@@ -19,8 +19,8 @@ add_lib(thirdparty-jpg-lib
 )
 
 set(__THIRDPARTY_JPG_PATH "${GODOT_SOURCE_DIR}/thirdparty/jpeg-compressor")
-target_sources(thirdparty-jpg-lib PRIVATE
-	"${__THIRDPARTY_JPG_PATH}/jpgd.cpp"
+target_sources_from_path(thirdparty-jpg-lib PRIVATE "${__THIRDPARTY_JPG_PATH}"
+	"jpgd.cpp"
 )
 
 target_include_directories(jpg-env INTERFACE "${__THIRDPARTY_JPG_PATH}")

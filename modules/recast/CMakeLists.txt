@@ -22,20 +22,22 @@ if(GODOT_BUILTIN_RECAST)
 		PARENT_LIB
 			recast-lib
 		COMPONENTS
-			recast-env	
-		SOURCES
-			"${__THIRDPARTY_RECAST_PATH}/Source/Recast.cpp"
-			"${__THIRDPARTY_RECAST_PATH}/Source/RecastAlloc.cpp"
-			"${__THIRDPARTY_RECAST_PATH}/Source/RecastArea.cpp"
-			"${__THIRDPARTY_RECAST_PATH}/Source/RecastAssert.cpp"
-			"${__THIRDPARTY_RECAST_PATH}/Source/RecastContour.cpp"
-			"${__THIRDPARTY_RECAST_PATH}/Source/RecastFilter.cpp"
-			"${__THIRDPARTY_RECAST_PATH}/Source/RecastLayers.cpp"
-			"${__THIRDPARTY_RECAST_PATH}/Source/RecastMesh.cpp"
-			"${__THIRDPARTY_RECAST_PATH}/Source/RecastMeshDetail.cpp"
-			"${__THIRDPARTY_RECAST_PATH}/Source/RecastRasterization.cpp"
-			"${__THIRDPARTY_RECAST_PATH}/Source/RecastRegion.cpp"
+			recast-env
 	)
+	target_sources_from_path(thirdparty-recast-lib PRIVATE "${__THIRDPARTY_RECAST_PATH}/Source"
+		"Recast.cpp"
+		"RecastAlloc.cpp"
+		"RecastArea.cpp"
+		"RecastAssert.cpp"
+		"RecastContour.cpp"
+		"RecastFilter.cpp"
+		"RecastLayers.cpp"
+		"RecastMesh.cpp"
+		"RecastMeshDetail.cpp"
+		"RecastRasterization.cpp"
+		"RecastRegion.cpp"
+	)
+
 endif()
 target_glob_sources(recast-lib PRIVATE "*.cpp")
 

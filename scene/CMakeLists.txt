@@ -17,11 +17,11 @@ add_lib(thirdparty-scene-lib
 
 # Thirdparty code
 set(__THIRDPARTY_MISC_DIR "${GODOT_SOURCE_DIR}/thirdparty/misc")
-target_sources(thirdparty-scene-lib PRIVATE
+target_sources_from_path(thirdparty-scene-lib PRIVATE "${__THIRDPARTY_MISC_DIR}"
     # C++ sources
-    "${__THIRDPARTY_MISC_DIR}/easing_equations.cpp"
+    "easing_equations.cpp"
     # C sources
-    "${__THIRDPARTY_MISC_DIR}/mikktspace.c"
+    "mikktspace.c"
 )
 
 target_glob_sources(scene-lib PRIVATE "*.cpp")

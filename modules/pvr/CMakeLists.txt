@@ -24,12 +24,12 @@ set(__THIRDPARTY_PVR_PATH "${GODOT_SOURCE_DIR}/thirdparty/pvrtccompressor")
 
 target_include_directories(pvr-env INTERFACE "${__THIRDPARTY_PVR_PATH}")
 
-target_sources(thirdparty-pvr-lib PRIVATE 
-	"${__THIRDPARTY_PVR_PATH}/BitScale.cpp"
-	"${__THIRDPARTY_PVR_PATH}/MortonTable.cpp"
-	"${__THIRDPARTY_PVR_PATH}/PvrTcDecoder.cpp"
-	"${__THIRDPARTY_PVR_PATH}/PvrTcEncoder.cpp"
-	"${__THIRDPARTY_PVR_PATH}/PvrTcPacket.cpp"
+target_sources_from_path(thirdparty-pvr-lib PRIVATE "${__THIRDPARTY_PVR_PATH}"
+	"BitScale.cpp"
+	"MortonTable.cpp"
+	"PvrTcDecoder.cpp"
+	"PvrTcEncoder.cpp"
+	"PvrTcPacket.cpp"
 )
 
 target_glob_sources(pvr-lib PRIVATE "*.cpp")

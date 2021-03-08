@@ -1,14 +1,11 @@
 cmake_minimum_required (VERSION 3.19.0)
 project (godot VERSION 3.2.3 LANGUAGES CXX C)
 
+# Seting defualt language standarts. 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
-
-#TODO: bigest conserns:
-# - create good environment cloning functions (because it's borring each time call add_library->clone_target_properties->target_link_library)
-# - refactor all thirdparty libs from static to object libraries 
 
 # Just for all hardcoded folders outthere.
 # This is not strictly needed, but, because there a lot of submodules which uses rood directory for thirdparty sources search, 
@@ -16,6 +13,7 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 # I still will create this variable just in case when CMAKE_SOURCE_DIR will shout incorrect result.  
 set(GODOT_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 
+# First of all, including all needed functions
 include(methods.cmake)
 
 ############### Processing platforms ###############
@@ -25,24 +23,22 @@ include(methods.cmake)
 # So first of all we transforming CMAKE_SYSTEM_NAME into GODOT_PLATFORM, 
 # because system name, and godot platform, is sometimes has different names for same thing.
 string(TOLOWER "${CMAKE_SYSTEM_NAME}" __SYSTEM_NAME)
-if(__SYSTEM_NAME MATCHES "(linux|x11|bsd|linuxbsd)")
-
-	set(GODOT_PLATFORM "x11") # linux case. x11 is godot name for linux
-
-elseif(__SYSTEM_NAME MATCHES "(windows|win32)")
-
+if(__SYSTEM_NAME MATCHES "(windows|win32)")
 	set(GODOT_PLATFORM "windows") # windows case
-
-elseif(__SYSTEM_NAME STREQUAL "android")
-
-	set(GODOT_PLATFORM "android") # android case
-
 else()
+	# For now we are not supporting any other platforms..
+	message(FATAL_ERROR "Platform \"${CMAKE_SYSTEM_NAME}\" is not supported.")
+endif()
 
+#[[
+elseif(__SYSTEM_NAME MATCHES "(linux|x11|bsd|linuxbsd)")
+	set(GODOT_PLATFORM "x11") # linux case. x11 is godot name for linux
+elseif(__SYSTEM_NAME STREQUAL "android")
+	set(GODOT_PLATFORM "android") # android case
+else()
 	set(GODOT_PLATFORM "${__SYSTEM_NAME}") # default case, for some specific platforms like javascript (a.k.a. webassembly) etc.
-
 endif() # everything else for now is not supported
-#TODO: create case for ios/macos
+]]
 
 #[=[
 DOCUMENTATION FOR PLATFORMS
@@ -73,19 +69,20 @@ set(PLATFORMS_LIST "")
 
 file(GLOB __PLATFORM_DIRS 
 	LIST_DIRECTORIES true 
-	"${CMAKE_CURRENT_SOURCE_DIR}/platform/*" # CMAKE_CURRENT_SOURCE_DIR added just to be more explicit 
+	"${GODOT_SOURCE_DIR}/platform/*"
 )
 
 # for each available platform
 foreach(__DIR IN LISTS __PLATFORM_DIRS)
-	# local variables
-	unset(__PLATFORM_ID)
+
+	unset(__PLATFORM_ID) # just in case
 
 	if(NOT IS_DIRECTORY "${__DIR}")
 		continue()
 	endif()
 
 	if(NOT EXISTS "${__DIR}/detect.cmake")
+		# for now we will comment this warning, because most of platforms are not supported.
 		# message(WARNING "The platform \"${__DIR}\" is defined, but doesn't have detect.cmake in it, so it can't be processed..")
 		continue()
 	endif()
@@ -110,24 +107,27 @@ foreach(__DIR IN LISTS __PLATFORM_DIRS)
 		list(APPEND PLATFORMS_APIS "${__PLATFORM_ID}")
 	endif()
 
-	# all platform variables names is starts with platform id itself, so it can be later addressed as android_IS_PLARFORM_ACTIVE for example 
-
 	# if platform defined as active (must be defined in detect.cmake)
 	cmake_language(CALL "${__PLATFORM_ID}_get_is_platform_active" ${__PLATFORM_ID}_IS_PLATFORM_ACTIVE)
 	if(${__PLATFORM_ID}_IS_PLATFORM_ACTIVE)
+
 		cmake_language(CALL "${__PLATFORM_ID}_get_platform_name" "${__PLATFORM_ID}_PLATFROM_NAME")
 		list(APPEND ACTIVE_PLATFORMS "${${__PLATFORM_ID}_PLATFROM_NAME}")
 		list(APPEND ACTIVE_PLATFORM_PATHS "${__DIR}")
+
 	endif()
 
 	# if platform can be built (must be defined in detect.cmake)
 	cmake_language(CALL "${__PLATFORM_ID}_get_can_platform_build" ${__PLATFORM_ID}_PLATFROM_CAN_BUILD)
 	if(${__PLATFORM_ID}_PLATFROM_CAN_BUILD)
+
 		list(APPEND PLATFORMS_LIST "${__PLATFORM_ID}")
 		if(__PLATFORM_ID STREQUAL GODOT_PLATFORM)
 			cmake_language(CALL "${__PLATFORM_ID}_create_custom_options")
 		endif()
+
 	endif()
+
 endforeach()
 
 execute_python_method(methods save_active_platforms
@@ -142,11 +142,6 @@ execute_python_method(methods save_active_platforms
 # (for example, some platforms tend to override GODOT_BUILD_TOOLS option)
 
 # Target build options
-# arch			# Platform-dependent architecture (arm/arm64/x86/x64/mips/...)
-# bits			# Target platform bits ("default", "32", "64")
-# set_string_option	(GODOT_PLATFORM 				""	 	DESCRIPTION	"Target platform (if platform is empty, it will be tried to dedused)." ENUM ${PLATFORMS_LIST})
-# target 		# Compilation target ("debug", "release_debug", "release")
-# optimize 		# Optimization type ("speed", "size")
 set_string_option	(GODOT_BIN_DIRECTORY			"bin/$<CONFIG>"		DESCRIPTION "Build directory. (can use generator expression)")
 set_bool_option		(GODOT_BUILD_TOOLS 				true 	DESCRIPTION	"Build the tools (a.k.a. the Godot editor). By itself, this option does nothing. By enableing this option build will add two additional configurations: ToolsDebug and ToolsRelWithDebInfo. Tools will be build only by choosing those configurations.")
 set_bool_option		(GODOT_USE_LTO					false	DESCRIPTION "Use link-time optimization.")
@@ -201,6 +196,7 @@ set_bool_option		(GODOT_BUILTIN_XATLAS		true 	DESCRIPTION "Use the built-in xatl
 set_bool_option		(GODOT_BUILTIN_ZLIB			true 	DESCRIPTION "Use the built-in zlib library.")
 set_bool_option		(GODOT_BUILTIN_ZSTD			true 	DESCRIPTION "Use the built-in Zstd library.")
 
+# Generator expressions for easier working with build types which can be used in the future.
 set(IS_OPTIMIZED_GEN_EXPR 		$<CONFIG:Release,MinSizeRel,RelWithDebInfo,ToolsRelWithDebInfo>)
 set(IS_RELEASE_GEN_EXPR 		$<CONFIG:Release,MinSizeRel>)
 set(IS_DEBUG_INFO_GEN_EXPR 		$<CONFIG:Debug,RelWithDebInfo,ToolsDebug,ToolsRelWithDebInfo>)
@@ -208,12 +204,14 @@ set(IS_DEBUG_GEN_EXPR 			$<CONFIG:Debug,ToolsDebug>)
 set(IS_OPT_DEBUG_GEN_EXPR 		$<CONFIG:RelWithDebInfo,ToolsRelWithDebInfo>)
 set(IS_TOOLS_GEN_EXPR 			$<CONFIG:ToolsDebug,ToolsRelWithDebInfo>)
 
+# Normilizing godot bin directory and making it absolute.
 if(NOT IS_ABSOLUTE "${GODOT_BIN_DIRECTORY}")
 	join_paths(GODOT_BIN_DIRECTORY "${CMAKE_BINARY_DIR}" "${GODOT_BIN_DIRECTORY}")
 else()
 	normilize_path(GODOT_BIN_DIRECTORY "${GODOT_BIN_DIRECTORY}")
 endif()
 
+# Processing LTO
 if(GODOT_USE_LTO)
 	set(CMAKE_INTERPROCEDURAL_OPTIMIZATION true)
 else()
@@ -305,15 +303,15 @@ unset(__MODULE_VALID)
 unset(__MODULE_ID)
 
 foreach(__DIR IN LISTS __MODULES_DIRS)
+	# just in case..
+	normilize_path(__DIR "${__DIR}")
+
 	is_module("${__DIR}" __MODULE_VALID)
 	if(NOT __MODULE_VALID)
 		message(WARNING "Provided module by the path \"${__DIR}\" is not valid, and can't be processed..")
 		continue()
 	endif()
 
-	# Just to be sure...
-	# Each module path must NOT have slash in the end
-	string(REGEX REPLACE "[/\\]$" "" __DIR "${__DIR}")
 	get_top_directory("${__DIR}" __MODULE_ID)
 
 	if(__MODULE_ID IN_LIST MODULES_IDS)
@@ -353,11 +351,8 @@ execute_python_method(methods cmake_write_modules
 		ARR_VAR "MODULES_PATHS"
 )
 
-
-set(__EDITOR_MODULES_LIST "regex")
-
 # detecting some modules which requred for the tools
-foreach(__MODULE_ID IN LISTS __EDITOR_MODULES_LIST)
+foreach(__MODULE_ID "regex")
 	if (NOT ${__MODULE_ID}_IS_MODULE_ENABLED)
 		
 		if(GODOT_BUILD_TOOLS)
@@ -369,6 +364,7 @@ foreach(__MODULE_ID IN LISTS __EDITOR_MODULES_LIST)
 	endif()	
 endforeach()
 
+# we can't have that with tools on.
 if (GODOT_DISABLE_3D)
 	if(GODOT_BUILD_TOOLS)
 		set(GODOT_BUILD_TOOLS false)
@@ -376,6 +372,7 @@ if (GODOT_DISABLE_3D)
 	endif()
 endif()
 
+# this we also can't have with tools on.
 if (GODOT_DISABLE_ADVANCE_GUI)
 	if(GODOT_BUILD_TOOLS)
 		set(GODOT_BUILD_TOOLS false)
@@ -387,6 +384,7 @@ endif()
 
 if(CMAKE_CONFIGURATION_TYPES)
 
+	# if we use multiconfigurational build system, symply add build types for tools (if tools enabled of course) 
 	if(GODOT_BUILD_TOOLS)
 		if(NOT "ToolsDebug" IN_LIST CMAKE_CONFIGURATION_TYPES)
 			list(APPEND CMAKE_CONFIGURATION_TYPES "ToolsDebug")
@@ -400,25 +398,36 @@ if(CMAKE_CONFIGURATION_TYPES)
 
 else()
 
+	# if we are not using multiconfigurational build system, symply define which build types can be used.. 
 	set(__ALLOWED_BUILD_TYPES "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 	if(GODOT_BUILD_TOOLS)
 		list(APPEND __ALLOWED_BUILD_TYPES "ToolsDebug" "ToolsRelWithDebInfo")
 	endif()
 
+	# ..and just check for those build types.
+	# if no build type defined, make defualt Debug or ToolsDebug, depending on thenever tools are on.
 	if("${CMAKE_BUILD_TYPE}" STREQUAL "")
+		
 		if(GODOT_BUILD_TOOLS)
 			set(CMAKE_BUILD_TYPE "ToolsDebug" CACHE STRING "" FORCE)
 		else()
 			set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "" FORCE)
 		endif()
+
 	elseif(NOT CMAKE_BUILD_TYPE IN_LIST __ALLOWED_BUILD_TYPES)
+		
 		message(FATAL_ERROR "Invalid build type ${CMAKE_BUILD_TYPE}. Possible build types are: ${__ALLOWED_BUILD_TYPES}")
+	
 	endif()
 
+	# also add property to the CMAKE_BUILD_TYPE, so it will be more easier to choose build type in cmake gui.
 	set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${__ALLOWED_BUILD_TYPES})
+
+	message(STATUS "Current build type is \"$CACHE{CMAKE_BUILD_TYPE}\".")
 
 endif()
 
+# If tools are enebled, we must set bunch of defualt variables for all new build types..
 if(GODOT_BUILD_TOOLS)
 
 	set(CMAKE_C_FLAGS_TOOLSDEBUG				${CMAKE_C_FLAGS_DEBUG})
@@ -444,7 +453,7 @@ if(GODOT_USE_PRECISE_MATH_CHECKS)
 endif()
 
 target_compile_definitions(global-env INTERFACE 
-	$<$<NOT:${IS_OPTIMIZED_GEN_EXPR}>:DEBUG_MEMORY_ALLOC;DISABLE_FORCED_INLINE> # if we are in the full debug..
+	$<${IS_DEBUG_GEN_EXPR}:DEBUG_MEMORY_ALLOC;DISABLE_FORCED_INLINE> # if we are in the full debug..
 	$<${IS_RELEASE_GEN_EXPR}:NDEBUG> # if we are the full release..
 )
 
@@ -456,8 +465,10 @@ if(GODOT_DEPRECATED)
 	target_compile_definitions(global-env INTERFACE "DISABLE_DEPRECATED")
 endif()
 
+# are we using MSVC..
 set(__IS_MSVC_GEN_EXPR $<BOOL:${MSVC}>)
 
+# are we using gcc..
 set(__IS_GCC_GEN_EXPR
 	$<OR:$<CXX_COMPILER_ID:GNU>,$<C_COMPILER_ID:GNU>,$<OBJCXX_COMPILER_ID:GNU>,$<OBJC_COMPILER_ID:GNU>>)
 
@@ -470,6 +481,7 @@ set(__OBJC_GCC_7VER_GEN_EXPR 		$<AND:$<OBJC_COMPILER_ID:GNU>,$<VERSION_GREATER_E
 set(__GCC_7VER_GEN_EXPR 
 	$<OR:${__CXX_GCC_7VER_GEN_EXPR},${__C_GCC_7VER_GEN_EXPR},${__OBJCXX_GCC_7VER_GEN_EXPR},${__OBJC_GCC_7VER_GEN_EXPR}>)
 
+# if compiler for c/cxx is gcc and its version is >= 9.0.0
 set(__CXX_GCC_9VER_GEN_EXPR 		$<AND:$<CXX_COMPILER_ID:GNU>,$<VERSION_GREATER_EQUAL:$<CXX_COMPILER_VERSION>,9.0.0>>)
 set(__C_GCC_9VER_GEN_EXPR 			$<AND:$<C_COMPILER_ID:GNU>,$<VERSION_GREATER_EQUAL:$<C_COMPILER_VERSION>,9.0.0>>)
 set(__OBJCXX_GCC_9VER_GEN_EXPR 		$<AND:$<OBJCXX_COMPILER_ID:GNU>,$<VERSION_GREATER_EQUAL:$<OBJCXX_COMPILER_VERSION>,9.0.0>>)
@@ -551,7 +563,7 @@ set(CLASSES_DOC_PATHS "")
 set(MODULES_ICONS_PATHS "")
 # just to be sure
 unset(__VERSION_STRING)
-# Actually enebled modules which can be built
+# Actually enabled modules which can be built
 set(MODULES_LIST "") 
 
 foreach(__MODULE_ID IN LISTS MODULES_IDS)
@@ -630,10 +642,7 @@ execute_python_method(methods update_version
 		STR_VAR "__VERSION_STRING"
 )
 
-
-# processing extra suffix
-# in the SCons solution it is possible to define suffix for specific file type, but I haven't found the same thing for the cmake. 
-# it is possible to set specific output name for targets, but only for specific ones..  
+# processing extra suffix 
 set(EXTRA_SUFFIX "")
 
 if(COMMAND "${GODOT_PLATFORM}_get_program_suffix")
@@ -652,7 +661,6 @@ if(CMAKE_SIZEOF_VOID_P EQUAL 8)
 elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
 	set(EXTRA_SUFFIX "${EXTRA_SUFFIX}.32")
 else()
-	#TODO: For now, just a notice. But think of a better system in the future.
 	message(NOTICE "Target architecture wasn't deduced buy the \"CMAKE_SIZEOF_VOID_P\" (${CMAKE_SIZEOF_VOID_P}). This will result in absence of architecture sign in the program suffix.")
 endif()
 
@@ -661,7 +669,6 @@ set(EXTRA_SUFFIX "${EXTRA_SUFFIX}${__VERSION_STRING}")
 if(NOT GODOT_EXTRA_SUFFIX STREQUAL "")
 	set(EXTRA_SUFFIX "${EXTRA_SUFFIX}.${GODOT_EXTRA_SUFFIX}")
 endif()
-
 
 ############### Processing some defines after modules were processed ###############
 
@@ -691,8 +698,8 @@ if (GODOT_MINIZIP)
 	target_compile_definitions(global-env INTERFACE "MINIZIP_ENABLED") 
 endif()
 
+# this is basically a library to hold all the other main libraries (like cor-lib, scene-lib, modules-lib etc.)
 add_library(global-libs-list INTERFACE)
-
 
 add_subdirectory(core)
 add_subdirectory(servers)

@@ -2,209 +2,250 @@
 set(__THIRDPARTY_LIBVPX_PATH "${GODOT_SOURCE_DIR}/thirdparty/libvpx")
 
 set(__LIBVPX_SOURCES
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/vp8_dx_iface.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/generic/systemdependent.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/alloccommon.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/blockd.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/copy_c.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/debugmodes.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/dequantize.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/entropy.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/entropymode.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/entropymv.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/extend.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/filter.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/findnearmv.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/idct_blk.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/idctllm.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/loopfilter_filters.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/mbpitch.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/modecont.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/quant_common.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/reconinter.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/reconintra.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/reconintra4x4.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/rtcd.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/setupintrarecon.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/swapyv12buffer.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/treecoder.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/vp8_loopfilter.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/decoder/dboolhuff.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/decoder/decodeframe.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/decoder/decodemv.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/decoder/detokenize.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/decoder/onyxd_if.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp9/vp9_dx_iface.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp9/common/vp9_alloccommon.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp9/common/vp9_blockd.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp9/common/vp9_common_data.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp9/common/vp9_debugmodes.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp9/common/vp9_entropy.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp9/common/vp9_entropymode.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp9/common/vp9_entropymv.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp9/common/vp9_filter.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp9/common/vp9_frame_buffers.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp9/common/vp9_idct.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp9/common/vp9_loopfilter.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp9/common/vp9_mvref_common.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp9/common/vp9_pred_common.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp9/common/vp9_quant_common.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp9/common/vp9_reconinter.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp9/common/vp9_reconintra.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp9/common/vp9_rtcd.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp9/common/vp9_scale.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp9/common/vp9_scan.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp9/common/vp9_seg_common.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp9/common/vp9_thread_common.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp9/common/vp9_tile_common.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp9/decoder/vp9_decodeframe.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp9/decoder/vp9_decodemv.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp9/decoder/vp9_decoder.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp9/decoder/vp9_detokenize.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp9/decoder/vp9_dsubexp.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp9/decoder/vp9_dthread.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx/src/vpx_codec.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx/src/vpx_decoder.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx/src/vpx_image.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx/src/vpx_psnr.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/bitreader.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/bitreader_buffer.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/intrapred.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/inv_txfm.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/loopfilter.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/prob.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/vpx_convolve.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/vpx_dsp_rtcd.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_mem/vpx_mem.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_scale/vpx_scale_rtcd.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_scale/generic/yv12config.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_scale/generic/yv12extend.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_util/vpx_thread.c"
+    "vp8/vp8_dx_iface.c"
+    "vp8/common/generic/systemdependent.c"
+    "vp8/common/alloccommon.c"
+    "vp8/common/blockd.c"
+    "vp8/common/copy_c.c"
+    "vp8/common/debugmodes.c"
+    "vp8/common/dequantize.c"
+    "vp8/common/entropy.c"
+    "vp8/common/entropymode.c"
+    "vp8/common/entropymv.c"
+    "vp8/common/extend.c"
+    "vp8/common/filter.c"
+    "vp8/common/findnearmv.c"
+    "vp8/common/idct_blk.c"
+    "vp8/common/idctllm.c"
+    "vp8/common/loopfilter_filters.c"
+    "vp8/common/mbpitch.c"
+    "vp8/common/modecont.c"
+    "vp8/common/quant_common.c"
+    "vp8/common/reconinter.c"
+    "vp8/common/reconintra.c"
+    "vp8/common/reconintra4x4.c"
+    "vp8/common/rtcd.c"
+    "vp8/common/setupintrarecon.c"
+    "vp8/common/swapyv12buffer.c"
+    "vp8/common/treecoder.c"
+    "vp8/common/vp8_loopfilter.c"
+    "vp8/decoder/dboolhuff.c"
+    "vp8/decoder/decodeframe.c"
+    "vp8/decoder/decodemv.c"
+    "vp8/decoder/detokenize.c"
+    "vp8/decoder/onyxd_if.c"
+    "vp9/vp9_dx_iface.c"
+    "vp9/common/vp9_alloccommon.c"
+    "vp9/common/vp9_blockd.c"
+    "vp9/common/vp9_common_data.c"
+    "vp9/common/vp9_debugmodes.c"
+    "vp9/common/vp9_entropy.c"
+    "vp9/common/vp9_entropymode.c"
+    "vp9/common/vp9_entropymv.c"
+    "vp9/common/vp9_filter.c"
+    "vp9/common/vp9_frame_buffers.c"
+    "vp9/common/vp9_idct.c"
+    "vp9/common/vp9_loopfilter.c"
+    "vp9/common/vp9_mvref_common.c"
+    "vp9/common/vp9_pred_common.c"
+    "vp9/common/vp9_quant_common.c"
+    "vp9/common/vp9_reconinter.c"
+    "vp9/common/vp9_reconintra.c"
+    "vp9/common/vp9_rtcd.c"
+    "vp9/common/vp9_scale.c"
+    "vp9/common/vp9_scan.c"
+    "vp9/common/vp9_seg_common.c"
+    "vp9/common/vp9_thread_common.c"
+    "vp9/common/vp9_tile_common.c"
+    "vp9/decoder/vp9_decodeframe.c"
+    "vp9/decoder/vp9_decodemv.c"
+    "vp9/decoder/vp9_decoder.c"
+    "vp9/decoder/vp9_detokenize.c"
+    "vp9/decoder/vp9_dsubexp.c"
+    "vp9/decoder/vp9_dthread.c"
+    "vpx/src/vpx_codec.c"
+    "vpx/src/vpx_decoder.c"
+    "vpx/src/vpx_image.c"
+    "vpx/src/vpx_psnr.c"
+    "vpx_dsp/bitreader.c"
+    "vpx_dsp/bitreader_buffer.c"
+    "vpx_dsp/intrapred.c"
+    "vpx_dsp/inv_txfm.c"
+    "vpx_dsp/loopfilter.c"
+    "vpx_dsp/prob.c"
+    "vpx_dsp/vpx_convolve.c"
+    "vpx_dsp/vpx_dsp_rtcd.c"
+    "vpx_mem/vpx_mem.c"
+    "vpx_scale/vpx_scale_rtcd.c"
+    "vpx_scale/generic/yv12config.c"
+    "vpx_scale/generic/yv12extend.c"
+    "vpx_util/vpx_thread.c"
 )
+list(TRANSFORM __LIBVPX_SOURCES PREPEND "${__THIRDPARTY_LIBVPX_PATH}/")
+
+##############################################################################################
 
 set(__LIBVPX_SOURCES_MT
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/decoder/threading.c"
+    "vp8/decoder/threading.c"
 )
+list(TRANSFORM __LIBVPX_SOURCES_MT PREPEND "${__THIRDPARTY_LIBVPX_PATH}/")
+
+##############################################################################################
 
 set(__LIBVPX_SOURCES_INTRIN_X86
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/x86/filter_x86.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/x86/loopfilter_x86.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/x86/vp8_asm_stubs.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/x86/vpx_asm_stubs.c"
+    "vp8/common/x86/filter_x86.c"
+    "vp8/common/x86/loopfilter_x86.c"
+    "vp8/common/x86/vp8_asm_stubs.c"
+    "vpx_dsp/x86/vpx_asm_stubs.c"
 )
+list(TRANSFORM __LIBVPX_SOURCES_INTRIN_X86 PREPEND "${__THIRDPARTY_LIBVPX_PATH}/")
+
+##############################################################################################
 
 set(__LIBVPX_SOURCES_INTRIN_X86_MMX
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/x86/idct_blk_mmx.c"
+    "vp8/common/x86/idct_blk_mmx.c"
 )
+list(TRANSFORM __LIBVPX_SOURCES_INTRIN_X86_MMX PREPEND "${__THIRDPARTY_LIBVPX_PATH}/")
+
+##############################################################################################
 
 set(__LIBVPX_SOURCES_INTRIN_X86_SSE2
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/x86/idct_blk_sse2.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp9/common/x86/vp9_idct_intrin_sse2.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/x86/inv_txfm_sse2.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/x86/loopfilter_sse2.c"
+    "vp8/common/x86/idct_blk_sse2.c"
+    "vp9/common/x86/vp9_idct_intrin_sse2.c"
+    "vpx_dsp/x86/inv_txfm_sse2.c"
+    "vpx_dsp/x86/loopfilter_sse2.c"
 )
+list(TRANSFORM __LIBVPX_SOURCES_INTRIN_X86_SSE2 PREPEND "${__THIRDPARTY_LIBVPX_PATH}/")
+
+##############################################################################################
 
 set(__LIBVPX_SOURCES_INTRIN_X86_SSSE3
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/x86/vpx_subpixel_8t_intrin_ssse3.c"
+    "vpx_dsp/x86/vpx_subpixel_8t_intrin_ssse3.c"
 )
+list(TRANSFORM __LIBVPX_SOURCES_INTRIN_X86_SSSE3 PREPEND "${__THIRDPARTY_LIBVPX_PATH}/")
+
+##############################################################################################
 
 set(__LIBVPX_SOURCES_INTRIN_X86_AVX2
-	"${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/x86/loopfilter_avx2.c"
-	"${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/x86/vpx_subpixel_8t_intrin_avx2.c"
+	"vpx_dsp/x86/loopfilter_avx2.c"
+	"vpx_dsp/x86/vpx_subpixel_8t_intrin_avx2.c"
 )
+list(TRANSFORM __LIBVPX_SOURCES_INTRIN_X86_AVX2 PREPEND "${__THIRDPARTY_LIBVPX_PATH}/")
+
+##############################################################################################
 
 set(__LIBVPX_SOURCES_X86ASM
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/x86/copy_sse2.asm"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/x86/copy_sse3.asm"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/x86/dequantize_mmx.asm"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/x86/idctllm_mmx.asm"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/x86/idctllm_sse2.asm"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/x86/iwalsh_mmx.asm"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/x86/iwalsh_sse2.asm"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/x86/loopfilter_sse2.asm"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/x86/recon_mmx.asm"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/x86/recon_sse2.asm"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/x86/subpixel_mmx.asm"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/x86/subpixel_sse2.asm"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/x86/subpixel_ssse3.asm"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/x86/vp8_loopfilter_mmx.asm"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/x86/intrapred_sse2.asm"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/x86/intrapred_ssse3.asm"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/x86/inv_wht_sse2.asm"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/x86/vpx_convolve_copy_sse2.asm"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/x86/vpx_subpixel_8t_sse2.asm"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/x86/vpx_subpixel_8t_ssse3.asm"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/x86/vpx_subpixel_bilinear_sse2.asm"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/x86/vpx_subpixel_bilinear_ssse3.asm"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_ports/emms.asm"
+    "vp8/common/x86/copy_sse2.asm"
+    "vp8/common/x86/copy_sse3.asm"
+    "vp8/common/x86/dequantize_mmx.asm"
+    "vp8/common/x86/idctllm_mmx.asm"
+    "vp8/common/x86/idctllm_sse2.asm"
+    "vp8/common/x86/iwalsh_mmx.asm"
+    "vp8/common/x86/iwalsh_sse2.asm"
+    "vp8/common/x86/loopfilter_sse2.asm"
+    "vp8/common/x86/recon_mmx.asm"
+    "vp8/common/x86/recon_sse2.asm"
+    "vp8/common/x86/subpixel_mmx.asm"
+    "vp8/common/x86/subpixel_sse2.asm"
+    "vp8/common/x86/subpixel_ssse3.asm"
+    "vp8/common/x86/vp8_loopfilter_mmx.asm"
+    "vpx_dsp/x86/intrapred_sse2.asm"
+    "vpx_dsp/x86/intrapred_ssse3.asm"
+    "vpx_dsp/x86/inv_wht_sse2.asm"
+    "vpx_dsp/x86/vpx_convolve_copy_sse2.asm"
+    "vpx_dsp/x86/vpx_subpixel_8t_sse2.asm"
+    "vpx_dsp/x86/vpx_subpixel_8t_ssse3.asm"
+    "vpx_dsp/x86/vpx_subpixel_bilinear_sse2.asm"
+    "vpx_dsp/x86/vpx_subpixel_bilinear_ssse3.asm"
+    "vpx_ports/emms.asm"
 )
+list(TRANSFORM __LIBVPX_SOURCES_X86ASM PREPEND "${__THIRDPARTY_LIBVPX_PATH}/")
+
+##############################################################################################
 
 set(__LIBVPX_SOURCES_X86_64ASM
-	"${__THIRDPARTY_LIBVPX_PATH}/vp8/common/x86/loopfilter_block_sse2_x86_64.asm"
-	"${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/x86/inv_txfm_ssse3_x86_64.asm"
+	"vp8/common/x86/loopfilter_block_sse2_x86_64.asm"
+	"vpx_dsp/x86/inv_txfm_ssse3_x86_64.asm"
 )
+list(TRANSFORM __LIBVPX_SOURCES_X86_64ASM PREPEND "${__THIRDPARTY_LIBVPX_PATH}/")
+
+##############################################################################################
 
 set(__LIBVPX_SOURCES_ARM
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_ports/arm_cpudetect.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/arm/loopfilter_arm.c"
+    "vpx_ports/arm_cpudetect.c"
+    "vp8/common/arm/loopfilter_arm.c"
 )
+list(TRANSFORM __LIBVPX_SOURCES_ARM PREPEND "${__THIRDPARTY_LIBVPX_PATH}/")
+
+##############################################################################################
 
 set(__LIBVPX_SOURCES_ARM_NEON
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/arm/neon/bilinearpredict_neon.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/arm/neon/copymem_neon.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/arm/neon/dc_only_idct_add_neon.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/arm/neon/dequant_idct_neon.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/arm/neon/dequantizeb_neon.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/arm/neon/idct_blk_neon.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/arm/neon/idct_dequant_0_2x_neon.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/arm/neon/idct_dequant_full_2x_neon.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/arm/neon/iwalsh_neon.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/arm/neon/loopfiltersimplehorizontaledge_neon.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/arm/neon/loopfiltersimpleverticaledge_neon.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/arm/neon/mbloopfilter_neon.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/arm/neon/shortidct4x4llm_neon.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/arm/neon/sixtappredict_neon.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp8/common/arm/neon/vp8_loopfilter_neon.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp9/common/arm/neon/vp9_iht4x4_add_neon.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vp9/common/arm/neon/vp9_iht8x8_add_neon.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/arm/idct16x16_1_add_neon.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/arm/idct16x16_add_neon.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/arm/idct16x16_neon.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/arm/idct32x32_1_add_neon.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/arm/idct32x32_add_neon.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/arm/idct4x4_1_add_neon.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/arm/idct4x4_add_neon.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/arm/idct8x8_1_add_neon.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/arm/idct8x8_add_neon.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/arm/intrapred_neon.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/arm/loopfilter_16_neon.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/arm/loopfilter_4_neon.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/arm/loopfilter_8_neon.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/arm/loopfilter_neon.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/arm/vpx_convolve8_avg_neon.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/arm/vpx_convolve8_neon.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/arm/vpx_convolve_avg_neon.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/arm/vpx_convolve_copy_neon.c"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/arm/vpx_convolve_neon.c"
+    "vp8/common/arm/neon/bilinearpredict_neon.c"
+    "vp8/common/arm/neon/copymem_neon.c"
+    "vp8/common/arm/neon/dc_only_idct_add_neon.c"
+    "vp8/common/arm/neon/dequant_idct_neon.c"
+    "vp8/common/arm/neon/dequantizeb_neon.c"
+    "vp8/common/arm/neon/idct_blk_neon.c"
+    "vp8/common/arm/neon/idct_dequant_0_2x_neon.c"
+    "vp8/common/arm/neon/idct_dequant_full_2x_neon.c"
+    "vp8/common/arm/neon/iwalsh_neon.c"
+    "vp8/common/arm/neon/loopfiltersimplehorizontaledge_neon.c"
+    "vp8/common/arm/neon/loopfiltersimpleverticaledge_neon.c"
+    "vp8/common/arm/neon/mbloopfilter_neon.c"
+    "vp8/common/arm/neon/shortidct4x4llm_neon.c"
+    "vp8/common/arm/neon/sixtappredict_neon.c"
+    "vp8/common/arm/neon/vp8_loopfilter_neon.c"
+    "vp9/common/arm/neon/vp9_iht4x4_add_neon.c"
+    "vp9/common/arm/neon/vp9_iht8x8_add_neon.c"
+    "vpx_dsp/arm/idct16x16_1_add_neon.c"
+    "vpx_dsp/arm/idct16x16_add_neon.c"
+    "vpx_dsp/arm/idct16x16_neon.c"
+    "vpx_dsp/arm/idct32x32_1_add_neon.c"
+    "vpx_dsp/arm/idct32x32_add_neon.c"
+    "vpx_dsp/arm/idct4x4_1_add_neon.c"
+    "vpx_dsp/arm/idct4x4_add_neon.c"
+    "vpx_dsp/arm/idct8x8_1_add_neon.c"
+    "vpx_dsp/arm/idct8x8_add_neon.c"
+    "vpx_dsp/arm/intrapred_neon.c"
+    "vpx_dsp/arm/loopfilter_16_neon.c"
+    "vpx_dsp/arm/loopfilter_4_neon.c"
+    "vpx_dsp/arm/loopfilter_8_neon.c"
+    "vpx_dsp/arm/loopfilter_neon.c"
+    "vpx_dsp/arm/vpx_convolve8_avg_neon.c"
+    "vpx_dsp/arm/vpx_convolve8_neon.c"
+    "vpx_dsp/arm/vpx_convolve_avg_neon.c"
+    "vpx_dsp/arm/vpx_convolve_copy_neon.c"
+    "vpx_dsp/arm/vpx_convolve_neon.c"
 )
+list(TRANSFORM __LIBVPX_SOURCES_ARM_NEON PREPEND "${__THIRDPARTY_LIBVPX_PATH}/")
+
+##############################################################################################
 
 set(__LIBVPX_SOURCES_ARM_NEON_GAS
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/arm/gas/intrapred_neon_asm.s"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/arm/gas/loopfilter_mb_neon.s"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/arm/gas/save_reg_neon.s"
+    "vpx_dsp/arm/gas/intrapred_neon_asm.s"
+    "vpx_dsp/arm/gas/loopfilter_mb_neon.s"
+    "vpx_dsp/arm/gas/save_reg_neon.s"
 )
+list(TRANSFORM __LIBVPX_SOURCES_ARM_NEON_GAS PREPEND "${__THIRDPARTY_LIBVPX_PATH}/")
+
+##############################################################################################
 
 set(__LIBVPX_SOURCES_ARM_NEON_ARMASM_MS
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/arm/armasm_ms/intrapred_neon_asm.asm"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/arm/armasm_ms/loopfilter_mb_neon.asm"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/arm/armasm_ms/save_reg_neon.asm"
+    "vpx_dsp/arm/armasm_ms/intrapred_neon_asm.asm"
+    "vpx_dsp/arm/armasm_ms/loopfilter_mb_neon.asm"
+    "vpx_dsp/arm/armasm_ms/save_reg_neon.asm"
 )
+list(TRANSFORM __LIBVPX_SOURCES_ARM_NEON_ARMASM_MS PREPEND "${__THIRDPARTY_LIBVPX_PATH}/")
+
+##############################################################################################
 
 set(__LIBVPX_SOURCES_ARM_NEON_GAS_APPLE
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/arm/gas_apple/intrapred_neon_asm.s"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/arm/gas_apple/loopfilter_mb_neon.s"
-    "${__THIRDPARTY_LIBVPX_PATH}/vpx_dsp/arm/gas_apple/save_reg_neon.s"
+    "vpx_dsp/arm/gas_apple/intrapred_neon_asm.s"
+    "vpx_dsp/arm/gas_apple/loopfilter_mb_neon.s"
+    "vpx_dsp/arm/gas_apple/save_reg_neon.s"
 )
+list(TRANSFORM __LIBVPX_SOURCES_ARM_NEON_GAS_APPLE PREPEND "${__THIRDPARTY_LIBVPX_PATH}/")
+
 
 add_env(libvpx-env
 	COMPONENTS
@@ -350,7 +391,7 @@ if(__WEBM_CPU_X86)
 
 	endforeach()
 
-	#TODO: Find what the hell is "osxcross", and why it must be in env 
+	#TODO: Dont forget to use "osxcross" then it will be implemented with osx platforms 
 	set(__IS_CLANG_OR_GCC_GEN_EXPR 
         $<OR:$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang>,$<COMPILE_LANG_AND_ID:C,GNU,Clang,AppleClang>,$<COMPILE_LANG_AND_ID:OBJCXX,GNU,Clang,AppleClang>,$<COMPILE_LANG_AND_ID:OBJC,GNU,Clang,AppleClang>>)
 

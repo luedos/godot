@@ -1,5 +1,3 @@
-#TODO: some commands were moved here from configure time to compile time.
-# research everything again and find if some files is not included by globing because of that. 
 
 add_module_lib(mono-lib
 	COMPONENTS
@@ -50,7 +48,6 @@ set(__x86_ANDROID_ARCH_DIR			"x86")
 set(__x86_64_ANDROID_ARCH_DIR		"x86_64")
 set(__ANDROID_OUTPUT_DIR "${GODOT_SOURCE_DIR}/platform/android/java/lib/libs/$<IF:${IS_RELEASE_GEN_EXPR},release,debug>/${__${GODOT_ANDROID_ARCH}_ANDROID_ARCH_DIR}")
 
-#TODO: think of better way to detect number of bits
 if(CMAKE_SIZEOF_VOID_P EQUAL 4)
 	set(__BITS 32)
 else()
@@ -59,7 +56,13 @@ endif()
 set(__MONO_LIB_NAMES "mono-2.0-sgen" "monosgen-2.0")
 
 # mode can be TREE (a.k.a. DIRECTORY) or FILE
+# Copies file or directory.
+# By defult tries to copy file at configure time, 
+# but if file path has generator expression in it (or 'FORCE_BUILD_TIME' option specified),
+# file will be copied by custom prebuild event.
 function(__copy_path __MODE __SRC __DST)
+
+	assert_if_empty(__SRC __DST)
 
 	if(NOT __MODE MATCHES "(FILE|TREE)")
 		message(FATAL_ERROR "__copy_path mode incorrect (${__MODE}), must be FILE or TREE")
@@ -73,21 +76,17 @@ function(__copy_path __MODE __SRC __DST)
 		# If none of those paths has a generator expression the file will be copied at configure time, with configure_file.
 		# But if you want to force usage of custom command, and build time copying, set this option.		
 		FORCE_BUILD_TIME 
-		# By default, if file does not exist, the command will throw in some way. 
-		# If you want less strict policy, and do not throw an error if file does not exist, use this option.
+		# By default, if file does not exist, the command will throw an error in some way. 
+		# If you want less strict policy, and don't want to throw an error if file does not exist, use this option.
 		OPTIONAL
 	)
 	set(__ONE_VALUE_ARGS "")
 	set(__MULTI_VALUE_ARGS "")
 	cmake_parse_arguments(PARSE_ARGV 3 __ARGS "${__OPTIONS_ARGS}" "${__ONE_VALUE_ARGS}" "${__MULTI_VALUE_ARGS}")
 
-	string(GENEX_STRIP "${__SRC}" __GEN_STRIPPED)
-	if(NOT __SRC STREQUAL __GEN_STRIPPED) # then we have generator expression
-		set(__ARGS_FORCE_BUILD_TIME true)
-	endif()
-
-	string(GENEX_STRIP "${__DEST}" __GEN_STRIPPED)
-	if(NOT __DEST STREQUAL __GEN_STRIPPED) # then we have generator expression
+	check_for_gen_expr(__SRC_HAS_GEN_EXPR "${__SRC}")
+	check_for_gen_expr(__DST_HAS_GEN_EXPR "${__DST}")
+	if(__SRC_HAS_GEN_EXPR OR __DST_HAS_GEN_EXPR)
 		set(__ARGS_FORCE_BUILD_TIME true)
 	endif()
 
@@ -147,6 +146,10 @@ function(__copy_path __MODE __SRC __DST)
 
 endfunction()
 
+# returns file name (or curname if 'RETURN_ONLY_CURNAME' specified),
+# in sertain directory ('PATH' option), which has one of specified extentions ('FILE_EXTENTIONS'),
+# and one of specified prefixes ('FILE_PREFIXES').
+
 function(__find_file_in_dir __OUTPUT)
 
 	set(__OPTIONS_ARGS 
@@ -162,6 +165,11 @@ function(__find_file_in_dir __OUTPUT)
 	)
 	cmake_parse_arguments(PARSE_ARGV 1 __ARGS "${__OPTIONS_ARGS}" "${__ONE_VALUE_ARGS}" "${__MULTI_VALUE_ARGS}")
 
+	assert_if_empty(__OUTPUT __ARGS_PATH __ARGS_FILE_NAMES)
+
+	# if extentions or prefixes are empty, we are adding single star.
+	# this will indicate that extention (or prefixes) list has only one empty item.
+	# later in function we will simply check for this star.
 	if("${__ARGS_FILE_EXTENTIONS}" STREQUAL "")
 		list(APPEND __ARGS_FILE_EXTENTIONS "*") # aka none
 	endif()
@@ -175,6 +183,7 @@ function(__find_file_in_dir __OUTPUT)
 			set(__EXTENTION "")
 		endif()
 
+		# if extention does not have dot at the begining, we will add it..
 		if(NOT "${__EXTENTION}" STREQUAL "" 
 			AND NOT __EXTENTION MATCHES "^\\..*")
 			
@@ -214,14 +223,14 @@ endfunction()
 
 #################################
 
-
 # Configure Thread Local Storage
-
-# I hope this will work..
 include(CheckCXXSourceCompiles)
 
+# Simply checking that provided keyword will compile with or default parameters.
 function(__check_keyword_compile __OUTPUT __KEYWORD)
 	message(STATUS "Checking for `${__KEYWORD}` support...")
+	# just in case if compiler changed without our notice..
+	unset(${__OUTPUT}_OUTPUT CACHE)
 	check_cxx_source_compiles(
 		"${__KEYWORD} int foo = 0; 
 		int main() 
@@ -579,8 +588,7 @@ else()
 					message(FATAL_ERROR "Could not find mono wasm src directory")
 				endif()
 
-				# (This is not my comment, but I want to keep it)
-				# Ideally this should be defined only for 'driver.c', but I can't fight scons for another 2 hours
+				#SCons comment: Ideally this should be defined only for 'driver.c', but I can't fight scons for another 2 hours
 				#TODO: test it, and maybe really cange it to set only one source property. 
 				target_compile_definitions(mono-lib PRIVATE "CORE_BINDINGS")
 
@@ -733,6 +741,7 @@ elseif(__IS_ANDROID)
 	set(__CONFIG_FILE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/build_scripts/mono_android_config.xml")
 	set(__CONFIG_OUTPUT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/mono_gd")
 
+	# Do not forget, that this command will generate android_mono_config.gen.cpp, and we want this only if tools are disabled!
 	execute_python_method(make_android_mono_config generate_compressed_config
 		MODULE_DIR build_scripts
 		PYTHON_ARGS
@@ -785,7 +794,6 @@ endif()
 if(GODOT_BUILD_TOOLS AND GODOT_MONO_GLUE AND GODOT_BUILD_CIL)
 
 	set(__LAST_TARGET "")
-	set(__LAST_SYMBOLIC_SRC "")
 
 	#====================== Api Solution Build =======================
 	set(__TARGET_FILENAMES
@@ -796,8 +804,6 @@ if(GODOT_BUILD_TOOLS AND GODOT_MONO_GLUE AND GODOT_BUILD_CIL)
 		"GodotSharpEditor.pdb"
 		"GodotSharpEditor.xml"
 	)
-
-	set(__SYMBOLIC_SOURCES "")
 
 	foreach(__CONFIG "Debug" "Release")
 		
@@ -822,12 +828,9 @@ if(GODOT_BUILD_TOOLS AND GODOT_MONO_GLUE AND GODOT_BUILD_CIL)
 
 		string(TOLOWER "${__CONFIG}" __CONFIG_LOWER)
 		set(__CUSTOM_TARGET_NAME "mono-${__CONFIG_LOWER}-api-solution-gen")
-		set(__SYMBOLIC_SRC "mono-api-solution-${__CONFIG_LOWER}-symbolic-source")
 
 		add_python_generator_command(api_solution_build build_api_solution
 			TARGET_FILES ${__TARGETS}
-			# SYMBOLIC_TARGETS "${__SYMBOLIC_SRC}"
-			# SYMBOLIC_SOURCES "${__LAST_SYMBOLIC_SRC}"
 			MODULE_DIR "build_scripts"
 			WORKING_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
 			CREATE_CUSTOM_TARGET "${__CUSTOM_TARGET_NAME}"
@@ -840,9 +843,6 @@ if(GODOT_BUILD_TOOLS AND GODOT_MONO_GLUE AND GODOT_BUILD_CIL)
 			PYTHON_ARGS
 				RAW_VAR "env=__FAKE_ENV_MAP"
 		)
-
-		set(__LAST_SYMBOLIC_SRC "${__SYMBOLIC_SRC}")
-		list(APPEND __SYMBOLIC_SOURCES "${__SYMBOLIC_SRC}")
 
 		# This is comment from SCons version, I'm not sure we need to do the same in cmake, but just to be sure
         # Make the Release build of the API solution depend on the Debug build.
@@ -879,11 +879,8 @@ if(GODOT_BUILD_TOOLS AND GODOT_MONO_GLUE AND GODOT_BUILD_CIL)
 	)
 
 	set(__CUSTOM_TARGET_NAME "mono-tools-solution-gen")
-	set(__SYMBOLIC_SRC "mono-tools-solution-symbolic-source")
 	add_python_generator_command(godot_tools_build build_godot_tools
 		TARGET_FILES ${__TARGETS}
-		# SYMBOLIC_TARGETS "${__SYMBOLIC_SRC}"
-		# SYMBOLIC_SOURCES "${__LAST_SYMBOLIC_SRC}"
 		MODULE_DIR "build_scripts"
 		WORKING_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
 		CREATE_CUSTOM_TARGET "${__CUSTOM_TARGET_NAME}"
@@ -897,9 +894,6 @@ if(GODOT_BUILD_TOOLS AND GODOT_MONO_GLUE AND GODOT_BUILD_CIL)
 		PYTHON_ARGS
 			RAW_VAR "env=__FAKE_ENV_MAP"
 	)
-	
-	list(APPEND __SYMBOLIC_SOURCES "${__SYMBOLIC_SRC}")
-	set(__LAST_SYMBOLIC_SRC "${__SYMBOLIC_SRC}")
 
 	if(NOT "${__LAST_TARGET}" STREQUAL "")
 		add_dependencies("${__CUSTOM_TARGET_NAME}" "${__LAST_TARGET}")
@@ -908,16 +902,7 @@ if(GODOT_BUILD_TOOLS AND GODOT_MONO_GLUE AND GODOT_BUILD_CIL)
 
 	#================================================================
 
-	# if(NOT "${__SYMBOLIC_SOURCES}" STREQUAL "")
-	# 	add_custom_target(mono-solution-gen
-	# 		DEPENDS
-	# 			${__SYMBOLIC_SOURCES}
-	# 	)
-	# 	add_dependencies(mono-lib mono-solution-gen)
-	# endif()
-
 	add_dependencies(mono-lib "${__LAST_TARGET}")
-	# target_sources(mono-lib PRIVATE ${__SYMBOLIC_SOURCES})
 
 endif()
 
@@ -925,12 +910,12 @@ target_glob_sources(mono-lib PRIVATE "*.cpp")
 target_glob_sources(mono-lib PRIVATE "glue/*.cpp")
 
 file(GLOB __MONO_GD_SOURCES LIST_DIRECTORIES false "${CMAKE_CURRENT_SOURCE_DIR}/mono_gd/*.cpp")
-# we are remembering that we have that file
-extract_file_from_list(__MONO_GD_SOURCES "android_mono_config.gen.cpp")
+# we are remembering that this file must be included only if tools are disabled
+extract_file_from_list(__MONO_GD_SOURCES "android_mono_config.gen.cpp" RETURN __MONO_GD_ANDROID_CONFIG_SOURCE)
 target_sources(mono-lib PRIVATE	${__MONO_GD_SOURCES})
 
 if(__IS_ANDROID)
-	target_sources(mono-lib PRIVATE	$<$<NOT:${IS_TOOLS_GEN_EXPR}>:"${CMAKE_CURRENT_SOURCE_DIR}/mono_gd/android_mono_config.gen.cpp">)	
+	target_sources(mono-lib PRIVATE	$<$<NOT:${IS_TOOLS_GEN_EXPR}>:${__MONO_GD_ANDROID_CONFIG_SOURCE}>)	
 endif()
 
 target_glob_sources(mono-lib PRIVATE "utils/*.cpp")

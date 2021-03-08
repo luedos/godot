@@ -18,8 +18,8 @@ if(GODOT_PLATFORM MATCHES "(haiku|osx|windows|x11)")
 		"GLES_OVER_GL"
 	)
 
-	target_sources(thirdparty-drivers-glad-lib PRIVATE
-		"${__THIRDPARTY_GLAD_PATH}/glad.c"
+	target_sources_from_path(thirdparty-drivers-glad-lib PRIVATE "${__THIRDPARTY_GLAD_PATH}"
+		"glad.c"
 	)
 
 endif()

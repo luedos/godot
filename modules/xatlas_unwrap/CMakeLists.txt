@@ -22,9 +22,10 @@ if(GODOT_BUILTIN_XATLAS)
 		PARENT_LIB
 			xatlas-unwrap-lib
 		COMPONENTS
-			xatlas-unwrap-env	
-		SOURCES
-			"${__THIRDPARTY_XATLAS_PATH}/xatlas.cpp"
+			xatlas-unwrap-env
+	)
+	target_sources_from_path(thirdparty-xatlas-unwrap-lib PRIVATE "${__THIRDPARTY_XATLAS_PATH}"
+		"xatlas.cpp"
 	)
 endif()
 

@@ -22,21 +22,24 @@ if(GODOT_BUILTIN_MINIUPNPC)
 		PARENT_LIB
 			upnp-lib
 		COMPONENTS
-			upnp-env	
-		SOURCES
-			"${__THIRDPARTY_UPNP_PATH}/miniupnpc/miniupnpc.c"
-			"${__THIRDPARTY_UPNP_PATH}/miniupnpc/upnpcommands.c"
-			"${__THIRDPARTY_UPNP_PATH}/miniupnpc/miniwget.c"
-			"${__THIRDPARTY_UPNP_PATH}/miniupnpc/upnpdev.c"
-			"${__THIRDPARTY_UPNP_PATH}/miniupnpc/igd_desc_parse.c"
-			"${__THIRDPARTY_UPNP_PATH}/miniupnpc/minissdpc.c"
-			"${__THIRDPARTY_UPNP_PATH}/miniupnpc/minisoap.c"
-			"${__THIRDPARTY_UPNP_PATH}/miniupnpc/minixml.c"
-			"${__THIRDPARTY_UPNP_PATH}/miniupnpc/connecthostport.c"
-			"${__THIRDPARTY_UPNP_PATH}/miniupnpc/receivedata.c"
-			"${__THIRDPARTY_UPNP_PATH}/miniupnpc/portlistingparse.c"
-			"${__THIRDPARTY_UPNP_PATH}/miniupnpc/upnpreplyparse.c"
+			upnp-env
 	)
+
+	target_sources_from_path(thirdparty-upnp-lib PRIVATE "${__THIRDPARTY_UPNP_PATH}"
+		"miniupnpc/miniupnpc.c"
+		"miniupnpc/upnpcommands.c"
+		"miniupnpc/miniwget.c"
+		"miniupnpc/upnpdev.c"
+		"miniupnpc/igd_desc_parse.c"
+		"miniupnpc/minissdpc.c"
+		"miniupnpc/minisoap.c"
+		"miniupnpc/minixml.c"
+		"miniupnpc/connecthostport.c"
+		"miniupnpc/receivedata.c"
+		"miniupnpc/portlistingparse.c"
+		"miniupnpc/upnpreplyparse.c"
+	)
+
 endif()
 
 target_glob_sources(upnp-lib PRIVATE "*.cpp")

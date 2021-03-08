@@ -22,12 +22,13 @@ add_lib(thirdparty-webm-lib
 	PARENT_LIB
 		webm-lib
 	COMPONENTS
-		webm-env	
-	SOURCES
-	    "${__THIRDPARTY_WEBM_PATH}/libwebm/mkvparser/mkvparser.cc"
-	    "${__THIRDPARTY_WEBM_PATH}/OpusVorbisDecoder.cpp"
-	    "${__THIRDPARTY_WEBM_PATH}/VPXDecoder.cpp"
-	    "${__THIRDPARTY_WEBM_PATH}/WebMDemuxer.cpp"
+		webm-env
+)
+target_sources_from_path(thirdparty-webm-lib PRIVATE "${__THIRDPARTY_WEBM_PATH}"
+	"libwebm/mkvparser/mkvparser.cc"
+	"OpusVorbisDecoder.cpp"
+	"VPXDecoder.cpp"
+	"WebMDemuxer.cpp"
 )
 
 if(GODOT_BUILTIN_LIBOGG)

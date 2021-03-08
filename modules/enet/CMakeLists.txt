@@ -24,15 +24,15 @@ if(GODOT_BUILTIN_ENET)
 			enet-env
 	)
 
-	target_sources(thirdparty-enet-lib PRIVATE 
-		"${__THIRDPARTY_ENET_PATH}/godot.cpp"
-		"${__THIRDPARTY_ENET_PATH}/callbacks.c"
-		"${__THIRDPARTY_ENET_PATH}/compress.c"
-		"${__THIRDPARTY_ENET_PATH}/host.c"
-		"${__THIRDPARTY_ENET_PATH}/list.c"
-		"${__THIRDPARTY_ENET_PATH}/packet.c"
-		"${__THIRDPARTY_ENET_PATH}/peer.c"
-		"${__THIRDPARTY_ENET_PATH}/protocol.c"
+	target_sources_from_path(thirdparty-enet-lib PRIVATE "${__THIRDPARTY_ENET_PATH}"
+		"godot.cpp"
+		"callbacks.c"
+		"compress.c"
+		"host.c"
+		"list.c"
+		"packet.c"
+		"peer.c"
+		"protocol.c"
 	)
 
 endif()

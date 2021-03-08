@@ -25,22 +25,22 @@ add_lib(thirdparty-etc-lib
 
 # Thirdparty source files
 # Not unbundled so far since not widespread as shared library
-target_sources(thirdparty-etc-lib PRIVATE 
-	"${__THIRDPARTY_ETC_PATH}/EtcBlock4x4.cpp"
-	"${__THIRDPARTY_ETC_PATH}/EtcBlock4x4Encoding.cpp"
-	"${__THIRDPARTY_ETC_PATH}/EtcBlock4x4Encoding_ETC1.cpp"
-	"${__THIRDPARTY_ETC_PATH}/EtcBlock4x4Encoding_R11.cpp"
-	"${__THIRDPARTY_ETC_PATH}/EtcBlock4x4Encoding_RG11.cpp"
-	"${__THIRDPARTY_ETC_PATH}/EtcBlock4x4Encoding_RGB8A1.cpp"
-	"${__THIRDPARTY_ETC_PATH}/EtcBlock4x4Encoding_RGB8.cpp"
-	"${__THIRDPARTY_ETC_PATH}/EtcBlock4x4Encoding_RGBA8.cpp"
-	"${__THIRDPARTY_ETC_PATH}/Etc.cpp"
-	"${__THIRDPARTY_ETC_PATH}/EtcDifferentialTrys.cpp"
-	"${__THIRDPARTY_ETC_PATH}/EtcFilter.cpp"
-	"${__THIRDPARTY_ETC_PATH}/EtcImage.cpp"
-	"${__THIRDPARTY_ETC_PATH}/EtcIndividualTrys.cpp"
-	"${__THIRDPARTY_ETC_PATH}/EtcMath.cpp"
-	"${__THIRDPARTY_ETC_PATH}/EtcSortedBlockList.cpp"
+target_sources_from_path(thirdparty-etc-lib PRIVATE "${__THIRDPARTY_ETC_PATH}"
+	"EtcBlock4x4.cpp"
+	"EtcBlock4x4Encoding.cpp"
+	"EtcBlock4x4Encoding_ETC1.cpp"
+	"EtcBlock4x4Encoding_R11.cpp"
+	"EtcBlock4x4Encoding_RG11.cpp"
+	"EtcBlock4x4Encoding_RGB8A1.cpp"
+	"EtcBlock4x4Encoding_RGB8.cpp"
+	"EtcBlock4x4Encoding_RGBA8.cpp"
+	"Etc.cpp"
+	"EtcDifferentialTrys.cpp"
+	"EtcFilter.cpp"
+	"EtcImage.cpp"
+	"EtcIndividualTrys.cpp"
+	"EtcMath.cpp"
+	"EtcSortedBlockList.cpp"
 )
 
 # Godot source files

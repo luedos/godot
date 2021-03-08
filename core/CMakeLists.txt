@@ -25,33 +25,32 @@ add_lib(thirdparty-core-lib
 # Here we assume, that godot project will be build as standalone, so thirdparty folder will be in the source directory. 
 # Usually this is true, but if another is the case, this will lead to some problems.
 #TODO: Think of the solution for this.  
-set(__THIRDPARTY_MISC_DIR "${GODOT_SOURCE_DIR}/thirdparty/misc")
-target_sources(thirdparty-core-lib PRIVATE 
+target_sources_from_path(thirdparty-core-lib PRIVATE "${GODOT_SOURCE_DIR}/thirdparty/misc"
 	# C sources
-	"${__THIRDPARTY_MISC_DIR}/fastlz.c"
-	"${__THIRDPARTY_MISC_DIR}/smaz.c"
+	"fastlz.c"
+	"smaz.c"
 	# C++ sources
-	"${__THIRDPARTY_MISC_DIR}/hq2x.cpp"
-	"${__THIRDPARTY_MISC_DIR}/pcg.cpp"
-	"${__THIRDPARTY_MISC_DIR}/triangulator.cpp"
-	"${__THIRDPARTY_MISC_DIR}/clipper.cpp"
+	"hq2x.cpp"
+	"pcg.cpp"
+	"triangulator.cpp"
+	"clipper.cpp"
 )
 
 if(GODOT_BUILTIN_ZLIB)
 	set(__THIRDPARTY_ZLIB_DIR "${GODOT_SOURCE_DIR}/thirdparty/zlib")
 
-	target_sources(thirdparty-core-lib PRIVATE
-		"${__THIRDPARTY_ZLIB_DIR}/adler32.c"
-		"${__THIRDPARTY_ZLIB_DIR}/compress.c"
-		"${__THIRDPARTY_ZLIB_DIR}/crc32.c"
-		"${__THIRDPARTY_ZLIB_DIR}/deflate.c"
-		"${__THIRDPARTY_ZLIB_DIR}/infback.c"
-		"${__THIRDPARTY_ZLIB_DIR}/inffast.c"
-		"${__THIRDPARTY_ZLIB_DIR}/inflate.c"
-		"${__THIRDPARTY_ZLIB_DIR}/inftrees.c"
-		"${__THIRDPARTY_ZLIB_DIR}/trees.c"
-		"${__THIRDPARTY_ZLIB_DIR}/uncompr.c"
-		"${__THIRDPARTY_ZLIB_DIR}/zutil.c"
+	target_sources_from_path(thirdparty-core-lib PRIVATE "${__THIRDPARTY_ZLIB_DIR}"
+		"adler32.c"
+		"compress.c"
+		"crc32.c"
+		"deflate.c"
+		"infback.c"
+		"inffast.c"
+		"inflate.c"
+		"inftrees.c"
+		"trees.c"
+		"uncompr.c"
+		"zutil.c"
 	)
 
 	# Needs to be available in main env too
@@ -62,11 +61,10 @@ endif()
 
 # Minizip library, could be unbundled in theory
 # However, our version has some custom modifications, so it won't compile with the system one
-set(__THIRDPARTY_MINIZIP_DIR "${GODOT_SOURCE_DIR}/thirdparty/minizip")
-target_sources(thirdparty-core-lib PRIVATE
-	"${__THIRDPARTY_MINIZIP_DIR}/ioapi.c"
-	"${__THIRDPARTY_MINIZIP_DIR}/unzip.c"
-	"${__THIRDPARTY_MINIZIP_DIR}/zip.c"
+target_sources_from_path(thirdparty-core-lib PRIVATE "${GODOT_SOURCE_DIR}/thirdparty/minizip"
+	"ioapi.c"
+	"unzip.c"
+	"zip.c"
 )
 
 # Zstd library, can be unbundled in theory
@@ -75,31 +73,31 @@ target_sources(thirdparty-core-lib PRIVATE
 if(GODOT_BUILTIN_ZSTD)
 	set(__THIRDPARTY_ZSTD_DIR "${GODOT_SOURCE_DIR}/thirdparty/zstd")
 
-	target_sources(thirdparty-core-lib PRIVATE
-		"${__THIRDPARTY_ZSTD_DIR}/common/debug.c"
-		"${__THIRDPARTY_ZSTD_DIR}/common/entropy_common.c"
-		"${__THIRDPARTY_ZSTD_DIR}/common/error_private.c"
-		"${__THIRDPARTY_ZSTD_DIR}/common/fse_decompress.c"
-		"${__THIRDPARTY_ZSTD_DIR}/common/pool.c"
-		"${__THIRDPARTY_ZSTD_DIR}/common/threading.c"
-		"${__THIRDPARTY_ZSTD_DIR}/common/xxhash.c"
-		"${__THIRDPARTY_ZSTD_DIR}/common/zstd_common.c"
-		"${__THIRDPARTY_ZSTD_DIR}/compress/fse_compress.c"
-		"${__THIRDPARTY_ZSTD_DIR}/compress/hist.c"
-		"${__THIRDPARTY_ZSTD_DIR}/compress/huf_compress.c"
-		"${__THIRDPARTY_ZSTD_DIR}/compress/zstd_compress.c"
-		"${__THIRDPARTY_ZSTD_DIR}/compress/zstd_double_fast.c"
-		"${__THIRDPARTY_ZSTD_DIR}/compress/zstd_fast.c"
-		"${__THIRDPARTY_ZSTD_DIR}/compress/zstd_lazy.c"
-		"${__THIRDPARTY_ZSTD_DIR}/compress/zstd_ldm.c"
-		"${__THIRDPARTY_ZSTD_DIR}/compress/zstd_opt.c"
-		"${__THIRDPARTY_ZSTD_DIR}/compress/zstdmt_compress.c"
-		"${__THIRDPARTY_ZSTD_DIR}/compress/zstd_compress_literals.c"
-		"${__THIRDPARTY_ZSTD_DIR}/compress/zstd_compress_sequences.c"
-		"${__THIRDPARTY_ZSTD_DIR}/decompress/huf_decompress.c"
-		"${__THIRDPARTY_ZSTD_DIR}/decompress/zstd_ddict.c"
-		"${__THIRDPARTY_ZSTD_DIR}/decompress/zstd_decompress_block.c"
-		"${__THIRDPARTY_ZSTD_DIR}/decompress/zstd_decompress.c"
+	target_sources_from_path(thirdparty-core-lib PRIVATE "${__THIRDPARTY_ZSTD_DIR}"
+		"common/debug.c"
+		"common/entropy_common.c"
+		"common/error_private.c"
+		"common/fse_decompress.c"
+		"common/pool.c"
+		"common/threading.c"
+		"common/xxhash.c"
+		"common/zstd_common.c"
+		"compress/fse_compress.c"
+		"compress/hist.c"
+		"compress/huf_compress.c"
+		"compress/zstd_compress.c"
+		"compress/zstd_double_fast.c"
+		"compress/zstd_fast.c"
+		"compress/zstd_lazy.c"
+		"compress/zstd_ldm.c"
+		"compress/zstd_opt.c"
+		"compress/zstdmt_compress.c"
+		"compress/zstd_compress_literals.c"
+		"compress/zstd_compress_sequences.c"
+		"decompress/huf_decompress.c"
+		"decompress/zstd_ddict.c"
+		"decompress/zstd_decompress_block.c"
+		"decompress/zstd_decompress.c"
 	)
 
 	# Needs to be available in main env too

@@ -23,9 +23,10 @@ add_lib(thirdparty-svg-lib
 	PARENT_LIB
 		svg-lib
 	COMPONENTS
-		svg-env	
-	SOURCES
-		"${__THIRDPARTY_SVG_PATH}/nanosvg.cc"
+		svg-env
+)
+target_sources_from_path(thirdparty-svg-lib PRIVATE "${__THIRDPARTY_SVG_PATH}"
+	"nanosvg.cc"
 )
 
 target_glob_sources(svg-lib PRIVATE "*.cpp")

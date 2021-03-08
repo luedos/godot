@@ -23,8 +23,8 @@ set(__THIRDPARTY_CVTT_PATH "${GODOT_SOURCE_DIR}/thirdparty/cvtt")
 
 target_include_directories(cvtt-env INTERFACE "${__THIRDPARTY_CVTT_PATH}")
 
-target_sources(thirdparty-cvtt-lib PRIVATE 
-	"${__THIRDPARTY_CVTT_PATH}/ConvectionKernels.cpp"
+target_sources_from_path(thirdparty-cvtt-lib PRIVATE "${__THIRDPARTY_CVTT_PATH}"
+	"ConvectionKernels.cpp"
 )
 
 target_glob_sources(cvtt-lib PRIVATE "*.cpp")

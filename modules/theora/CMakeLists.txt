@@ -21,60 +21,63 @@ if(GODOT_BUILTIN_LIBTHEORA)
 		COMPONENTS
 			theora-env	
 		SOURCES
-			# "${__THIRDPARTY_THEORA_PATH}/analyze.c"
-			# "${__THIRDPARTY_THEORA_PATH}/apiwrapper.c"
-			"${__THIRDPARTY_THEORA_PATH}/bitpack.c"
-			"${__THIRDPARTY_THEORA_PATH}/cpu.c"
-			# "${__THIRDPARTY_THEORA_PATH}/decapiwrapper.c"
-			"${__THIRDPARTY_THEORA_PATH}/decinfo.c"
-			"${__THIRDPARTY_THEORA_PATH}/decode.c"
-			"${__THIRDPARTY_THEORA_PATH}/dequant.c"
-			# "${__THIRDPARTY_THEORA_PATH}/encapiwrapper.c"
-			# "${__THIRDPARTY_THEORA_PATH}/encfrag.c"
-			# "${__THIRDPARTY_THEORA_PATH}/encinfo.c"
-			# "${__THIRDPARTY_THEORA_PATH}/encode.c"
-			# "${__THIRDPARTY_THEORA_PATH}/encoder_disabled.c"
-			# "${__THIRDPARTY_THEORA_PATH}/enquant.c"
-			# "${__THIRDPARTY_THEORA_PATH}/fdct.c"
-			"${__THIRDPARTY_THEORA_PATH}/fragment.c"
-			"${__THIRDPARTY_THEORA_PATH}/huffdec.c"
-			# "${__THIRDPARTY_THEORA_PATH}/huffenc.c"
-			"${__THIRDPARTY_THEORA_PATH}/idct.c"
-			"${__THIRDPARTY_THEORA_PATH}/info.c"
-			"${__THIRDPARTY_THEORA_PATH}/internal.c"
-			# "${__THIRDPARTY_THEORA_PATH}/mathops.c"
-			# "${__THIRDPARTY_THEORA_PATH}/mcenc.c"
-			"${__THIRDPARTY_THEORA_PATH}/quant.c"
-			# "${__THIRDPARTY_THEORA_PATH}/rate.c"
-			"${__THIRDPARTY_THEORA_PATH}/state.c"
-			# "${__THIRDPARTY_THEORA_PATH}/tokenize.c"
+	)
+
+	target_sources_from_path(thirdparty-theora-lib PRIVATE "${__THIRDPARTY_THEORA_PATH}"
+		# "analyze.c"
+		# "apiwrapper.c"
+		"bitpack.c"
+		"cpu.c"
+		# "decapiwrapper.c"
+		"decinfo.c"
+		"decode.c"
+		"dequant.c"
+		# "encapiwrapper.c"
+		# "encfrag.c"
+		# "encinfo.c"
+		# "encode.c"
+		# "encoder_disabled.c"
+		# "enquant.c"
+		# "fdct.c"
+		"fragment.c"
+		"huffdec.c"
+		# "huffenc.c"
+		"idct.c"
+		"info.c"
+		"internal.c"
+		# "mathops.c"
+		# "mcenc.c"
+		"quant.c"
+		# "rate.c"
+		"state.c"
+		# "tokenize.c"
 	)
 
 	get_target_property(__X86_LIBTHEORA_OPT_GCC global-env X86_LIBTHEORA_OPT_GCC)
 	get_target_property(__X86_LIBTHEORA_OPT_VC global-env X86_LIBTHEORA_OPT_VC)
 
 	if(__X86_LIBTHEORA_OPT_GCC)
-		target_sources(thirdparty-theora-lib PRIVATE
-			# "${__THIRDPARTY_THEORA_PATH}/x86/mmxencfrag.c"
-			# "${__THIRDPARTY_THEORA_PATH}/x86/mmxfdct.c"
-			"${__THIRDPARTY_THEORA_PATH}/x86/mmxfrag.c"
-			"${__THIRDPARTY_THEORA_PATH}/x86/mmxidct.c"
-			"${__THIRDPARTY_THEORA_PATH}/x86/mmxstate.c"
-			# "${__THIRDPARTY_THEORA_PATH}/x86/sse2fdct.c"
-			# "${__THIRDPARTY_THEORA_PATH}/x86/x86enc.c"
-			"${__THIRDPARTY_THEORA_PATH}/x86/x86state.c"
+		target_sources_from_path(thirdparty-theora-lib PRIVATE "${__THIRDPARTY_THEORA_PATH}"
+			# "x86/mmxencfrag.c"
+			# "x86/mmxfdct.c"
+			"x86/mmxfrag.c"
+			"x86/mmxidct.c"
+			"x86/mmxstate.c"
+			# "x86/sse2fdct.c"
+			# "x86/x86enc.c"
+			"x86/x86state.c"
 		)
 	endif()
 
 	if(__X86_LIBTHEORA_OPT_VC)
-		target_sources(thirdparty-theora-lib PRIVATE
-			# "${__THIRDPARTY_THEORA_PATH}/x86_vc/mmxencfrag.c"
-			# "${__THIRDPARTY_THEORA_PATH}/x86_vc/mmxfdct.c"
-			"${__THIRDPARTY_THEORA_PATH}/x86_vc/mmxfrag.c"
-			"${__THIRDPARTY_THEORA_PATH}/x86_vc/mmxidct.c"
-			"${__THIRDPARTY_THEORA_PATH}/x86_vc/mmxstate.c"
-			# "${__THIRDPARTY_THEORA_PATH}/x86_vc/x86enc.c"
-			"${__THIRDPARTY_THEORA_PATH}/x86_vc/x86state.c"
+		target_sources_from_path(thirdparty-theora-lib PRIVATE "${__THIRDPARTY_THEORA_PATH}"
+			# "x86_vc/mmxencfrag.c"
+			# "x86_vc/mmxfdct.c"
+			"x86_vc/mmxfrag.c"
+			"x86_vc/mmxidct.c"
+			"x86_vc/mmxstate.c"
+			# "x86_vc/x86enc.c"
+			"x86_vc/x86state.c"
 		)
 	endif()
 

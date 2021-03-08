@@ -23,10 +23,9 @@ if(GODOT_BUILTIN_LIBOGG)
 		COMPONENTS
 			ogg-env	
 	)
-
-	target_sources(thirdparty-ogg-lib PRIVATE
-		"${__THIRDPARTY_OGG_PATH}/bitwise.c"
-		"${__THIRDPARTY_OGG_PATH}/framing.c"
+	target_sources_from_path(thirdparty-ogg-lib PRIVATE "${__THIRDPARTY_OGG_PATH}"
+		"bitwise.c"
+		"framing.c"
 	)
 
 endif()

@@ -30,13 +30,13 @@ if(NOT mbedtls_IS_MODULE_ENABLED)
 		MBEDTLS_CONFIG_FILE="thirdparty/mbedtls/include/godot_core_mbedtls_config.h"
 	)
 	set(__THIRDPARTY_MBEDTLS_DIR "${GODOT_SOURCE_DIR}/thirdparty/mbedtls/library")
-	target_sources(thirdparty-core-crypto-lib PRIVATE
-		"${__THIRDPARTY_MBEDTLS_DIR}/aes.c"
-		"${__THIRDPARTY_MBEDTLS_DIR}/base64.c"
-		"${__THIRDPARTY_MBEDTLS_DIR}/md5.c"
-		"${__THIRDPARTY_MBEDTLS_DIR}/sha1.c"
-		"${__THIRDPARTY_MBEDTLS_DIR}/sha256.c"
-		"${__THIRDPARTY_MBEDTLS_DIR}/godot_core_mbedtls_platform.c"
+	target_sources_from_path(thirdparty-core-crypto-lib PRIVATE "${__THIRDPARTY_MBEDTLS_DIR}"
+		"aes.c"
+		"base64.c"
+		"md5.c"
+		"sha1.c"
+		"sha256.c"
+		"godot_core_mbedtls_platform.c"
 	)
 
 endif()

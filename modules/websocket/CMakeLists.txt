@@ -28,14 +28,16 @@ if(GODOT_BUILTIN_WSLAY AND NOT GODOT_PLATFORM STREQUAL "javascript")
 		PARENT_LIB
 			ws-lib
 		COMPONENTS
-			ws-env	
-		SOURCES
-        	"${__THIRDPARTY_WSLAY_PATH}/wslay_net.c"
-        	"${__THIRDPARTY_WSLAY_PATH}/wslay_event.c"
-        	"${__THIRDPARTY_WSLAY_PATH}/wslay_queue.c"
-        	"${__THIRDPARTY_WSLAY_PATH}/wslay_stack.c"
-        	"${__THIRDPARTY_WSLAY_PATH}/wslay_frame.c"
+			ws-env
 	)
+	target_sources_from_path(thirdparty-ws-lib PRIVATE "${__THIRDPARTY_WSLAY_PATH}"
+		"wslay_net.c"
+		"wslay_event.c"
+		"wslay_queue.c"
+		"wslay_stack.c"
+		"wslay_frame.c"
+	)
+
 endif()
 
 target_glob_sources(ws-lib PRIVATE "*.cpp")
