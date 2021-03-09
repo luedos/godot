@@ -197,12 +197,11 @@ set_bool_option		(GODOT_BUILTIN_ZLIB			true 	DESCRIPTION "Use the built-in zlib 
 set_bool_option		(GODOT_BUILTIN_ZSTD			true 	DESCRIPTION "Use the built-in Zstd library.")
 
 # Generator expressions for easier working with build types which can be used in the future.
-set(IS_OPTIMIZED_GEN_EXPR 		$<CONFIG:Release,MinSizeRel,RelWithDebInfo,ToolsRelWithDebInfo>)
+set(IS_OPTIMIZED_GEN_EXPR 		$<CONFIG:Release,MinSizeRel,RelWithDebInfo>)
 set(IS_RELEASE_GEN_EXPR 		$<CONFIG:Release,MinSizeRel>)
-set(IS_DEBUG_INFO_GEN_EXPR 		$<CONFIG:Debug,RelWithDebInfo,ToolsDebug,ToolsRelWithDebInfo>)
-set(IS_DEBUG_GEN_EXPR 			$<CONFIG:Debug,ToolsDebug>)
-set(IS_OPT_DEBUG_GEN_EXPR 		$<CONFIG:RelWithDebInfo,ToolsRelWithDebInfo>)
-set(IS_TOOLS_GEN_EXPR 			$<CONFIG:ToolsDebug,ToolsRelWithDebInfo>)
+set(IS_DEBUG_INFO_GEN_EXPR 		$<CONFIG:Debug,RelWithDebInfo>)
+set(IS_DEBUG_GEN_EXPR 			$<CONFIG:Debug>)
+set(IS_OPT_DEBUG_GEN_EXPR 		$<CONFIG:RelWithDebInfo>)
 
 # Normilizing godot bin directory and making it absolute.
 if(NOT IS_ABSOLUTE "${GODOT_BIN_DIRECTORY}")
@@ -364,85 +363,45 @@ foreach(__MODULE_ID "regex")
 	endif()	
 endforeach()
 
-# we can't have that with tools on.
-if (GODOT_DISABLE_3D)
-	if(GODOT_BUILD_TOOLS)
-		set(GODOT_BUILD_TOOLS false)
-		message(WARNING "Build option 'GODOT_DISABLE_3D=true' cannot be used with 'GODOT_BUILD_TOOLS=true' (editor), only with 'GODOT_BUILD_TOOLS=false' (export template). Because of that GODOT_BUILD_TOOLS will be turned off.")
-	endif()
-endif()
-
-# this we also can't have with tools on.
-if (GODOT_DISABLE_ADVANCE_GUI)
-	if(GODOT_BUILD_TOOLS)
-		set(GODOT_BUILD_TOOLS false)
-		message(WARNING "Build option 'GODOT_DISABLE_ADVANCE_GUI=true' cannot be used with 'GODOT_BUILD_TOOLS=true' (editor), only with 'GODOT_BUILD_TOOLS=false' (export template). Because of that GODOT_BUILD_TOOLS will be turned off.")
-	endif()
-endif()
-
 ############### Processing new configurations ###############
+
+if(GODOT_BUILD_TOOLS)
+	# If we are using tools, we will not use Release and MinSizeRel
+	set(__POSSIBLE_BUILD_TYPES 
+		"Debug" 
+		"RelWithDebInfo"
+	)
+else()
+	set(__POSSIBLE_BUILD_TYPES 
+		"Debug" 
+		"RelWithDebInfo" 
+		"Release" 
+		"MinSizeRel"
+	)
+endif()
 
 if(CMAKE_CONFIGURATION_TYPES)
 
-	# if we use multiconfigurational build system, symply add build types for tools (if tools enabled of course) 
-	if(GODOT_BUILD_TOOLS)
-		if(NOT "ToolsDebug" IN_LIST CMAKE_CONFIGURATION_TYPES)
-			list(APPEND CMAKE_CONFIGURATION_TYPES "ToolsDebug")
-		endif()
-		if(NOT "ToolsRelWithDebInfo" IN_LIST CMAKE_CONFIGURATION_TYPES)
-			list(APPEND CMAKE_CONFIGURATION_TYPES "ToolsRelWithDebInfo")
-		endif()
-	endif()
-
+	set(CMAKE_CONFIGURATION_TYPES "${__POSSIBLE_BUILD_TYPES}")
 	message(STATUS "Possible configurations is: ${CMAKE_CONFIGURATION_TYPES}")
 
 else()
 
-	# if we are not using multiconfigurational build system, symply define which build types can be used.. 
-	set(__ALLOWED_BUILD_TYPES "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
-	if(GODOT_BUILD_TOOLS)
-		list(APPEND __ALLOWED_BUILD_TYPES "ToolsDebug" "ToolsRelWithDebInfo")
-	endif()
-
-	# ..and just check for those build types.
-	# if no build type defined, make defualt Debug or ToolsDebug, depending on thenever tools are on.
+	# if no build type defined, make defualt Debug.
 	if("${CMAKE_BUILD_TYPE}" STREQUAL "")
 		
-		if(GODOT_BUILD_TOOLS)
-			set(CMAKE_BUILD_TYPE "ToolsDebug" CACHE STRING "" FORCE)
-		else()
-			set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "" FORCE)
-		endif()
-
-	elseif(NOT CMAKE_BUILD_TYPE IN_LIST __ALLOWED_BUILD_TYPES)
+		set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "" FORCE)
 		
-		message(FATAL_ERROR "Invalid build type ${CMAKE_BUILD_TYPE}. Possible build types are: ${__ALLOWED_BUILD_TYPES}")
+	elseif(NOT CMAKE_BUILD_TYPE IN_LIST __POSSIBLE_BUILD_TYPES)
+		
+		message(FATAL_ERROR "Invalid build type ${CMAKE_BUILD_TYPE}. Possible build types are: ${__POSSIBLE_BUILD_TYPES}")
 	
 	endif()
 
 	# also add property to the CMAKE_BUILD_TYPE, so it will be more easier to choose build type in cmake gui.
-	set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${__ALLOWED_BUILD_TYPES})
+	set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${__POSSIBLE_BUILD_TYPES})
 
 	message(STATUS "Current build type is \"$CACHE{CMAKE_BUILD_TYPE}\".")
-
-endif()
-
-# If tools are enebled, we must set bunch of defualt variables for all new build types..
-if(GODOT_BUILD_TOOLS)
-
-	set(CMAKE_C_FLAGS_TOOLSDEBUG				${CMAKE_C_FLAGS_DEBUG})
-	set(CMAKE_CXX_FLAGS_TOOLSDEBUG				${CMAKE_CXX_FLAGS_DEBUG})
-	set(CMAKE_EXE_LINKER_FLAGS_TOOLSDEBUG		${CMAKE_EXE_LINKER_FLAGS_DEBUG})
-	set(CMAKE_SHARED_LINKER_FLAGS_TOOLSDEBUG	${CMAKE_SHARED_LINKER_FLAGS_DEBUG})
-	set(CMAKE_STATIC_LINKER_FLAGS_TOOLSDEBUG	${CMAKE_STATIC_LINKER_FLAGS_DEBUG})
-	set(CMAKE_MODULE_LINKER_FLAGS_TOOLSDEBUG	${CMAKE_MODULE_LINKER_FLAGS_DEBUG})
-
-	set(CMAKE_C_FLAGS_TOOLSRELWITHDEBINFO				${CMAKE_C_FLAGS_RELWITHDEBINFO})
-	set(CMAKE_CXX_FLAGS_TOOLSRELWITHDEBINFO				${CMAKE_CXX_FLAGS_RELWITHDEBINFO})
-	set(CMAKE_EXE_LINKER_FLAGS_TOOLSRELWITHDEBINFO		${CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO})
-	set(CMAKE_SHARED_LINKER_FLAGS_TOOLSRELWITHDEBINFO	${CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO})
-	set(CMAKE_STATIC_LINKER_FLAGS_TOOLSRELWITHDEBINFO	${CMAKE_STATIC_LINKER_FLAGS_RELWITHDEBINFO})
-	set(CMAKE_MODULE_LINKER_FLAGS_TOOLSRELWITHDEBINFO	${CMAKE_MODULE_LINKER_FLAGS_RELWITHDEBINFO})
 
 endif()
 
@@ -653,8 +612,15 @@ endif()
 
 set(EXTRA_SUFFIX "${EXTRA_SUFFIX}.${${GODOT_PLATFORM}_PROGRAM_SUFFIX}")
 
-set(EXTRA_SUFFIX "${EXTRA_SUFFIX}$<${IS_OPTIMIZED_GEN_EXPR}:.opt>") # extra suffix for all optimized versions
-set(EXTRA_SUFFIX "${EXTRA_SUFFIX}$<${IS_DEBUG_INFO_GEN_EXPR}:$<IF:${IS_TOOLS_GEN_EXPR},.tools,.debug>>") # extra suffix for all versions with debug info 
+# extra suffix for all optimized versions
+set(EXTRA_SUFFIX "${EXTRA_SUFFIX}$<${IS_OPTIMIZED_GEN_EXPR}:.opt>")
+
+# extra suffix for all versions with debug info 
+if(GODOT_BUILD_TOOLS)
+	set(EXTRA_SUFFIX "${EXTRA_SUFFIX}$<${IS_DEBUG_INFO_GEN_EXPR}:.tools>")
+else()
+	set(EXTRA_SUFFIX "${EXTRA_SUFFIX}$<${IS_DEBUG_INFO_GEN_EXPR}:.debug>") 
+endif()
 
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
 	set(EXTRA_SUFFIX "${EXTRA_SUFFIX}.64")
@@ -678,10 +644,16 @@ if(__USE_PTRCALL)
 	target_compile_definitions(global-env INTERFACE "PTRCALL_ENABLED")
 endif()
 
-target_compile_definitions(global-env INTERFACE $<${IS_TOOLS_GEN_EXPR}:TOOLS_ENABLED>)
+if(GODOT_BUILD_TOOLS)
+	target_compile_definitions(global-env INTERFACE "TOOLS_ENABLED")
+endif()
 
 if (GODOT_DISABLE_3D)
-	# tools can't be enabled here, because we turned them off previusly if this option is true
+
+	assert("Build option 'GODOT_DISABLE_3D=true' cannot be used with 'GODOT_BUILD_TOOLS=true' (editor), only with 'GODOT_BUILD_TOOLS=false' (export template)."
+		NOT GODOT_BUILD_TOOLS
+	)
+
 	target_compile_definitions(global-env INTERFACE "_3D_DISABLED") 
 endif()
 
@@ -690,8 +662,12 @@ if (GODOT_GDSCRIPT)
 endif()
 
 if (GODOT_DISABLE_ADVANCE_GUI)
-	# tools can't be enabled here, because we turned them off previusly if this option is true
-	target_compile_definitions(global-env INTERFACE $<$<NOT:${IS_TOOLS_GEN_EXPR}>:ADVANCED_GUI_DISABLED>) 
+	
+	assert("Build option 'GODOT_DISABLE_ADVANCE_GUI=true' cannot be used with 'GODOT_BUILD_TOOLS=true' (editor), only with 'GODOT_BUILD_TOOLS=false' (export template)."
+		NOT GODOT_BUILD_TOOLS
+	)
+	
+	target_compile_definitions(global-env INTERFACE "ADVANCED_GUI_DISABLED") 
 endif()
 
 if (GODOT_MINIZIP)

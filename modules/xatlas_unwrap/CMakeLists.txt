@@ -5,7 +5,6 @@ add_env(xatlas-unwrap-env
 )
 
 add_module_lib(xatlas-unwrap-lib
-	TOOLS_DEPENDENT
 	COMPONENTS
 		xatlas-unwrap-env
 		warnings-env

@@ -27,23 +27,15 @@ function(__generate_python_class_map __OUTPUT __CLASSES_LIST __VALUES_SUFFIX)
 
 endfunction()
 
-# Important note: even if GODOT_BUILD_TOOLS option is true, it still can become false in build time.
-# This can happend if we use multiconfigurational generator, which start to build our project in the Release/MinSizeRel mode.
-# If this happends, we simply will not include our library into final executable using generator expression.
-# So for now, even if we use multiconfigurational generator, we still will create target for our editor library, and worry about using it later.
 if(GODOT_BUILD_TOOLS)
 	add_lib(editor-lib 
 		EXCLUDE_FROM_ALL
+		PARENT_ENV
+			global-libs-list
 		COMPONENTS
 			global-env
 			warnings-env
 	)
-
-	target_link_libraries(global-libs-list INTERFACE $<${IS_TOOLS_GEN_EXPR}:editor-lib>)
-	if(MSVC)
-		# because visual studio can't define dependency which based on build type, this library will not be build otherwise
-		add_dependencies(global-libs-list editor-lib)
-	endif()
 
 	set(__REGISTER_EXPORTERS_FILE "register_exporters.gen.cpp")
 	target_sources(editor-lib PRIVATE "${__REGISTER_EXPORTERS_FILE}")

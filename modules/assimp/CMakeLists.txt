@@ -5,7 +5,6 @@ add_env(assimp-env
 )
 
 add_module_lib(assimp-lib
-	TOOLS_DEPENDENT
 	COMPONENTS 
 		assimp-env
 		warnings-env

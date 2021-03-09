@@ -5,7 +5,6 @@ add_env(etc-env
 )
 
 add_module_lib(etc-lib
-	TOOLS_DEPENDENT
 	COMPONENTS
 		etc-env
 		warnings-env

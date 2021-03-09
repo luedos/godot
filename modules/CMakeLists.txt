@@ -19,8 +19,9 @@ target_sources(modules-lib PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/register_module_
 
 function(add_module_lib __NAME)
 
-	set(__OPTIONS_ARGS 
-		TOOLS_DEPENDENT # Is module is dependent on tools generation. If it does, and tools are not building, this module will not be included in the libraries list
+	assert_if_empty(__NAME)
+
+	set(__OPTIONS_ARGS
 		EXCLUDE_FROM_ALL 
 	)
 	set(__ONE_VALUE_ARGS
@@ -39,7 +40,7 @@ function(add_module_lib __NAME)
 
 	set(__FORWARD_ARGS "")
 
-	if (__ARGS_EXCLUDE_FROM_ALL OR GODOT_SPLIT_LIBMODULES)
+	if (__ARGS_EXCLUDE_FROM_ALL)
 		list(APPEND __FORWARD_ARGS "EXCLUDE_FROM_ALL")
 	endif()
 
@@ -60,13 +61,7 @@ function(add_module_lib __NAME)
 
 	add_lib("${__NAME}" ${__FORWARD_ARGS})
 
-	if (NOT __ARGS_EXCLUDE_FROM_ALL)
-		if (__ARGS_TOOLS_DEPENDENT)
-			set(__NAME $<${IS_TOOLS_GEN_EXPR}:${__NAME}>)
-		endif()
-		# adding our newly created target to others
-		target_link_libraries(modules-lib PRIVATE ${__NAME})
-	endif()
+	target_link_libraries(modules-lib PRIVATE ${__NAME})
 
 endfunction()
 

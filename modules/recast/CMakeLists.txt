@@ -5,7 +5,6 @@ add_env(recast-env
 )
 
 add_module_lib(recast-lib
-	TOOLS_DEPENDENT
 	COMPONENTS
 		recast-env
 		warnings-env

@@ -271,7 +271,6 @@ if(__IS_ANDROID AND NOT GODOT_ANDROID_ARCH IN_LIST __SUPPORTED_ANDROID_ARCH_DIRS
 	message(FATAL_ERROR "This module does not support the specified 'android_arch': ${GODOT_ANDROID_ARCH} (possible architectures are: ${__SUPPORTED_ANDROID_ARCH_DIRS})")
 endif()
 
-#TODO: in the future, think of making this rely more on the generator expression
 if(GODOT_BUILD_TOOLS AND NOT __MODULE_SUPPORTS_TOOLS)
 	# TODO:
 	# Android: We have to add the data directory to the apk, concretely the Api and Tools folders.
@@ -295,14 +294,12 @@ endif()
 # Although we don't support building with tools for any platform where we currently use static AOT,
 # if these are supported in the future, we won't be using static AOT for them as that would be
 # too restrictive for the editor. These builds would probably be made to only use the interpreter.
-set(__MONO_SINGLE_APPDOMAIN_GEN_EXPR 
-	$<AND:$<BOOL:${__IS_IOS}>,$<NOT:$<BOOL:${__IS_IOS_SIM}>>,$<NOT:${IS_TOOLS_GEN_EXPR}>>
-)
-target_compile_definitions(mono-lib PRIVATE 
-	$<${__MONO_SINGLE_APPDOMAIN_GEN_EXPR}:GD_MONO_SINGLE_APPDOMAIN>
-
-	$<$<AND:$<NOT:${__MONO_SINGLE_APPDOMAIN_GEN_EXPR}>,$<NOT:${IS_RELEASE_GEN_EXPR}>>:GD_MONO_HOT_RELOAD>
-)
+# aka mono_aot_static
+if(__IS_IOS AND NOT __IS_IOS_SIM AND NOT GODOT_BUILD_TOOLS)
+	target_compile_definitions(mono-lib PRIVATE "GD_MONO_SINGLE_APPDOMAIN")
+else()
+	target_compile_definitions(mono-lib PRIVATE $<$<NOT:${IS_RELEASE_GEN_EXPR}>:GD_MONO_HOT_RELOAD>)
+endif()
 
 if(__IS_WINDOWS)
 
@@ -715,53 +712,50 @@ parse_to_python_map(__FAKE_ENV_MAP FROM_ARGS
 
 set(__BUILD_SCRIPTS_COMMAND_PREFIX "import build_scripts.cmake_mono_configure_utils as cmake_mono_configure_utils; cmake_mono_configure_utils")
 
-# this 'if' statement left here only to sign that everything within it must work only with tools disabled
-# if(NOT GODOT_BUILD_TOOLS)
+if(NOT GODOT_BUILD_TOOLS)
 
-if(__IS_DESKTOP)
+	if(__IS_DESKTOP)
 
-	if("${__MONO_ROOT}" STREQUAL "")
-		if(NOT PKG_CONFIG_FOUND)
-			find_package(PkgConfig)
+		if("${__MONO_ROOT}" STREQUAL "")
+			if(NOT PKG_CONFIG_FOUND)
+				find_package(PkgConfig)
+			endif()
+		
+			if(PKG_CONFIG_FOUND)
+				pkg_get_variable(__MONO_ROOT "mono-2" "prefix")
+			endif()
 		endif()
-	
-		if(PKG_CONFIG_FOUND)
-			pkg_get_variable(__MONO_ROOT "mono-2" "prefix")
-		endif()
+
+		add_custom_command(TARGET mono-lib PRE_BUILD
+			COMMAND "python" "-c" "${__BUILD_SCRIPTS_COMMAND_PREFIX}.make_template_dir(env=${__FAKE_ENV_MAP}, mono_root='${__MONO_ROOT}', output_dir='${GODOT_BIN_DIRECTORY}')"
+			WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+		)
+
+	elseif(__IS_ANDROID)
+
+		set(__CONFIG_FILE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/build_scripts/mono_android_config.xml")
+		set(__CONFIG_OUTPUT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/mono_gd")
+
+		# Do not forget, that this command will generate android_mono_config.gen.cpp, and we want this only if tools are disabled!
+		execute_python_method(make_android_mono_config generate_compressed_config
+			MODULE_DIR build_scripts
+			PYTHON_ARGS
+				STR_VAR "__CONFIG_FILE_PATH"
+				STR_VAR "__CONFIG_OUTPUT_PATH"
+		)
+
+		add_custom_command(TARGET mono-lib PRE_BUILD
+			COMMAND "python" "-c" "${__BUILD_SCRIPTS_COMMAND_PREFIX}.copy_mono_shared_libs(env=${__FAKE_ENV_MAP}, mono_root='${__MONO_ROOT}', target_mono_root_dir=None)"
+			WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+		)
+
+	elseif(__IS_JAVASCRIPT)
+		# No data directory for this platform
+	elseif(__IS_IOS)
+		# No data directory for this platform
 	endif()
 
-	add_custom_command(TARGET mono-lib PRE_BUILD
-		# if IS_TOOLS_GEN_EXPR we will simply exit from command
-		COMMAND "python" "-c" "$<${IS_TOOLS_GEN_EXPR}:exit(0);>${__BUILD_SCRIPTS_COMMAND_PREFIX}.make_template_dir(env=${__FAKE_ENV_MAP}, mono_root='${__MONO_ROOT}', output_dir='${GODOT_BIN_DIRECTORY}')"
-		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-	)
-
-elseif(__IS_ANDROID)
-
-	set(__CONFIG_FILE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/build_scripts/mono_android_config.xml")
-	set(__CONFIG_OUTPUT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/mono_gd")
-
-	# Do not forget, that this command will generate android_mono_config.gen.cpp, and we want this only if tools are disabled!
-	execute_python_method(make_android_mono_config generate_compressed_config
-		MODULE_DIR build_scripts
-		PYTHON_ARGS
-			STR_VAR "__CONFIG_FILE_PATH"
-			STR_VAR "__CONFIG_OUTPUT_PATH"
-	)
-
-	add_custom_command(TARGET mono-lib PRE_BUILD
-		# if IS_TOOLS_GEN_EXPR we will simply exit from command
-		COMMAND "python" "-c" "$<${IS_TOOLS_GEN_EXPR}:exit(0);>${__BUILD_SCRIPTS_COMMAND_PREFIX}.copy_mono_shared_libs(env=${__FAKE_ENV_MAP}, mono_root='${__MONO_ROOT}', target_mono_root_dir=None)"
-		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-	)
-
-elseif(__IS_JAVASCRIPT)
-	# No data directory for this platform
-elseif(__IS_IOS)
-	# No data directory for this platform
 endif()
-
-# endif()
 
 if(GODOT_COPY_MONO_ROOT)
 
@@ -778,14 +772,16 @@ if(GODOT_COPY_MONO_ROOT)
 
 		set(__COMMAND "android_dir='${__ANDROID_OUTPUT_DIR}'; import build_scripts.cmake_mono_configure_utils as cmake_mono_configure_utils; ") # initial setup
 		set(__COMMAND "${__COMMAND} cmake_mono_configure_utils.copy_mono_root_files(env=${__FAKE_ENV_MAP}, mono_root='${__MONO_ROOT}', output_dir='${GODOT_BIN_DIRECTORY}') ") # calling copy_mono_root_files if tools are enabled
-		set(__COMMAND "${__COMMAND} if $<IF:${IS_TOOLS_GEN_EXPR},True,False> else ") # else ...
-		set(__COMMAND "${__COMMAND} print('Ignoring option: GODOT_COPY_MONO_ROOT; only available for builds with GODOT_BUILD_TOOLS enabled.')") # just printing that we are ignoring this parameter 
 		
 		add_custom_command(TARGET mono-lib PRE_BUILD
 			COMMAND "python" "-c" "${__COMMAND}"
 			WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
 			COMMENT "Copying mono_root from \"${__MONO_ROOT}\".."
 		)
+
+	else()
+
+		message(STATUS "Ignoring option: GODOT_COPY_MONO_ROOT; only available for builds with GODOT_BUILD_TOOLS enabled.")
 
 	endif()
 
@@ -811,7 +807,7 @@ if(GODOT_BUILD_TOOLS AND GODOT_MONO_GLUE AND GODOT_BUILD_CIL)
 			RAW_VAL "target" "target_var"
 			STR_VAR "platform" "GODOT_PLATFORM"
 			RAW_VAR "bits" "__BITS"
-			RAW_VAL "tools" "tools_var"
+			BOOL_VAR "tools" "GODOT_BUILD_TOOLS"
 			STR_VAR "mono_prefix" "GODOT_MONO_PREFIX"
 			STR_VAL "module_dir" "${CMAKE_CURRENT_SOURCE_DIR}"
 			STR_VAR "solution_build_config" "__CONFIG"
@@ -834,11 +830,9 @@ if(GODOT_BUILD_TOOLS AND GODOT_MONO_GLUE AND GODOT_BUILD_CIL)
 			MODULE_DIR "build_scripts"
 			WORKING_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
 			CREATE_CUSTOM_TARGET "${__CUSTOM_TARGET_NAME}"
-			GEN_EXPR_DEPENDENT "${IS_TOOLS_GEN_EXPR}"
 			SILENCE_GEN_EXPR_BYPRODUCTS_WARNINGS # we are not really consered about loosing some byproducts
 			BY_FILE "api_solution_${__CONFIG_LOWER}"
 			CUSTOM_VARS
-				RAW_VAL "tools_var=$<IF:${IS_TOOLS_GEN_EXPR},True,False>"
 				STR_VAL "target_var=$<${IS_RELEASE_GEN_EXPR}:release>$<${IS_DEBUG_GEN_EXPR}:debug>$<${IS_OPT_DEBUG_GEN_EXPR}:release_debug>"
 			PYTHON_ARGS
 				RAW_VAR "env=__FAKE_ENV_MAP"
@@ -870,7 +864,7 @@ if(GODOT_BUILD_TOOLS AND GODOT_MONO_GLUE AND GODOT_BUILD_CIL)
 		RAW_VAL "target" "target_var"
 		STR_VAR "platform" "GODOT_PLATFORM"
 		RAW_VAR "bits" "__BITS"
-		RAW_VAL "tools" "tools_var"
+		BOOL_VAR "tools" "GODOT_BUILD_TOOLS"
 		STR_VAR "mono_prefix" "GODOT_MONO_PREFIX"
 		STR_VAL "module_dir" "${CMAKE_CURRENT_SOURCE_DIR}"
 		BOOL_VAR "verbose" "VERBOSE"
@@ -886,9 +880,7 @@ if(GODOT_BUILD_TOOLS AND GODOT_MONO_GLUE AND GODOT_BUILD_CIL)
 		CREATE_CUSTOM_TARGET "${__CUSTOM_TARGET_NAME}"
 		SILENCE_GEN_EXPR_BYPRODUCTS_WARNINGS
 		BY_FILE "tools_solution"
-		GEN_EXPR_DEPENDENT "${IS_TOOLS_GEN_EXPR}"
 		CUSTOM_VARS
-			RAW_VAL "tools_var=$<IF:${IS_TOOLS_GEN_EXPR},True,False>"
 			STR_VAL "target_var=$<${IS_RELEASE_GEN_EXPR}:release>$<${IS_DEBUG_GEN_EXPR}:debug>$<${IS_OPT_DEBUG_GEN_EXPR}:release_debug>"
 			STR_VAL "binary_dir_var=${GODOT_BIN_DIRECTORY}"
 		PYTHON_ARGS
@@ -914,8 +906,8 @@ file(GLOB __MONO_GD_SOURCES LIST_DIRECTORIES false "${CMAKE_CURRENT_SOURCE_DIR}/
 extract_file_from_list(__MONO_GD_SOURCES "android_mono_config.gen.cpp" RETURN __MONO_GD_ANDROID_CONFIG_SOURCE)
 target_sources(mono-lib PRIVATE	${__MONO_GD_SOURCES})
 
-if(__IS_ANDROID)
-	target_sources(mono-lib PRIVATE	$<$<NOT:${IS_TOOLS_GEN_EXPR}>:${__MONO_GD_ANDROID_CONFIG_SOURCE}>)	
+if(__IS_ANDROID AND NOT GODOT_BUILD_TOOLS)
+	target_sources(mono-lib PRIVATE	${__MONO_GD_ANDROID_CONFIG_SOURCE})	
 endif()
 
 target_glob_sources(mono-lib PRIVATE "utils/*.cpp")
@@ -927,7 +919,7 @@ if(GODOT_PLATFORM MATCHES "(osx|iphone)")
 	target_glob_sources(mono-lib PRIVATE "mono_gd/support/*.m")
 endif()
 
-
-file(GLOB __MONO_EDITOR_SOURCES LIST_DIRECTORIES false "${CMAKE_CURRENT_SOURCE_DIR}/editor/*.cpp")
-target_sources(mono-lib PRIVATE $<${IS_TOOLS_GEN_EXPR}:${__MONO_EDITOR_SOURCES}>)
+if(GODOT_BUILD_TOOLS)
+	target_glob_sources(mono-lib PRIVATE "editor/*.cpp")
+endif()
 

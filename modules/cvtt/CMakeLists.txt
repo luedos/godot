@@ -5,7 +5,6 @@ add_env(cvtt-env
 )
 
 add_module_lib(cvtt-lib
-	TOOLS_DEPENDENT
 	COMPONENTS
 		cvtt-env
 		warnings-env

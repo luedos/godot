@@ -5,7 +5,6 @@ add_env(tinyexr-env
 )
 
 add_module_lib(tinyexr-lib
-	TOOLS_DEPENDENT
 	COMPONENTS
 		tinyexr-env
 		warnings-env
