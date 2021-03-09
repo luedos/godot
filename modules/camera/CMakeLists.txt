@@ -1,8 +1,8 @@
 
 if(GODOT_PLATFORM STREQUAL "iphone")
 
-	add_module_lib(camera-lib
-		EXCLUDE_FROM_ALL
+	#TODO: again, as arkit lib, it seams this library is not connected to anything at all.. need to test it more on phone targets..
+	add_lib(camera-lib
 		COMPONENTS
 			modules-env
 			warnings-env

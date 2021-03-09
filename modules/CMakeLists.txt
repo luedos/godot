@@ -22,7 +22,7 @@ function(add_module_lib __NAME)
 	assert_if_empty(__NAME)
 
 	set(__OPTIONS_ARGS
-		EXCLUDE_FROM_ALL 
+		""
 	)
 	set(__ONE_VALUE_ARGS
 		PARENT_ENV # env this library will link to
@@ -39,10 +39,6 @@ function(add_module_lib __NAME)
 	cmake_parse_arguments(PARSE_ARGV 1 __ARGS "${__OPTIONS_ARGS}" "${__ONE_VALUE_ARGS}" "${__MULTI_VALUE_ARGS}")
 
 	set(__FORWARD_ARGS "")
-
-	if (__ARGS_EXCLUDE_FROM_ALL)
-		list(APPEND __FORWARD_ARGS "EXCLUDE_FROM_ALL")
-	endif()
 
 	macro(forward_arg __ARG __ARGS_LIST)
 		if(NOT "${__ARGS_${__ARG}}" STREQUAL "")
