@@ -6,8 +6,7 @@ add_module_lib(stb-vorbis-lib
 		warnings-env
 )
 
-add_lib(thirdparty-stb-vorbis-lib
-	OBJECT
+add_module_lib(thirdparty-stb-vorbis-lib
 	PARENT_LIB
 		stb-vorbis-lib
 	COMPONENTS

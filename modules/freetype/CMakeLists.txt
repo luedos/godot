@@ -36,8 +36,7 @@ if(GODOT_BUILTIN_FREETYPE)
 		target_include_directories(freetype-env INTERFACE "${GODOT_SOURCE_DIR}/thirdparty/libpng")
 	endif()
 
-	add_lib(thirdparty-freetype-lib
-		OBJECT
+	add_module_lib(thirdparty-freetype-lib
 		PARENT_LIB
 			freetype-lib
 		COMPONENTS
@@ -45,10 +44,9 @@ if(GODOT_BUILTIN_FREETYPE)
 	)
 
 	if(GODOT_PLATFORM STREQUAL "javascript")
-		add_lib(tmp-freetype-lib
-			OBJECT
+		add_module_lib(tmp-freetype-lib
 			PARENT_LIB
-				freetype-lib
+				thirdparty-freetype-lib
 			COMPONENTS
 				freetype-env
 		)
@@ -103,6 +101,12 @@ if(GODOT_BUILTIN_FREETYPE)
         "type42/type42.c"
         "winfonts/winfnt.c"
 	)
+
+	#TODO: need to test this thing:
+	# Needs to be appended to arrive after libscene in the linker call,
+	# but we don't want it to arrive *after* system libs, so manual hack
+	# LIBS contains first SCons Library objects ("SCons.Node.FS.File object")
+	# and then plain strings for system library. We insert between the two.
 
 endif()
 

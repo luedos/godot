@@ -17,8 +17,7 @@ target_include_directories(webm-env INTERFACE
 	"${__THIRDPARTY_WEBM_PATH}/libwebm"
 )
 
-add_lib(thirdparty-webm-lib
-	OBJECT
+add_module_lib(thirdparty-webm-lib
 	PARENT_LIB
 		webm-lib
 	COMPONENTS

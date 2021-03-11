@@ -10,8 +10,7 @@ add_module_lib(cvtt-lib
 		warnings-env
 )
 
-add_lib(thirdparty-cvtt-lib
-	OBJECT
+add_module_lib(thirdparty-cvtt-lib
 	PARENT_LIB
 		cvtt-lib
 	COMPONENTS

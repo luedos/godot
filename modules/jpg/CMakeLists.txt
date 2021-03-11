@@ -10,8 +10,7 @@ add_module_lib(jpg-lib
 		warnings-env
 )
 
-add_lib(thirdparty-jpg-lib
-	OBJECT
+add_module_lib(thirdparty-jpg-lib
 	PARENT_LIB
 		jpg-lib
 	COMPONENTS

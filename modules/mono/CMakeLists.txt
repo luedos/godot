@@ -1,4 +1,9 @@
 
+#Note: Through out this directory we will create number of custom_targets where, supposedly, better whould be use POST_BUILD custom_command events.
+# This is done intentionnaly, because mono-lib could be OBJECT library, and those one doesn't support POST_BUILD/PRE_LINK/PRE_BUILD events..
+# We also can't use simple custom commands, because not always we know exact output files. Plus most of the outputs use generator expressions,
+# and generator expression in OUTPUT paremeter of the custom_command supported only from cmake 3.20.
+
 add_module_lib(mono-lib
 	COMPONENTS
 		modules-env
@@ -55,7 +60,22 @@ else()
 endif()	
 set(__MONO_LIB_NAMES "mono-2.0-sgen" "monosgen-2.0")
 
-# mode can be TREE (a.k.a. DIRECTORY) or FILE
+# This custom command is basically allow us to create custom target with dynamic COMMAND parameter.
+# Because custom target 'COMMAND' paremeter can't be expanded, but custom command for the same output file can be appended.
+add_custom_command(
+	OUTPUT mono-files-copy-gen-source
+	COMMAND "" # first command is empty, others will be just appended
+	VERBATIM # because most of the commands will be python ones..
+)
+add_custom_target(mono-files-copy-gen
+	DEPENDS
+		mono-files-copy-gen-source
+	COMMENT "[mono-files-copy-gen] Copying all neseccery files fro mono-lib.."
+)
+add_dependencies(mono-lib mono-files-copy-gen)
+set_source_files_properties(mono-gen-files-copy-source PROPERTIES SYMBOLIC TRUE)
+
+# Mode can be TREE (a.k.a. DIRECTORY) or FILE
 # Copies file or directory.
 # By defult tries to copy file at configure time, 
 # but if file path has generator expression in it (or 'FORCE_BUILD_TIME' option specified),
@@ -119,8 +139,10 @@ function(__copy_path __MODE __SRC __DST)
 			set(__COMMAND "${__COMMAND} (print(f'${__MODE} ({src}) does not exist'), exit(-1))") # last things if the got to "else" part of the command
 		endif()
 
-		add_custom_command(TARGET mono-lib PRE_BUILD 
+		add_custom_command(OUTPUT mono-files-copy-gen-source
+			APPEND
 			COMMAND "python" "-c" "${__COMMAND}"
+			VERBATIM
 		)
 
 	else()
@@ -725,11 +747,14 @@ if(NOT GODOT_BUILD_TOOLS)
 				pkg_get_variable(__MONO_ROOT "mono-2" "prefix")
 			endif()
 		endif()
-
-		add_custom_command(TARGET mono-lib PRE_BUILD
+		
+		add_custom_target(mono-create-template-dir-gen
 			COMMAND "python" "-c" "${__BUILD_SCRIPTS_COMMAND_PREFIX}.make_template_dir(env=${__FAKE_ENV_MAP}, mono_root='${__MONO_ROOT}', output_dir='${GODOT_BIN_DIRECTORY}')"
 			WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+			COMMENT "[mono-create-template-dir-gen] Creating template dir.."
+			VERBATIM
 		)
+		add_dependencies(mono-lib mono-create-template-dir-gen)
 
 	elseif(__IS_ANDROID)
 
@@ -744,10 +769,13 @@ if(NOT GODOT_BUILD_TOOLS)
 				STR_VAR "__CONFIG_OUTPUT_PATH"
 		)
 
-		add_custom_command(TARGET mono-lib PRE_BUILD
+		add_custom_target(mono-copy-shared-libs-gen
 			COMMAND "python" "-c" "${__BUILD_SCRIPTS_COMMAND_PREFIX}.copy_mono_shared_libs(env=${__FAKE_ENV_MAP}, mono_root='${__MONO_ROOT}', target_mono_root_dir=None)"
 			WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+			COMMENT "[mono-copy-shared-libs-gen] Copying mono shared libraries.."
+			VERBATIM
 		)
+		add_dependencies(mono-lib mono-copy-shared-libs-gen)
 
 	elseif(__IS_JAVASCRIPT)
 		# No data directory for this platform
@@ -772,12 +800,14 @@ if(GODOT_COPY_MONO_ROOT)
 
 		set(__COMMAND "android_dir='${__ANDROID_OUTPUT_DIR}'; import build_scripts.cmake_mono_configure_utils as cmake_mono_configure_utils; ") # initial setup
 		set(__COMMAND "${__COMMAND} cmake_mono_configure_utils.copy_mono_root_files(env=${__FAKE_ENV_MAP}, mono_root='${__MONO_ROOT}', output_dir='${GODOT_BIN_DIRECTORY}') ") # calling copy_mono_root_files if tools are enabled
-		
-		add_custom_command(TARGET mono-lib PRE_BUILD
+
+		add_custom_target(mono-copy-root-gen
 			COMMAND "python" "-c" "${__COMMAND}"
 			WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-			COMMENT "Copying mono_root from \"${__MONO_ROOT}\".."
+			COMMENT "[mono-copy-root-gen] Copying mono_root from \"${__MONO_ROOT}\".."
+			VERBATIM
 		)
+		add_dependencies(mono-lib mono-copy-root-gen)
 
 	else()
 
@@ -922,4 +952,3 @@ endif()
 if(GODOT_BUILD_TOOLS)
 	target_glob_sources(mono-lib PRIVATE "editor/*.cpp")
 endif()
-

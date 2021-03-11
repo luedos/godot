@@ -14,8 +14,7 @@ set(__THIRDPARTY_VHACD_PATH "${GODOT_SOURCE_DIR}/thirdparty/vhacd")
 
 target_include_directories(vhacd-env INTERFACE "${__THIRDPARTY_VHACD_PATH}/inc")
 
-add_lib(thirdparty-vhacd-lib
-	OBJECT
+add_module_lib(thirdparty-vhacd-lib
 	PARENT_LIB
 		vhacd-lib
 	COMPONENTS

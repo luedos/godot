@@ -19,8 +19,7 @@ if(GODOT_BUILTIN_LIBWEBP)
 		"${__THIRDPARTY_WEBP_PATH}/src"
 	)
 
-	add_lib(thirdparty-webp-lib
-		OBJECT
+	add_module_lib(thirdparty-webp-lib
 		PARENT_LIB
 			webp-lib
 		COMPONENTS

@@ -16,8 +16,7 @@ if(GODOT_BUILTIN_RECAST)
 
 	target_include_directories(recast-env INTERFACE "${__THIRDPARTY_RECAST_PATH}/Include")
 
-	add_lib(thirdparty-recast-lib
-		OBJECT
+	add_module_lib(thirdparty-recast-lib
 		PARENT_LIB
 			recast-lib
 		COMPONENTS

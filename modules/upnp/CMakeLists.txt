@@ -17,8 +17,7 @@ if(GODOT_BUILTIN_MINIUPNPC)
 	target_include_directories(upnp-env INTERFACE "${__THIRDPARTY_UPNP_PATH}")
 	target_compile_definitions(upnp-env INTERFACE "MINIUPNP_STATICLIB" "MINIUPNPC_SET_SOCKET_TIMEOUT")
 
-	add_lib(thirdparty-upnp-lib
-		OBJECT
+	add_module_lib(thirdparty-upnp-lib
 		PARENT_LIB
 			upnp-lib
 		COMPONENTS

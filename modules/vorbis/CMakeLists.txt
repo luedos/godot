@@ -22,8 +22,7 @@ if(GODOT_BUILTIN_LIBVORBIS)
 		target_include_directories(vorbis-env INTERFACE "${GODOT_SOURCE_DIR}/thirdparty/libogg")
 	endif()
 
-	add_lib(thirdparty-vorbis-lib
-		OBJECT
+	add_module_lib(thirdparty-vorbis-lib
 		PARENT_LIB
 			vorbis-lib
 		COMPONENTS

@@ -55,10 +55,8 @@ if(GODOT_GDNATIVE_WRAPPER)
 		TARGET_FILES ${__GDNATIVE_WRAPPER_TARGETS}
 	)
 
+	#TODO: this library is also seems to not being connected to anything..
 	add_lib(gdnative-wrapper-lib
-		OBJECT
-		PARENT_LIB
-			gdnative-lib
 		COMPONENTS
 			gdnative-env
 			warnings-env

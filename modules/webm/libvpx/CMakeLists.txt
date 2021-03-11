@@ -252,7 +252,7 @@ add_env(libvpx-env
 		modules-env
 )
 
-add_lib(libvpx-lib
+add_module_lib(libvpx-lib
 	PARENT_LIB
 		webm-lib
 	COMPONENTS
@@ -387,6 +387,7 @@ if(__WEBM_CPU_X86)
 				-D "${__ASM_CPU}"
 				-o "${__OUTPUT_FILE}" 
 				"${__SOURCE_FILE}"
+			VERBATIM
 		)
 
 	endforeach()
@@ -397,19 +398,19 @@ if(__WEBM_CPU_X86)
 
 	inline_if(__IS_CPU_32_BITS __CPU_BITS EQUAL 32)
 
-	add_lib(libvpx-mmx-lib OBJECT PARENT_LIB libvpx-lib COMPONENTS libvpx-env)
+	add_module_lib(libvpx-mmx-lib PARENT_LIB libvpx-lib COMPONENTS libvpx-env)
 	target_compile_options(libvpx-mmx-lib PRIVATE $<$<AND:$<BOOL:${__IS_CPU_32_BITS}>,${__IS_CLANG_OR_GCC_GEN_EXPR}>:-mmmx>)
 	target_sources(libvpx-mmx-lib PRIVATE ${__LIBVPX_SOURCES_INTRIN_X86_MMX})
 
-	add_lib(libvpx-sse2-lib OBJECT PARENT_LIB libvpx-lib COMPONENTS libvpx-env)
+	add_module_lib(libvpx-sse2-lib PARENT_LIB libvpx-lib COMPONENTS libvpx-env)
 	target_compile_options(libvpx-sse2-lib PRIVATE $<$<AND:$<BOOL:${__IS_CPU_32_BITS}>,${__IS_CLANG_OR_GCC_GEN_EXPR}>:-msse2>)
 	target_sources(libvpx-sse2-lib PRIVATE ${__LIBVPX_SOURCES_INTRIN_X86_SSE2})
 
-	add_lib(libvpx-ssse3-lib OBJECT PARENT_LIB libvpx-lib COMPONENTS libvpx-env)
+	add_module_lib(libvpx-ssse3-lib PARENT_LIB libvpx-lib COMPONENTS libvpx-env)
 	target_compile_options(libvpx-ssse3-lib PRIVATE $<${__IS_CLANG_OR_GCC_GEN_EXPR}:-mssse3>)
 	target_sources(libvpx-ssse3-lib PRIVATE ${__LIBVPX_SOURCES_INTRIN_X86_SSSE3})
 
-	add_lib(libvpx-avx2-lib OBJECT PARENT_LIB libvpx-lib COMPONENTS libvpx-env)
+	add_module_lib(libvpx-avx2-lib PARENT_LIB libvpx-lib COMPONENTS libvpx-env)
 	target_compile_options(libvpx-avx2-lib PRIVATE $<${__IS_CLANG_OR_GCC_GEN_EXPR}:-mavx2>)
 	target_sources(libvpx-ssse3-lib PRIVATE ${__LIBVPX_SOURCES_INTRIN_X86_AVX2})
 
@@ -455,6 +456,7 @@ elseif(__WEBM_CPU_ARM)
 				ARGS 
 					-o "${__OUTPUT_FILE}" 
 					"${__SOURCE_FILE}"
+				VERBATIM
 			)
 
 		endforeach()

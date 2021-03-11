@@ -14,8 +14,7 @@ if(GODOT_BUILTIN_LIBTHEORA)
 
 	set(__THIRDPARTY_THEORA_PATH "${GODOT_SOURCE_DIR}/thirdparty/libtheora")
 
-	add_lib(thirdparty-theora-lib
-		OBJECT
+	add_module_lib(thirdparty-theora-lib
 		PARENT_LIB
 			theora-lib
 		COMPONENTS

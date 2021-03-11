@@ -21,8 +21,7 @@ if(GODOT_BUILTIN_BULLET)
 		"BT_USE_OLD_DAMPING_METHOD"
 	)
 
-	add_lib(thirdparty-bullet-lib
-		OBJECT
+	add_module_lib(thirdparty-bullet-lib
 		PARENT_LIB 
 			bullet-lib
 		COMPONENTS

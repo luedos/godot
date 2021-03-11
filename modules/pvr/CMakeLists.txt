@@ -10,8 +10,7 @@ add_module_lib(pvr-lib
 		warnings-env
 )
 
-add_lib(thirdparty-pvr-lib
-	OBJECT
+add_module_lib(thirdparty-pvr-lib
 	PARENT_LIB
 		pvr-lib
 	COMPONENTS

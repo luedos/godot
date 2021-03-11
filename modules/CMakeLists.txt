@@ -17,6 +17,8 @@ add_dependencies(modules-env core-gen) # many modules dependent on the core gen 
 #TODO: Not sure where this file is came from. Need to research this more in the future.
 target_sources(modules-lib PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/register_module_types.gen.cpp")
 
+# Basically a wrapper around add_lib
+# If 'GODOT_SPLIT_LIBMODULES' global option is off, creates object library, and connect it to the modules-lib directly ('PARENT_LIB' option is ignored).
 function(add_module_lib __NAME)
 
 	assert_if_empty(__NAME)
@@ -25,8 +27,7 @@ function(add_module_lib __NAME)
 		""
 	)
 	set(__ONE_VALUE_ARGS
-		PARENT_ENV # env this library will link to
-		PARENT_LIB # lib this library will link to
+		PARENT_LIB
 		OUTPUT_DIR
 		OUTPUT_NAME
 	)
@@ -45,9 +46,20 @@ function(add_module_lib __NAME)
 			list(APPEND ${__ARGS_LIST} ${__ARG} ${__ARGS_${__ARG}})
 		endif()
 	endmacro()
+	
+	# if we are not spliting libmodules, then we want only object files, not libraries.
+	# Because of that we will generate only object libraries, and automatically connect them to the modules-lib.	
+	if(NOT GODOT_SPLIT_LIBMODULES)
+		list(APPEND __FORWARD_ARGS OBJECT)
+		set(__ARGS_PARENT_LIB modules-lib)
+	endif()
 
-	# forward_arg(PARENT_ENV __FORWARD_ARGS)
-	# forward_arg(PARENT_LIB __FORWARD_ARGS)
+	# if no parent library was defined yet, using modules-lib as a default
+	if("${__ARGS_PARENT_LIB}" STREQUAL "")
+		set(__ARGS_PARENT_LIB modules-lib)
+	endif()
+
+	forward_arg(PARENT_LIB __FORWARD_ARGS)
 	forward_arg(COMPONENTS __FORWARD_ARGS)
 	forward_arg(ENVS_CLONE __FORWARD_ARGS)
 	forward_arg(LIBS_CLONE __FORWARD_ARGS)
@@ -56,8 +68,6 @@ function(add_module_lib __NAME)
 	forward_arg(SOURCES __FORWARD_ARGS)
 
 	add_lib("${__NAME}" ${__FORWARD_ARGS})
-
-	target_link_libraries(modules-lib PRIVATE ${__NAME})
 
 endfunction()
 

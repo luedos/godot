@@ -14,8 +14,7 @@ set(__THIRDPARTY_OPENSIMPLEX_PATH "${GODOT_SOURCE_DIR}/thirdparty/misc")
 
 target_include_directories(opensimplex-env INTERFACE "${__THIRDPARTY_OPENSIMPLEX_PATH}")
 
-add_lib(thirdparty-opensimplex-lib 
-	OBJECT
+add_module_lib(thirdparty-opensimplex-lib 
 	PARENT_LIB
 		opensimplex-lib
 	COMPONENTS

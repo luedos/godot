@@ -15,8 +15,7 @@ add_module_lib(tinyexr-lib
 
 set(__THIRDPARTY_TINYEXR_PATH "${GODOT_SOURCE_DIR}/thirdparty/tinyexr")
 
-add_lib(thirdparty-tinyexr-lib
-	OBJECT
+add_module_lib(thirdparty-tinyexr-lib
 	PARENT_LIB
 		tinyexr-lib
 	COMPONENTS

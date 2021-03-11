@@ -1065,6 +1065,7 @@ function(add_python_generator_command __MODULE __FUNCTION)
 			DEPENDS ${__DEPENDS} ${__ARGS_SYMBOLIC_SOURCES}
 			WORKING_DIRECTORY "${__ARGS_WORKING_DIR}"
 			COMMENT "Executing python method: ${__FUNCTION}"
+			VERBATIM
 		)
 
 	else()
@@ -1082,6 +1083,7 @@ function(add_python_generator_command __MODULE __FUNCTION)
 			BYPRODUCTS ${${__TARGET_FILES_LIST_NAME}} ${__ARGS_SYMBOLIC_TARGETS}
 			WORKING_DIRECTORY "${__ARGS_WORKING_DIR}"
 			COMMENT "Executing python method: ${__FUNCTION}"
+			VERBATIM
 		)
 
 	endif()

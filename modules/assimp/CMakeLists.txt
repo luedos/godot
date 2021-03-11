@@ -96,8 +96,7 @@ if("true") # GODOT_BUILTIN_ASSIMP
 		)
 	endif()
 
-	add_lib(thirdparty-assimp-lib
-		OBJECT
+	add_module_lib(thirdparty-assimp-lib
 		PARENT_LIB
 			assimp-lib
 		COMPONENTS

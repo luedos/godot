@@ -1,5 +1,5 @@
 
-add_lib(gdnative-net-lib
+add_module_lib(gdnative-net-lib
 	PARENT_LIB
 		gdnative-lib
 	COMPONENTS

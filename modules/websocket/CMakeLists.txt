@@ -23,8 +23,7 @@ if(GODOT_BUILTIN_WSLAY AND NOT GODOT_PLATFORM STREQUAL "javascript")
 		target_compile_definitions(ws-env INTERFACE "HAVE_NETINET_IN_H")
 	endif()
 
-	add_lib(thirdparty-ws-lib
-		OBJECT
+	add_module_lib(thirdparty-ws-lib
 		PARENT_LIB
 			ws-lib
 		COMPONENTS
