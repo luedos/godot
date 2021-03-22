@@ -1,7 +1,7 @@
 get_filename_component(__PLATFORM_NAME "${CMAKE_CURRENT_LIST_DIR}" NAME)
 
 function(${__PLATFORM_NAME}_create_custom_options)
-
+	set_string_option(GODOT_TARGET_WIN_VERSION "0x0601" DESCRIPTION "Targeted Windows version, >= 0x0601 (Windows 7)")
 endfunction()
 
 function(${__PLATFORM_NAME}_get_platform_name __OUTPUT)
@@ -60,11 +60,10 @@ function(${__PLATFORM_NAME}_configure_platform)
 			"WASAPI_ENABLED"
 			"WINMIDI_ENABLED"
 			"TYPED_METHOD_BIND"
-			# those ones (in theory) sould be defined by default
 			"WIN32"
 			"MSVC"
-			# "WINVER="
-			# "_WIN32_WINNT="
+			"WINVER=${GODOT_TARGET_WIN_VERSION}"
+			"_WIN32_WINNT=${GODOT_TARGET_WIN_VERSION}"
 			"NOMINMAX" # disable bogus min/max WinDef.h macros
 		)
 
@@ -107,7 +106,7 @@ function(${__PLATFORM_NAME}_configure_platform)
 	else()
 		
 		target_link_options(global-env INTERFACE 
-			$<${IS_RELEASE_GEN_EXPR}:"-Wl$<COMMA>--subsystem$<COMMA>windows">
+			$<${IS_RELEASE_GEN_EXPR}:-Wl$<COMMA>--subsystem$<COMMA>windows>
 			$<IF:$<EQUAL:${CMAKE_SIZEOF_VOID_P},4>,-static;-static-libgcc;-static-libstdc++,-static>			
 			"-Wl,--stack,8388608"
 		)
@@ -126,10 +125,8 @@ function(${__PLATFORM_NAME}_configure_platform)
 			"OPENGL_ENABLED"
 			"WASAPI_ENABLED"
 			"WINMIDI_ENABLED"
-			# those ones (in theory) sould be defined by default
-			# "WINVER="
-			# "_WIN32_WINNT="
-			"NOMINMAX" # disable bogus min/max WinDef.h macros
+			"WINVER=${GODOT_TARGET_WIN_VERSION}"
+			"_WIN32_WINNT=${GODOT_TARGET_WIN_VERSION}"
 			"MINGW_ENABLED"
 			"MINGW_HAS_SECURE_API=1"
 		)

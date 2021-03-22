@@ -203,6 +203,10 @@ set(IS_DEBUG_INFO_GEN_EXPR 		$<CONFIG:Debug,RelWithDebInfo>)
 set(IS_DEBUG_GEN_EXPR 			$<CONFIG:Debug>)
 set(IS_OPT_DEBUG_GEN_EXPR 		$<CONFIG:RelWithDebInfo>)
 
+if(MINGW)
+	set(GODOT_SPLIT_LIBMODULES TRUE CACHE BOOL "" FORCE)
+endif()
+
 # Normilizing godot bin directory and making it absolute.
 if(NOT IS_ABSOLUTE "${GODOT_BIN_DIRECTORY}")
 	join_paths(GODOT_BIN_DIRECTORY "${CMAKE_BINARY_DIR}" "${GODOT_BIN_DIRECTORY}")
@@ -688,4 +692,3 @@ add_subdirectory(modules)
 add_subdirectory(main)
 
 add_subdirectory("platform/${GODOT_PLATFORM}") #TODO: implement
-
