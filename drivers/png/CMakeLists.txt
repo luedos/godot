@@ -1,6 +1,7 @@
 
 
 add_lib(drivers-png-lib 
+	OBJECT
 	PARENT_LIB
 		drivers-lib
 	COMPONENTS

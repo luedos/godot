@@ -15,6 +15,7 @@ set(__THIRDPARTY_ETC_PATH "${GODOT_SOURCE_DIR}/thirdparty/etc2comp")
 target_include_directories(etc-env INTERFACE "${__THIRDPARTY_ETC_PATH}")
 
 add_module_lib(thirdparty-etc-lib
+	OBJECT
 	PARENT_LIB
 		etc-lib
 	COMPONENTS

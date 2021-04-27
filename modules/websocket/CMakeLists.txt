@@ -24,6 +24,7 @@ if(GODOT_BUILTIN_WSLAY AND NOT GODOT_PLATFORM STREQUAL "javascript")
 	endif()
 
 	add_module_lib(thirdparty-ws-lib
+		OBJECT
 		PARENT_LIB
 			ws-lib
 		COMPONENTS

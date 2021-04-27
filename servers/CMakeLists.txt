@@ -1,11 +1,12 @@
 
 add_lib(servers-lib
-	PARENT_ENV
-		global-libs-list
 	COMPONENTS
 		global-env
 		warnings-env
 )
+
+register_global_lib(servers-lib)
+
 target_glob_sources(servers-lib PRIVATE "*.cpp")
 
 add_subdirectory(arvr)

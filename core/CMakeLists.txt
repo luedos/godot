@@ -4,13 +4,12 @@ execute_python_method(gen_methods generate_encryption_key_header
 		STR_ENV_VAR "SCRIPT_AES256_ENCRYPTION_KEY"
 )
 
-add_lib(core-lib 
-	PARENT_ENV
-		global-libs-list
+add_lib(core-lib
 	COMPONENTS
 		global-env
 		warnings-env
 )
+register_global_lib(core-lib)
 add_lib(thirdparty-core-lib 
 	OBJECT
 	PARENT_LIB 

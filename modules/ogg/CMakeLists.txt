@@ -17,6 +17,7 @@ if(GODOT_BUILTIN_LIBOGG)
 	target_include_directories(ogg-env INTERFACE "${__THIRDPARTY_OGG_PATH}")
 
 	add_module_lib(thirdparty-ogg-lib
+		OBJECT
 		PARENT_LIB
 			ogg-lib
 		COMPONENTS

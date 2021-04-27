@@ -18,6 +18,7 @@ target_include_directories(webm-env INTERFACE
 )
 
 add_module_lib(thirdparty-webm-lib
+	OBJECT
 	PARENT_LIB
 		webm-lib
 	COMPONENTS

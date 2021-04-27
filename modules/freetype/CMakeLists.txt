@@ -37,6 +37,7 @@ if(GODOT_BUILTIN_FREETYPE)
 	endif()
 
 	add_module_lib(thirdparty-freetype-lib
+		OBJECT
 		PARENT_LIB
 			freetype-lib
 		COMPONENTS
@@ -45,8 +46,9 @@ if(GODOT_BUILTIN_FREETYPE)
 
 	if(GODOT_PLATFORM STREQUAL "javascript")
 		add_module_lib(tmp-freetype-lib
+			OBJECT
 			PARENT_LIB
-				thirdparty-freetype-lib
+				freetype-lib
 			COMPONENTS
 				freetype-env
 		)

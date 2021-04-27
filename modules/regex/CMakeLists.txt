@@ -62,6 +62,7 @@ if(GODOT_BUILTIN_PCRE2)
 		set(__LIB_NAME "thirdparty-pcre2-${__WIDTH}-lib")
 
 		add_module_lib("${__LIB_NAME}"
+			OBJECT
 			PARENT_LIB
 				regex-lib
 			COMPONENTS

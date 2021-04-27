@@ -19,6 +19,7 @@ if(GODOT_BUILTIN_MBEDTLS)
 	target_include_directories(mbed-env INTERFACE "${__THIRDPARTY_MBED_PATH}/include")
 
 	add_module_lib(thirdparty-mbed-lib 
+		OBJECT
 		PARENT_LIB
 			mbed-lib
 		COMPONENTS

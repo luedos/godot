@@ -30,12 +30,11 @@ endfunction()
 if(GODOT_BUILD_TOOLS)
 	add_lib(editor-lib 
 		EXCLUDE_FROM_ALL
-		PARENT_ENV
-			global-libs-list
 		COMPONENTS
 			global-env
 			warnings-env
 	)
+	register_global_lib(editor-lib)
 
 	set(__REGISTER_EXPORTERS_FILE "register_exporters.gen.cpp")
 	target_sources(editor-lib PRIVATE "${__REGISTER_EXPORTERS_FILE}")

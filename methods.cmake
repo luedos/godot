@@ -1281,6 +1281,31 @@ function(add_lib __NAME)
 			)
 		endif()
 	else()
+		# Before we will add object library, we need to check that we are not linking to it another OBJECT library,
+		# nor we are linking it to another OBJECT library (OBJECT libraries are loose their objects if they are linked one to another).
+		if(NOT "${__ARGS_PARENT_LIB}" STREQUAL "")
+			get_target_property(__TARGET_TYPE "${__ARGS_PARENT_LIB}" TYPE)
+			assert("Can't link OBJECT library '${__NAME}' to another OBJECT library ${__ARGS_PARENT_LIB}"
+				NOT "${__TARGET_TYPE}" STREQUAL "OBJECT_LIBRARY"
+			)
+		endif()
+
+		if(NOT "${__ARGS_PARENT_ENV}" STREQUAL "")
+			get_target_property(__TARGET_TYPE "${__ARGS_PARENT_ENV}" TYPE)
+			assert("Can't link OBJECT library '${__NAME}' to another OBJECT library ${__ARGS_PARENT_ENV}"
+				NOT "${__TARGET_TYPE}" STREQUAL "OBJECT_LIBRARY"
+			)
+		endif()
+
+		foreach(__COMPONENT IN LISTS __ARGS_COMPONENTS)
+			if (TARGET "${__COMPONENT}")
+				get_target_property(__TARGET_TYPE "${__COMPONENT}" TYPE)
+				assert("Can't link OBJECT library '${__COMPONENT}' to another OBJECT library ${__NAME}"
+					NOT "${__TARGET_TYPE}" STREQUAL "OBJECT_LIBRARY"
+				)
+			endif()
+		endforeach()
+
 		add_library("${__NAME}" OBJECT ${__ARGS_SOURCES})
 	endif()
 

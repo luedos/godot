@@ -1,5 +1,6 @@
 
 add_module_lib(gdnative-vsdecoder-lib
+	OBJECT
 	PARENT_LIB
 		gdnative-lib
 	COMPONENTS

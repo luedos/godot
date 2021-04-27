@@ -7,6 +7,7 @@ add_module_lib(stb-vorbis-lib
 )
 
 add_module_lib(thirdparty-stb-vorbis-lib
+	OBJECT
 	PARENT_LIB
 		stb-vorbis-lib
 	COMPONENTS

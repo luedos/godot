@@ -15,8 +15,6 @@ foreach(__PLATFORM IN LISTS PLATFORMS_APIS)
 endforeach()
 
 add_lib(platform-lib
-	PARENT_ENV
-		global-libs-list
 	COMPONENTS
 		global-env
 		warnings-env
@@ -24,3 +22,5 @@ add_lib(platform-lib
 		${__PLATFORM_API_FILES}
 		"${__REG_API_FILE}"
 )
+
+register_global_lib(platform-lib)

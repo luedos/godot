@@ -5,12 +5,11 @@ add_env(drivers-env
 )
 
 add_lib(drivers-lib
-	PARENT_ENV
-		global-libs-list
 	COMPONENTS
 		drivers-env
 		warnings-env
 )
+register_global_lib(drivers-lib)
 
 # OS drivers
 add_subdirectory(unix)

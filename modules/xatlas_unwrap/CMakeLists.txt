@@ -17,6 +17,7 @@ if(GODOT_BUILTIN_XATLAS)
 	target_include_directories(xatlas-unwrap-env INTERFACE "${__THIRDPARTY_XATLAS_PATH}")
 
 	add_module_lib(thirdparty-xatlas-unwrap-lib
+		OBJECT
 		PARENT_LIB
 			xatlas-unwrap-lib
 		COMPONENTS

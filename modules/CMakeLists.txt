@@ -4,13 +4,12 @@ add_env(modules-env
 		global-env
 )
 
-add_lib(modules-lib 
-	PARENT_ENV
-		global-libs-list
+add_lib(modules-lib
 	COMPONENTS
 		modules-env
 		warnings-env
 )
+register_global_lib(modules-lib)
 
 add_dependencies(modules-env core-gen) # many modules dependent on the core gen headers
 
@@ -18,13 +17,13 @@ add_dependencies(modules-env core-gen) # many modules dependent on the core gen 
 target_sources(modules-lib PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/register_module_types.gen.cpp")
 
 # Basically a wrapper around add_lib
-# If 'GODOT_SPLIT_LIBMODULES' global option is off, creates object library, and connect it to the modules-lib directly ('PARENT_LIB' option is ignored).
+# If 'GODOT_SPLIT_LIBMODULES' global option is off, creates object library, and connect it to the modules-lib directly, 'PARENT_LIB' option, in that case, is ignored.
 function(add_module_lib __NAME)
 
 	assert_if_empty(__NAME)
 
 	set(__OPTIONS_ARGS
-		""
+		OBJECT
 	)
 	set(__ONE_VALUE_ARGS
 		PARENT_LIB
@@ -50,16 +49,31 @@ function(add_module_lib __NAME)
 	# if we are not spliting libmodules, then we want only object files, not libraries.
 	# Because of that we will generate only object libraries, and automatically connect them to the modules-lib.	
 	if(NOT GODOT_SPLIT_LIBMODULES)
+		set(__ARGS_OBJECT TRUE)
+		# linking this library directly into modules-lib
+		list(APPEND __FORWARD_ARGS PARENT_LIB modules-lib)
+
+	# if we are not forced to link everything into modules-lib
+	elseif("${__ARGS_PARENT_LIB}" STREQUAL "")
+		# if no parent lib was provided, then we want this library be part of the modules-lib interface..
+		# we are not linking this library directly into modules-lib, rather we are making it part of the interface. 
+		list(APPEND __FORWARD_ARGS PARENT_ENV modules-lib)
+
+	else()
+		# if parent lib was provided, then we just set this lib as parent lib.
+		list(APPEND __FORWARD_ARGS PARENT_LIB "${__ARGS_PARENT_LIB}")
+		# this is not a requirment, but it's desireble that only main modules libs (which are part of the modules-lib interface)
+		# are set as static, every other lib, should be object one.. 
+		if(NOT __ARGS_OBJECT)
+			message(WARNING "Module library '${__NAME}' (which is linked to the '${__ARGS_PARENT_LIB}' library) is not marked as OBJECT.")
+		endif()
+
+	endif()
+
+	if(__ARGS_OBJECT)
 		list(APPEND __FORWARD_ARGS OBJECT)
-		set(__ARGS_PARENT_LIB modules-lib)
 	endif()
 
-	# if no parent library was defined yet, using modules-lib as a default
-	if("${__ARGS_PARENT_LIB}" STREQUAL "")
-		set(__ARGS_PARENT_LIB modules-lib)
-	endif()
-
-	forward_arg(PARENT_LIB __FORWARD_ARGS)
 	forward_arg(COMPONENTS __FORWARD_ARGS)
 	forward_arg(ENVS_CLONE __FORWARD_ARGS)
 	forward_arg(LIBS_CLONE __FORWARD_ARGS)

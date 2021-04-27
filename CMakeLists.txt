@@ -680,15 +680,30 @@ endif()
 
 # this is basically a library to hold all the other main libraries (like cor-lib, scene-lib, modules-lib etc.)
 add_library(global-libs-list INTERFACE)
+# Opening global libs group
+if (NOT MSVC)
+	# This is done because we have bunch of cyclic dependencies in all global libs.
+	# This is not needed in msvc, because it's not dependent on linking order 
+	target_link_libraries(global-libs-list INTERFACE -Wl,--start-group)
+endif()
+
+# Just for eazy access to the mechanism of globals libs registration. 
+function(register_global_lib __NAME)
+	target_link_libraries(global-libs-list INTERFACE "${__NAME}")
+endfunction()
 
 add_subdirectory(core)
 add_subdirectory(servers)
 add_subdirectory(scene)
 add_subdirectory(editor)
 add_subdirectory(drivers)
-
 add_subdirectory(platform)
 add_subdirectory(modules)
 add_subdirectory(main)
 
-add_subdirectory("platform/${GODOT_PLATFORM}") #TODO: implement
+add_subdirectory("platform/${GODOT_PLATFORM}")
+
+# Closing global libs group
+if (NOT MSVC)
+	target_link_libraries(global-libs-list INTERFACE -Wl,--end-group)
+endif()

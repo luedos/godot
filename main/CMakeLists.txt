@@ -1,11 +1,10 @@
 
 add_lib(main-lib
-	PARENT_ENV
-		global-libs-list
 	COMPONENTS
 		global-env
 		warnings-env
 )
+register_global_lib(main-lib)
 target_glob_sources(main-lib PRIVATE "*.cpp")
 
 # Order matters here. Higher index controller database files write on top of lower index database files.

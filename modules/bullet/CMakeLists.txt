@@ -22,6 +22,7 @@ if(GODOT_BUILTIN_BULLET)
 	)
 
 	add_module_lib(thirdparty-bullet-lib
+		OBJECT
 		PARENT_LIB 
 			bullet-lib
 		COMPONENTS

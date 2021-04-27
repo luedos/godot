@@ -17,6 +17,7 @@ if(GODOT_BUILTIN_ENET)
 	target_compile_definitions(enet-env INTERFACE "GODOT_ENET")
 
 	add_module_lib(thirdparty-enet-lib
+		OBJECT
 		PARENT_LIB
 			enet-lib
 		COMPONENTS

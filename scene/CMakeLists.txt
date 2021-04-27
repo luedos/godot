@@ -1,11 +1,10 @@
 
 add_lib(scene-lib
-	PARENT_ENV
-		global-libs-list
 	COMPONENTS
 		global-env
 		warnings-env
 )
+register_global_lib(scene-lib)
 
 add_lib(thirdparty-scene-lib
 	OBJECT
