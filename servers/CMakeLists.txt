@@ -3,6 +3,8 @@ add_lib(servers-lib
 	COMPONENTS
 		global-env
 		warnings-env
+	DEPENDENCIES
+		core-lib
 )
 
 register_global_lib(servers-lib)

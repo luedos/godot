@@ -93,6 +93,10 @@ if(GODOT_BUILTIN_LIBTHEORA)
 	if(GODOT_BUILTIN_LIBVORBIS)
 		target_include_directories(theora-env INTERFACE "${GODOT_SOURCE_DIR}/thirdparty/libvorbis")
 	endif()
+	define_module_dependencies(theora-lib 
+		vorbis-lib
+		ogg-lib
+	)
 endif()
 
 target_glob_sources(theora-lib PRIVATE "*.cpp")

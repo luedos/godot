@@ -8,6 +8,9 @@ add_lib(drivers-lib
 	COMPONENTS
 		drivers-env
 		warnings-env
+	DEPENDENCIES
+		core-lib
+		servers-lib
 )
 register_global_lib(drivers-lib)
 
@@ -46,4 +49,3 @@ endif()
 add_subdirectory(png)
 
 target_glob_sources(drivers-lib PRIVATE "*.cpp")
-

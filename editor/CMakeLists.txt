@@ -33,6 +33,9 @@ if(GODOT_BUILD_TOOLS)
 		COMPONENTS
 			global-env
 			warnings-env
+		DEPENDENCIES
+			core-lib
+			scene-lib
 	)
 	register_global_lib(editor-lib)
 

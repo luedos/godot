@@ -20,7 +20,10 @@ if(GODOT_BUILTIN_LIBVORBIS)
 	target_include_directories(vorbis-env INTERFACE "${__THIRDPARTY_VORBIS_PATH}")
 	if(GODOT_BUILTIN_LIBOGG)
 		target_include_directories(vorbis-env INTERFACE "${GODOT_SOURCE_DIR}/thirdparty/libogg")
-	endif()
+	endif()	
+	define_module_dependencies(vorbis-lib 
+		ogg-lib
+	)
 
 	add_module_lib(thirdparty-vorbis-lib
 		OBJECT

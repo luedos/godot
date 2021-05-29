@@ -39,7 +39,8 @@ if(NOT mbedtls_IS_MODULE_ENABLED)
 		"sha256.c"
 		"godot_core_mbedtls_platform.c"
 	)
-
+else()
+	define_lib_dependencies(core-lib mbed-lib)
 endif()
 
 target_glob_sources(core-crypto-lib PRIVATE "*.cpp")

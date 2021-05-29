@@ -1210,6 +1210,27 @@ function(execute_python_method __MODULE __FUNCTION)
 
 endfunction()
 
+function(define_lib_dependencies __NAME)
+
+	assert_if_empty(__NAME)
+
+	get_target_property(__TARGET_TYPE "${__NAME}" TYPE)
+
+	if (__TARGET_TYPE STREQUAL "OBJECT_LIBRARY")
+		foreach(__DEPENDENCY IN LISTS ARGN)
+			if (TARGET "${__DEPENDENCY}")
+				get_target_property(__TARGET_TYPE "${__DEPENDENCY}" TYPE)
+				
+				assert("Library ${__NAME} was marked as OBJECT, and so it can't have OBJECT library dependency (dependency is \"${__DEPENDENCY}\")"
+					NOT __TARGET_TYPE STREQUAL "OBJECT_LIBRARY"
+				)
+			endif()
+		endforeach()
+	endif()
+	target_link_libraries("${__NAME}" PRIVATE ${ARGN})
+
+endfunction()
+
 # This function is for more simple adding of the libraries.
 # By default all libraries is STATIC, but you can force to generate OBJECT library with 'OBJECT' option.
 # Also, just as in regular add_library call, you can add 'EXCLUDE_FROM_ALL' option.
@@ -1238,6 +1259,7 @@ function(add_lib __NAME)
 	)
 	set(__MULTI_VALUE_ARGS 
 		COMPONENTS # all libraries/environments which will be connected to this library.
+		DEPENDENCIES
 		ENVS_CLONE
 		LIBS_CLONE
 		SOURCES
@@ -1280,6 +1302,19 @@ function(add_lib __NAME)
 				COMPILE_PDB_OUTPUT_DIRECTORY "${__ARGS_OUTPUT_DIR}$<0:>"
 			)
 		endif()
+
+		foreach(__COMP ${__ARGS_COMPONENTS})
+			if (TARGET "${__COMP}")
+				get_target_property(__TARGET_TYPE "${__COMP}" TYPE)
+				
+				if (NOT __TARGET_TYPE MATCHES "(OBJECT_LIBRARY|INTERFACE_LIBRARY)")
+					message(WARNING "Static library ${__NAME} can't have non OBJECT or non INTERFACE library \"${__COMP}\" as a component. This component will be moved into dependencies.")
+					list(REMOVE_ITEM __ARGS_COMPONENTS "${__COMP}")
+					list(APPEND __ARGS_DEPENDENCIES "${__COMP}")
+				endif()
+			endif()
+		endforeach()
+
 	else()
 		# Before we will add object library, we need to check that we are not linking to it another OBJECT library,
 		# nor we are linking it to another OBJECT library (OBJECT libraries are loose their objects if they are linked one to another).
@@ -1297,12 +1332,15 @@ function(add_lib __NAME)
 			)
 		endif()
 
-		foreach(__COMPONENT IN LISTS __ARGS_COMPONENTS)
-			if (TARGET "${__COMPONENT}")
-				get_target_property(__TARGET_TYPE "${__COMPONENT}" TYPE)
-				assert("Can't link OBJECT library '${__COMPONENT}' to another OBJECT library ${__NAME}"
-					NOT "${__TARGET_TYPE}" STREQUAL "OBJECT_LIBRARY"
-				)
+		foreach(__COMP ${__ARGS_COMPONENTS})
+			if (TARGET "${__COMP}")
+				get_target_property(__TARGET_TYPE "${__COMP}" TYPE)
+				
+				if (NOT __TARGET_TYPE STREQUAL "INTERFACE_LIBRARY")
+					message(WARNING "Object library ${__NAME} can't have non INTERFACE library \"${__COMP}\" as a component. This component will be moved into dependencies.")
+					list(REMOVE_ITEM __ARGS_COMPONENTS "${__COMP}")
+					list(APPEND __ARGS_DEPENDENCIES "${__COMP}")
+				endif()
 			endif()
 		endforeach()
 
@@ -1341,6 +1379,10 @@ function(add_lib __NAME)
 
 	if(NOT "${__ARGS_PARENT_ENV}" STREQUAL "")
 		target_link_libraries("${__ARGS_PARENT_ENV}" INTERFACE "${__NAME}")
+	endif()
+
+	if(NOT "${__ARGS_DEPENDENCIES}" STREQUAL "")
+		define_lib_dependencies("${__NAME}" ${__ARGS_DEPENDENCIES})
 	endif()
 
 endfunction()

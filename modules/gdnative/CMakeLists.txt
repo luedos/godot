@@ -76,8 +76,6 @@ if(GODOT_GDNATIVE_WRAPPER)
 
 	target_include_directories(gdnative-wrapper-lib PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
-	set(__IS_MSVC_GEN_EXPR )
-
 	if(GODOT_USE_LTO)
 		# this is actually enables lto!
 		set_target_property(gdnative-wrapper-lib PROPERTIES INTERPROCEDURAL_OPTIMIZATION true)

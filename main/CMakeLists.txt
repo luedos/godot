@@ -3,7 +3,20 @@ add_lib(main-lib
 	COMPONENTS
 		global-env
 		warnings-env
+	DEPENDENCIES
+		core-lib
+		servers-lib
+		scene-lib
+		drivers-lib
+		platform-lib
+		modules-lib	
 )
+if (GODOT_BUILD_TOOLS)
+	define_lib_dependencies(main-lib
+		editor-lib
+	)
+endif()
+
 register_global_lib(main-lib)
 target_glob_sources(main-lib PRIVATE "*.cpp")
 
@@ -64,4 +77,3 @@ if(GODOT_BUILD_TOOLS)
 	add_subdirectory(tests)
 
 endif()
-

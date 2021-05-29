@@ -3,7 +3,21 @@ add_lib(scene-lib
 	COMPONENTS
 		global-env
 		warnings-env
+	DEPENDENCIES
+		servers-lib
 )
+if (GODOT_BUILD_TOOLS)
+	define_lib_dependencies(scene-lib
+		editor-lib
+	)
+endif()
+
+if (freetype_IS_MODULE_ENABLED)
+	define_lib_dependencies(scene-lib 
+		freetype-lib
+	)
+endif()
+
 register_global_lib(scene-lib)
 
 add_lib(thirdparty-scene-lib

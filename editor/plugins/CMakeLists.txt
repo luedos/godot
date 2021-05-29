@@ -1,2 +1,2 @@
 
-target_glob_sources(core-lib PRIVATE "*.cpp")
+target_glob_sources(editor-lib PRIVATE "*.cpp")

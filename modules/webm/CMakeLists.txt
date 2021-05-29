@@ -8,6 +8,10 @@ add_module_lib(webm-lib
 	COMPONENTS
 		webm-env
 		warnings-env
+	DEPENDENCIES
+		ogg-lib
+		vorbis-lib
+		opus-lib
 )
 
 set(__THIRDPARTY_WEBM_PATH "${GODOT_SOURCE_DIR}/thirdparty/libsimplewebm")
