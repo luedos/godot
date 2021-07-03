@@ -37,6 +37,12 @@ endfunction()
 function(define_module_dependencies __NAME)
 
 	assert_if_empty(__NAME)
+	# This function is used for defining dependencies between modules.
+	# If we are not spliting lib modules, thats meen where is no need to define dependencies, 
+	# because all modules will be connected as OBJECT lib to the modules-lib anyway 
+	if (GODOT_SPLIT_LIBMODULES)
+		return()
+	endif()
 
 	set(__DEPENDENCIES ${ARGN})
 	__check_module_dependencies(__DEPENDENCIES)

@@ -13,9 +13,11 @@ if (GODOT_BUILD_TOOLS)
 endif()
 
 if (freetype_IS_MODULE_ENABLED)
-	define_lib_dependencies(scene-lib 
-		freetype-lib
-	)
+	if(GODOT_SPLIT_LIBMODULES)
+		define_lib_dependencies(scene-lib freetype-lib)
+	else()
+		define_lib_dependencies(scene-lib modules-lib)
+	endif()
 endif()
 
 register_global_lib(scene-lib)

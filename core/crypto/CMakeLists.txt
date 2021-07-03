@@ -40,7 +40,11 @@ if(NOT mbedtls_IS_MODULE_ENABLED)
 		"godot_core_mbedtls_platform.c"
 	)
 else()
-	define_lib_dependencies(core-lib mbed-lib)
+	if (GODOT_SPLIT_LIBMODULES)
+		define_lib_dependencies(core-lib mbed-lib)
+	else()
+		define_lib_dependencies(core-lib modules-lib)
+	endif()
 endif()
 
 target_glob_sources(core-crypto-lib PRIVATE "*.cpp")

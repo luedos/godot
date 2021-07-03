@@ -1527,3 +1527,104 @@ function(extract_file_from_list __LIST_VAR __FILE)
 	optionally_return("${__ARGS_RETURN}" "${__EXTRACTED_FILES}")
 
 endfunction()
+
+function(target_append_pkg_config __TARGET __SCOPE)
+
+	assert_if_empty(__TARGET __SCOPE)
+	assert("PkgConfig must be included before using 'target_append_pkg_config' function."
+		PKG_CONFIG_FOUND
+	)
+
+	set(__OPTIONS_ARGS 
+		INCLUDES
+		OTHER_CFLAGS
+		ALL_CFLAGS
+
+		LINK_LIBS
+		LINK_DIRS
+		OTHER_LDFLAGS
+		ALL_LDFLAGS
+
+		ALL
+
+		REQUIRED
+	)
+	set(__ONE_VALUE_ARGS "")
+	set(__MULTI_VALUE_ARGS "")
+	cmake_parse_arguments(PARSE_ARGV 2 __ARGS "${__OPTIONS_ARGS}" "${__ONE_VALUE_ARGS}" "${__MULTI_VALUE_ARGS}")
+
+	if(__ARGS_REQUIRED)
+		set(__REQUIRED REQUIRED)
+	else()
+		set(__REQUIRED "")
+	endif()
+
+	if(__ARGS_ALL)
+		set(__ARGS_ALL_CFLAGS TRUE)
+		set(__ARGS_ALL_LDFLAGS TRUE)
+	endif()
+
+	if(__ARGS_ALL_CFLAGS)
+		set(__ARGS_INCLUDES TRUE)
+		set(__ARGS_OTHER_CFLAGS TRUE)
+	endif()
+
+	if(__ARGS_ALL_LDFLAGS)
+		set(__ARGS_LINK_LIBS TRUE)
+		set(__ARGS_LINK_DIRS TRUE)
+		set(__ARGS_OTHER_LDFLAGS TRUE)
+	endif()
+
+	# basically, everything unparsed is modules
+	foreach(__MODULE IN LISTS __ARGS_UNPARSED_ARGUMENTS)
+		
+		pkg_check_modules(__PKG ${__REQUIRED} "${__MODULE}")
+		if (NOT __PKG_FOUND)
+			continue()
+		endif()
+
+		if(__ARGS_INCLUDES)
+			target_include_directories("${__TARGET}" "${__SCOPE}" ${__PKG_INCLUDE_DIRS})
+		endif()
+
+		if(__ARGS_OTHER_CFLAGS)
+			target_compile_options("${__TARGET}" "${__SCOPE}" ${__PKG_CFLAGS_OTHER})
+		endif()
+
+		if(__ARGS_LINK_LIBS)
+			target_link_libraries("${__TARGET}" "${__SCOPE}" ${__PKG_LINK_LIBRARIES})
+		endif()
+
+		if (__ARGS_LINK_DIRS)
+			target_link_directories("${__TARGET}" "${__SCOPE}" ${__PKG_LIBRARY_DIRS})
+		endif()
+
+		if(__ARGS_OTHER_LDFLAGS)
+			target_link_options("${__TARGET}" "${__SCOPE}" ${__PKG__LDFLAGS_OTHER})
+		endif()
+
+	endforeach()
+
+endfunction()
+
+function(check_pkg_exist __OUTPUT __PKG_NAME)
+
+	assert_if_empty(__PKG_NAME __OUTPUT)
+
+	assert("PkgConfig must be included before using 'check_pkg_exist' function."
+		PKG_CONFIG_FOUND
+	)
+
+	# executing actual command
+	execute_process(
+		COMMAND "${PKG_CONFIG_EXECUTABLE}" "--exists" "${__PKG_NAME}"
+		RESULT_VARIABLE __RET
+	)
+
+	if(__RET EQUAL 0)
+		set("${__OUTPUT}" TRUE PARENT_SCOPE)
+	else()
+		set("${__OUTPUT}" FALSE PARENT_SCOPE)
+	endif()
+
+endfunction()

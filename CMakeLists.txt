@@ -15,6 +15,8 @@ set(GODOT_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 
 # First of all, including all needed functions
 include(methods.cmake)
+# package config is used by the project here and there
+find_package(PkgConfig QUIET)
 
 ############### Processing platforms ###############
 
@@ -25,6 +27,8 @@ include(methods.cmake)
 string(TOLOWER "${CMAKE_SYSTEM_NAME}" __SYSTEM_NAME)
 if(__SYSTEM_NAME MATCHES "(windows|win32)")
 	set(GODOT_PLATFORM "windows") # windows case
+elseif(__SYSTEM_NAME MATCHES "(x11|linux)")
+	set(GODOT_PLATFORM "x11")
 else()
 	# For now we are not supporting any other platforms..
 	message(FATAL_ERROR "Platform \"${CMAKE_SYSTEM_NAME}\" is not supported.")
