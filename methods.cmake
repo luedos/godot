@@ -380,7 +380,7 @@ function(get_modules_paths __OUTPUT)
 
 	foreach(__PARENT_DIR IN LISTS ARGN)
 		# we need normilized absolute directory  
-		if(NOT IS_ABSOLUTE __PARENT_DIR)
+		if(NOT IS_ABSOLUTE "${__PARENT_DIR}")
 			join_paths(__PARENT_DIR "${GODOT_SOURCE_DIR}" "${__PARENT_DIR}")
 		else()
 			normilize_path(__PARENT_DIR "${__PARENT_DIR}")
@@ -1291,7 +1291,7 @@ function(add_lib __NAME)
 
 		# and defining output dir if one were provided.
 		if(NOT "${__ARGS_OUTPUT_DIR}" STREQUAL "")
-			if(NOT IS_ABSOLUTE __ARGS_OUTPUT_DIR)
+			if(NOT IS_ABSOLUTE "${__ARGS_OUTPUT_DIR}")
 				join_paths(__ARGS_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}" "${__ARGS_OUTPUT_DIR}")
 			endif()
 	
