@@ -285,6 +285,24 @@ function(join_paths __OUTPUT __FIRST_PATH __SECOND_PATH)
 	set(${__OUTPUT} "${__JOINED_PATH}" PARENT_SCOPE)
 endfunction()
 
+function(is_path_base_of __OUTPUT __PATH __RELATIVE_PATH)
+
+	assert_if_empty(__OUTPUT __PATH)
+
+	# Absolute will force path to be relative to the CMAKE_CURRENT_SOURCE_DIR, if path is not yet absolute (other wise it doesn't do anything).
+	# This is mostly 'plan B', it is always better to provide absolute paths in the first place. 
+	normilize_path(__PATH "${__PATH}" ABSOLUTE)
+	normilize_path(__RELATIVE_PATH "${__RELATIVE_PATH}" ABSOLUTE)
+
+	# if path starts with relative path (here all paths are absolute)
+	if (__PATH MATCHES "^${__RELATIVE_PATH}.*")
+		set("${__OUTPUT}" TRUE PARENT_SCOPE)
+	else()
+		set("${__OUTPUT}" FALSE PARENT_SCOPE)
+	endif()
+
+endfunction()
+
 # Globs files and adds them to the target as sources.
 # The signature is very simular to the regular target_sources, but here you must pass glob expression instead of actual sources. 
 # Also for, simplicity sake, only one glob expression with one scope can be provided.

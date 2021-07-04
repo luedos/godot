@@ -151,6 +151,13 @@ foreach(__MODULE_ID IN LISTS MODULES_LIST)
   	string(TOUPPER "${__MODULE_ID}" __MODULE_ID_UPPER)
 	target_compile_definitions(modules-env INTERFACE "MODULE_${__MODULE_ID_UPPER}_ENABLED")
 	
-	add_subdirectory("${${__MODULE_ID}_MODULE_PATH}")
+	# is module not from this directory, we would need to set binary dir.
+	is_path_base_of(__IS_MODULE_RELATIVE "${${__MODULE_ID}_MODULE_PATH}" "${CMAKE_CURRENT_SOURCE_DIR}")
+	if(__IS_MODULE_RELATIVE)
+		add_subdirectory("${${__MODULE_ID}_MODULE_PATH}")
+	else()
+		add_subdirectory("${${__MODULE_ID}_MODULE_PATH}" "external_modules/${__MODULE_ID}")
+	endif()
+
 
 endforeach()
