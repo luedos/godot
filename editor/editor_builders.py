@@ -9,6 +9,9 @@ from platform_methods import subprocess_main
 from compat import encode_utf8, byte_to_str, open_utf8
 
 
+def cmake_make_doc_header(target, source):
+    make_doc_header(target, sorted(source), None)
+
 def make_doc_header(target, source, env):
 
     dst = target[0]
@@ -44,6 +47,9 @@ def make_doc_header(target, source, env):
     g.close()
 
 
+def cmake_make_fonts_header(target, source):
+    make_fonts_header(target, sorted(source), None)
+
 def make_fonts_header(target, source, env):
 
     dst = target[0]
@@ -73,6 +79,9 @@ def make_fonts_header(target, source, env):
 
     g.close()
 
+
+def cmake_make_translations_header(target, source, category):
+    make_translations_header(target, source, None, category)
 
 def make_translations_header(target, source, env, category):
 
@@ -123,6 +132,34 @@ def make_translations_header(target, source, env, category):
 
     g.close()
 
+def cmake_register_exporters(output_file, modules):
+    from compat import open_utf8
+    # Register exporters
+    reg_exporters_inc = '#include "register_exporters.h"\n'
+    reg_exporters = "void register_exporters() {\n"
+    for e in modules:
+        reg_exporters += "\tregister_" + e + "_exporter();\n"
+        reg_exporters_inc += '#include "platform/' + e + '/export/export.h"\n'
+    reg_exporters += "}\n"
+
+    # NOTE: It is safe to generate this file here, since this is still executed serially
+    with open_utf8(output_file, "w") as f:
+        f.write(reg_exporters_inc)
+        f.write(reg_exporters)
+
+def cmake_make_doc_data_class_path(to_path, class_map):
+    # NOTE: It is safe to generate this file here, since this is still executed serially
+    g = open_utf8(os.path.join(to_path, "doc_data_class_path.gen.h"), "w")
+    g.write("static const int _doc_data_class_path_count = " + str(len(class_map)) + ";\n")
+    g.write("struct _DocDataClassPath { const char* name; const char* path; };\n")
+
+    g.write("static const _DocDataClassPath _doc_data_class_paths[" + str(len(class_map) + 1) + "] = {\n")
+    for c in sorted(class_map):
+        g.write('\t{"' + c + '", "' + class_map[c] + '"},\n')
+    g.write("\t{NULL, NULL}\n")
+    g.write("};\n")
+
+    g.close()
 
 def make_editor_translations_header(target, source, env):
     make_translations_header(target, source, env, "editor")

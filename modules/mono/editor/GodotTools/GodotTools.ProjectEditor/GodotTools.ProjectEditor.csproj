@@ -3,6 +3,8 @@
     <ProjectGuid>{A8CDAD94-C6D4-4B19-A7E7-76C53CC92984}</ProjectGuid>
     <TargetFramework>net472</TargetFramework>
     <LangVersion>7.2</LangVersion>
+    <GodotSourceRootPath>$(SolutionDir)/../../../../</GodotSourceRootPath>
+    <GodotOutputDataDir>$(GodotSourceRootPath)/bin/GodotSharp</GodotOutputDataDir>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.Build" />
@@ -24,10 +26,6 @@
     <None Include="MSBuild.exe" CopyToOutputDirectory="Always" />
   </ItemGroup>
   <Target Name="CopyMSBuildStubWindows" AfterTargets="Build" Condition=" '$(GodotPlatform)' == 'windows' Or ( '$(GodotPlatform)' == '' And '$(OS)' == 'Windows_NT' ) ">
-    <PropertyGroup>
-      <GodotSourceRootPath>$(SolutionDir)/../../../../</GodotSourceRootPath>
-      <GodotOutputDataDir>$(GodotSourceRootPath)/bin/GodotSharp</GodotOutputDataDir>
-    </PropertyGroup>
     <!-- Need to copy it here as well on Windows -->
     <Copy SourceFiles="MSBuild.exe" DestinationFiles="$(GodotOutputDataDir)\Mono\lib\mono\v4.0\MSBuild.exe" />
   </Target>

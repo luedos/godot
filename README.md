@@ -76,3 +76,11 @@ for more information.
 [![Translate on Weblate](https://hosted.weblate.org/widgets/godot-engine/-/godot/svg-badge.svg)](https://hosted.weblate.org/engage/godot-engine/?utm_source=widget)
 [![Total alerts on LGTM](https://img.shields.io/lgtm/alerts/g/godotengine/godot.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/godotengine/godot/alerts)
 [![TODOs](https://badgen.net/https/api.tickgit.com/badgen/github.com/godotengine/godot)](https://www.tickgit.com/browse?repo=github.com/godotengine/godot)
+
+## CMake part 
+
+This project is started, and still intended, for an educational purposes, to learn CMake and cross compilation in general.
+If you want to support it in any way, just test it yourself and leave an issue on whatever you found, so I can reasearch more staff.
+
+For now windows is the only platform that is supported. Next will be linux, and after that android.. 
+And I probably not even be able to finish android, so I don't know that will be next.

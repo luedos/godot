@@ -384,6 +384,9 @@ def run(target, source, env):
         f.write(text_free_func)
 
 
+def cmake_run(target, source, *args, **kwargs):
+	run(target, source, None, *args, **kwargs)
+
 if __name__ == "__main__":
     from platform_methods import subprocess_main
 
