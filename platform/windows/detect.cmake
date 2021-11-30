@@ -2,6 +2,8 @@ get_filename_component(__PLATFORM_NAME "${CMAKE_CURRENT_LIST_DIR}" NAME)
 
 function(${__PLATFORM_NAME}_create_custom_options)
 	set_string_option(GODOT_TARGET_WIN_VERSION "0x0601" DESCRIPTION "Targeted Windows version, >= 0x0601 (Windows 7)")
+	set_bool_option(GODOT_USE_STATIC_CPP TRUE DESCRIPTION "Link MinGW/MSVC C++ runtime libraries statically.")
+	set_bool_option(GODOT_USE_ASAN FALSE DESCRIPTION "Use address sanitizer (ASAN).")
 endfunction()
 
 function(${__PLATFORM_NAME}_get_platform_name __OUTPUT)
@@ -20,6 +22,12 @@ function(${__PLATFORM_NAME}_get_can_platform_build __OUTPUT)
 
 endfunction()
 
+# set(IS_OPTIMIZED_GEN_EXPR      $<CONFIG:Release,MinSizeRel,RelWithDebInfo>)
+# set(IS_RELEASE_GEN_EXPR        $<CONFIG:Release,MinSizeRel>)
+# set(IS_DEBUG_INFO_GEN_EXPR     $<CONFIG:Debug,RelWithDebInfo>)
+# set(IS_DEBUG_GEN_EXPR          $<CONFIG:Debug>)
+# set(IS_OPT_DEBUG_GEN_EXPR      $<CONFIG:RelWithDebInfo>)
+
 function(${__PLATFORM_NAME}_configure_platform)
 	
 	target_include_directories(global-env INTERFACE "${GODOT_SOURCE_DIR}/platform/windows")
@@ -30,31 +38,38 @@ function(${__PLATFORM_NAME}_configure_platform)
 		target_link_options(global-env INTERFACE 
 			$<${IS_RELEASE_GEN_EXPR}:/SUBSYSTEM:WINDOWS;/ENTRY:mainCRTStartup;/OPT:REF>
 			$<${IS_OPT_DEBUG_GEN_EXPR}:/SUBSYSTEM:CONSOLE;/OPT:REF>
-			$<${IS_DEBUG_GEN_EXPR}:/SUBSYSTEM:CONSOLE;/DEBUG>
+			$<${IS_DEBUG_GEN_EXPR}:/SUBSYSTEM:CONSOLE>
+			$<${IS_DEBUG_INFO_GEN_EXPR}:/DEBUG>
 			"/STACK:8388608"
 		)
 
 		target_compile_options(global-env INTERFACE
 			$<$<CONFIG:Release>:/O2>
 			$<$<CONFIG:MinSizeRel>:/O1>
+			$<${IS_DEBUG_INFO_GEN_EXPR}:/Zi;/FS>
 			$<${IS_OPT_DEBUG_GEN_EXPR}:/O2>
-			$<${IS_DEBUG_GEN_EXPR}:/Z7;/Od;/EHsc>
-			"/MT"
+			$<${IS_DEBUG_GEN_EXPR}:/Od;/EHsc>
 			"/Gd"
 			"/GR"
 			"/nologo"
+			# Force to use Unicode encoding
+			"/utf-8"
 			# assume all sources are C++
 			$<$<COMPILE_LANGUAGE:CXX>:/TP>
 		)
 
+		if(GODOT_USE_STATIC_CPP)
+			target_compile_options(global-env INTERFACE "/MT")
+		else()
+			target_compile_options(global-env INTERFACE "/MD")
+		endif()
+
 		if(MSVC_VERSION GREATER_EQUAL "1910") # vs2015 and later
 			target_compile_options(global-env INTERFACE
-				"/utf-8"
 			)
 		endif()
 
-		target_compile_definitions(global-env INTERFACE
-			$<${IS_DEBUG_INFO_GEN_EXPR}:DEBUG_ENABLED>			
+		target_compile_definitions(global-env INTERFACE		
 			"WINDOWS_ENABLED"
 			"OPENGL_ENABLED"
 			"WASAPI_ENABLED"
@@ -67,10 +82,8 @@ function(${__PLATFORM_NAME}_configure_platform)
 			"NOMINMAX" # disable bogus min/max WinDef.h macros
 		)
 
-		if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-			target_compile_definitions(global-env INTERFACE
-				"_WIN64"
-			)
+		if(PROCESSOR_BITS EQUAL 64)
+			target_compile_definitions(global-env INTERFACE	"_WIN64")
 		endif()
 
 		target_link_libraries(global-env INTERFACE
@@ -96,7 +109,17 @@ function(${__PLATFORM_NAME}_configure_platform)
 			"dwmapi"
 		)
 
-		if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+		if(GODOT_USE_LTO)
+			target_compile_options(global-env INTERFACE "/GL")
+			target_link_options("/LTCG")
+		endif()
+
+		if(GODOT_USE_ASAN)
+			target_link_options(global-env INTERFACE "/INFERASANLIBS")
+			target_compile_options(global-env INTERFACE "/fsanitize=address")
+		endif()
+
+		if(PROCESSOR_BITS EQUAL 64)
 			# If building for 64bit architecture, disable assembly optimisations for 32 bit builds (theora as of writing)... vc compiler for 64bit can not compile _asm
 			set_target_properties(global-env PROPERTIES X86_LIBTHEORA_OPT_VC false)
 		else()
@@ -106,21 +129,55 @@ function(${__PLATFORM_NAME}_configure_platform)
 	else()
 		
 		target_link_options(global-env INTERFACE 
-			$<${IS_RELEASE_GEN_EXPR}:-Wl$<COMMA>--subsystem$<COMMA>windows>
-			$<IF:$<EQUAL:${CMAKE_SIZEOF_VOID_P},4>,-static;-static-libgcc;-static-libstdc++,-static>			
+			$<${IS_RELEASE_GEN_EXPR}:-Wl$<COMMA>--subsystem$<COMMA>windows>			
 			"-Wl,--stack,8388608"
+			"-Wl,--nxcompat" # DEP protection. Not enabling ASLR for now, Mono crashes.
 		)
+		if(GODOT_USE_STATIC_CPP)
+			if(PROCESSOR_BITS EQUAL 32)
+				target_link_options(global-env INTERFACE 
+					"-static"
+					"-static-libgcc"
+					"-static-libstdc++"
+				)
+			else()
+				target_link_options(global-env INTERFACE 
+					"-static"
+				)
+			endif()
+		endif()
 
 		target_compile_options(global-env INTERFACE
-			$<$<CONFIG:Release>:-msse2;$<IF:$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>,-O3,-O2>>
+			$<$<CONFIG:Release>:-msse2;$<IF:$<EQUAL:${PROCESSOR_BITS},64>,-O3,-O2>>
 			$<$<CONFIG:MinSizeRel>:-Os>
 			$<${IS_OPT_DEBUG_GEN_EXPR}:-O2;-g2>
 			$<${IS_DEBUG_GEN_EXPR}:-g3>
 			"-mwindows"			
 		)
 
-		target_compile_definitions(global-env INTERFACE
-			$<${IS_DEBUG_INFO_GEN_EXPR}:DEBUG_ENABLED>			
+		if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
+			set(GODOT_SPLIT_LIBMODULES TRUE PARENT_SCOPE)
+		endif()
+
+
+		if(GODOT_USE_LTO)
+			if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang" 
+				AND GODOT_LTO_JOBS_COUNT MATCHES "^[0-9]+$" # check that GODOT_LTO_JOBS_COUNT is a valid number
+				AND GODOT_LTO_JOBS_COUNT GREATER "1")
+				target_compile_options(global-env INTERFACE "-flto")
+				target_link_options(global-env INTERFACE "-flto=${GODOT_LTO_JOBS_COUNT}")
+			else()
+				if(GODOT_USE_THINLTO)
+					target_compile_options(global-env INTERFACE "-flto=thin")
+					target_link_options(global-env INTERFACE "-flto=thin")
+				else()
+					target_compile_options(global-env INTERFACE "-flto")
+					target_link_options(global-env INTERFACE "-flto")
+				endif()
+			endif()
+		endif()
+
+		target_compile_definitions(global-env INTERFACE		
 			"WINDOWS_ENABLED"
 			"OPENGL_ENABLED"
 			"WASAPI_ENABLED"
@@ -155,7 +212,7 @@ function(${__PLATFORM_NAME}_configure_platform)
 			"dwmapi"
 		)
 
-		set_target_properties(global-env PROPERTIES X86_LIBTHEORA_OPT_GCC false)
+		set_target_properties(global-env PROPERTIES X86_LIBTHEORA_OPT_GCC TRUE)
 	endif()
 
 endfunction()

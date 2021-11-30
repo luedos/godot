@@ -2,21 +2,16 @@
 get_filename_component(__MODULE_NAME "${CMAKE_CURRENT_LIST_DIR}" NAME)
 
 function(${__MODULE_NAME}_configure_module)
-	# does nothing
+	# pass, nothing to do here
 endfunction()
 
 function(${__MODULE_NAME}_get_module_can_build __OUTPUT)
-	if(NOT PROCESSOR_IS_RISCV)
-		set(${__OUTPUT} TRUE PARENT_SCOPE)
-	else()
-		set(${__OUTPUT} FALSE PARENT_SCOPE)
-	endif()
+	set(${__OUTPUT} TRUE PARENT_SCOPE)
 endfunction()
 
 function(${__MODULE_NAME}_get_doc_classes __OUTPUT)
 	set(${__OUTPUT}
-		"RegEx"
-		"RegExMatch"
+		"AudioStreamMP3"
 		PARENT_SCOPE
 	)
 endfunction()

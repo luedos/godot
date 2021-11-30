@@ -6,10 +6,10 @@ function(${__MODULE_NAME}_configure_module)
 endfunction()
 
 function(${__MODULE_NAME}_get_module_can_build __OUTPUT)
-	if(NOT GODOT_PLATFORM STREQUAL "iphone")
-		set(${__OUTPUT} true PARENT_SCOPE)
+	if(GODOT_PLATFORM STREQUAL "iphone" OR PROCESSOR_IS_RISCV)
+		set(${__OUTPUT} FALSE PARENT_SCOPE)
 	else()
-		set(${__OUTPUT} false PARENT_SCOPE)
+		set(${__OUTPUT} TRUE PARENT_SCOPE)
 	endif()
 endfunction()
 

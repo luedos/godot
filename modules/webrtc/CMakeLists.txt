@@ -13,4 +13,10 @@ if(gdnative_IS_MODULE_ENABLED)
 	)
 endif()
 
+if(GODOT_PLATFORM STREQUAL "javascript")
+	#TODO: Actially implement function target_add_js_library
+	# This function basically should add input files input target_link_libraries as '--js-library "<library>"'
+	target_add_js_library(global-libs-list "library_godot_webrtc.js")
+endif()
+
 target_glob_sources(webrtc-lib PRIVATE "*.cpp")

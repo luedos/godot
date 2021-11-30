@@ -264,11 +264,7 @@ target_include_directories(libvpx-env INTERFACE "${__THIRDPARTY_LIBVPX_PATH}")
 
 inline_if(__WEBM_MULTITHREAD NOT GODOT_PLATFORM STREQUAL "javascript")
 
-if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-	set(__CPU_BITS 64)
-else()
-	set(__CPU_BITS 32)
-endif()
+set(__CPU_BITS ${PROCESSOR_BITS})
 
 set(__WEBM_CPU_X86 false)
 set(__WEBM_CPU_ARM false)
@@ -276,13 +272,13 @@ set(__WEBM_CPU_ARM false)
 if(GODOT_PLATFORM STREQUAL "uwp")
 
 	#TODO: this is incorrect way of specifying platform
-	if(CMAKE_SYSTEM_PROCESSOR MATCHES ".*arm.*")
+	if(PROCESSOR_IS_ARM)
 		set(__WEBM_CPU_ARM true)
 	else()
 		set(__WEBM_CPU_X86 true)
 	endif()
 
-else()
+elseif(NOT GODOT_PLATFORM STREQUAL "windows") # Disable for Windows, yasm SIMD optimizations trigger crash (GH-50862).
 
 	inline_if(__IS_X11_OR_SERVER_ARM 
 		GODOT_PLATFORM MATCHES "(x11|server)"
@@ -290,11 +286,11 @@ else()
 	)
 	inline_if(__IS_MACOS_X86
 		GODOT_PLATFORM STREQUAL "osx"
-		AND NOT CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64"
+		AND NOT PROCESSOR_IS_ARM
 	)
 	inline_if(__IS_IOS_X86
 		GODOT_PLATFORM STREQUAL "iphone"
-		AND CMAKE_SYSTEM_PROCESSOR MATCHES "^x86.*"
+		AND PROCESSOR_IS_X86
 	)
 	inline_if(__IS_ANDROID_X86 
 		GODOT_PLATFORM STREQUAL "android"
@@ -344,7 +340,7 @@ if(__WEBM_CPU_X86)
 
 endif()
 
-if(NOT __WEBM_CPU_X86 AND NOT __WEBM_CPU_ARM)
+if(NOT __WEBM_CPU_X86 AND NOT __WEBM_CPU_ARM AND NOT GODOT_PLATFORM STREQUAL "windows")
 	message(STATUS "WebM SIMD optimizations are disabled. Check if your CPU architecture, CPU bits or platform are supported!")
 endif()
 

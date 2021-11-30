@@ -161,9 +161,14 @@ def cmake_make_doc_data_class_path(to_path, class_map):
 
     g.close()
 
+def cmake_make_editor_translations_header(target, source):
+    make_editor_translations_header(target, source, None)
+
 def make_editor_translations_header(target, source, env):
     make_translations_header(target, source, env, "editor")
 
+def cmake_make_doc_translations_header(target, source):
+    make_doc_translations_header(target, source, None)
 
 def make_doc_translations_header(target, source, env):
     make_translations_header(target, source, env, "doc")

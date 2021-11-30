@@ -20,11 +20,11 @@ endif()
 register_global_lib(main-lib)
 target_glob_sources(main-lib PRIVATE "*.cpp")
 
-# Order matters here. Higher index controller database files write on top of lower index database files.
 set(__CONTROLLER_MAPING_GEN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/default_controller_mappings.gen.cpp")
 target_sources(main-lib PRIVATE ${__CONTROLLER_MAPING_GEN_FILE})
 add_python_generator_command(main_builders cmake_make_default_controller_mappings
 	SOURCE_FILES 
+		# Order matters here. Higher index controller database files write on top of lower index database files.
 		"${CMAKE_CURRENT_SOURCE_DIR}/gamecontrollerdb.txt"
 		"${CMAKE_CURRENT_SOURCE_DIR}/godotcontrollerdb.txt"
 	TARGET_FILES

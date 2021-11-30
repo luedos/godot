@@ -6,7 +6,7 @@ function(${__MODULE_NAME}_configure_module)
 endfunction()
 
 function(${__MODULE_NAME}_get_module_can_build __OUTPUT)
-	if(NOT PROCESSOR_IS_RISCV)
+	if (GODOT_BUILD_TOOLS AND NOT GODOT_DISABLE_3D)
 		set(${__OUTPUT} TRUE PARENT_SCOPE)
 	else()
 		set(${__OUTPUT} FALSE PARENT_SCOPE)
@@ -15,8 +15,21 @@ endfunction()
 
 function(${__MODULE_NAME}_get_doc_classes __OUTPUT)
 	set(${__OUTPUT}
-		"RegEx"
-		"RegExMatch"
+		"EditorSceneImporterGLTF"
+		"GLTFAccessor"
+		"GLTFAnimation"
+		"GLTFBufferView"
+		"GLTFCamera"
+		"GLTFDocument"
+		"GLTFLight"
+		"GLTFMesh"
+		"GLTFNode"
+		"GLTFSkeleton"
+		"GLTFSkin"
+		"GLTFSpecGloss"
+		"GLTFState"
+		"GLTFTexture"
+		"PackedSceneGLTF"
 		PARENT_SCOPE
 	)
 endfunction()

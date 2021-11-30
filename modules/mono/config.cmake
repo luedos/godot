@@ -9,7 +9,13 @@ function(${__MODULE_NAME}_configure_module)
 		message(FATAL_ERROR "This module does not currently support building for this platform (${GODOT_PLATFORM}).")
 	endif()
 
-	set_target_properties(global-env PROPERTIES USE_PTRCALL true)
+	get_target_property(__MODULE_VERSION_STRING global-env MODULE_VERSION_STRING)
+
+	set_target_properties(global-env 
+		PROPERTIES 
+		USE_PTRCALL true
+		MODULE_VERSION_STRING "${MODULE_VERSION_STRING}.mono"
+	)
 
 	if(GODOT_PLATFORM STREQUAL "iphone" OR GODOT_PLATFORM STREQUAL "javascript")
 		set(__DEFUALT_MONO_STATIC true)
@@ -24,6 +30,7 @@ function(${__MODULE_NAME}_configure_module)
 	endif()
 
 	set_path_option(GODOT_MONO_PREFIX "" DESCRIPTION "Path to the mono installation directory for the target platform and architecture.")
+	set_path_option(GODOT_MONO_BCL "" DESCRIPTION "Path to a custom Mono BCL (Base Class Library) directory for the target platform.")
 	set_bool_option(GODOT_MONO_STATIC ${__DEFUALT_MONO_STATIC} DESCRIPTION "Statically link mono.")
 	set_bool_option(GODOT_MONO_GLUE true DESCRIPTION "Build with the mono glue sources.")
 	set_bool_option(GODOT_BUILD_CIL true DESCRIPTION "Build C# solutions.")
@@ -40,7 +47,12 @@ function(${__MODULE_NAME}_configure_module)
 endfunction()
 
 function(${__MODULE_NAME}_get_module_can_build __OUTPUT)
-	set(${__OUTPUT} true PARENT_SCOPE)
+	string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" __CMAKE_SYSTEM_PROCESSOR)
+	if(NOT PROCESSOR_IS_RISCV)
+		set(${__OUTPUT} TRUE PARENT_SCOPE)
+	else()
+		set(${__OUTPUT} FALSE PARENT_SCOPE)
+	endiF()
 endfunction()
 
 function(${__MODULE_NAME}_get_doc_classes __OUTPUT)
@@ -58,8 +70,4 @@ endfunction()
 function(${__MODULE_NAME}_get_is_module_enabled __OUTPUT)
 	# The module is disabled by default. Use mono_IS_MODULE_ENABLED=true to enable it.
 	set(${__OUTPUT} false PARENT_SCOPE)
-endfunction()
-
-function(${__MODULE_NAME}_get_version_string __OUTPUT)
-	set(${__OUTPUT} "mono" PARENT_SCOPE)
 endfunction()

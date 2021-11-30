@@ -4,7 +4,7 @@ file(GLOB __ICON_FILES LIST_DIRECTORIES false "*.svg")
 foreach(__ICON_PATH IN LISTS MODULES_ICONS_PATHS)
 	# In theory __ICON_PATH is allways full path without a slash in the end
 	file(GLOB __TEMP_ICON_FILES LIST_DIRECTORIES false "${__ICON_PATH}/*.svg")
-	set(__ICON_FILES ${__ICON_FILES} ${__TEMP_ICON_FILES})
+	list(APPEND __ICON_FILES ${__TEMP_ICON_FILES})
 endforeach()
 
 # If I understand correctly, scons Alias is basiacaly a custom target, so we will do the next thing:

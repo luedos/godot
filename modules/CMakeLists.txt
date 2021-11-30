@@ -13,6 +13,13 @@ register_global_lib(modules-lib)
 
 add_dependencies(modules-env core-gen) # many modules dependent on the core gen headers
 
+set(__MODULES_ENABLED_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/modules_enabled.gen.h")
+execute_python_method(modules_builders cmake_generate_modules_enabled
+	PYTHON_ARGS
+		STR_VAR "target=__MODULES_ENABLED_HEADER"
+		ARR_VAR "module_list=MODULES_LIST"
+)
+
 target_sources(modules-lib PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/register_module_types.gen.cpp")
 
 function(__check_module_dependencies __LIST)
@@ -144,13 +151,6 @@ endfunction()
 
 foreach(__MODULE_ID IN LISTS MODULES_LIST)
 
-	if(__MODULE_ID IN_LIST DISABLED_MODULES)
-		continue()
-	endif()
-
-  	string(TOUPPER "${__MODULE_ID}" __MODULE_ID_UPPER)
-	target_compile_definitions(modules-env INTERFACE "MODULE_${__MODULE_ID_UPPER}_ENABLED")
-	
 	add_subdirectory("${${__MODULE_ID}_MODULE_PATH}")
 
 endforeach()

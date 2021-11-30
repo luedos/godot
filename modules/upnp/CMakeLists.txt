@@ -25,19 +25,20 @@ if(GODOT_BUILTIN_MINIUPNPC)
 			upnp-env
 	)
 
-	target_sources_from_path(thirdparty-upnp-lib PRIVATE "${__THIRDPARTY_UPNP_PATH}"
-		"miniupnpc/miniupnpc.c"
-		"miniupnpc/upnpcommands.c"
-		"miniupnpc/miniwget.c"
-		"miniupnpc/upnpdev.c"
-		"miniupnpc/igd_desc_parse.c"
-		"miniupnpc/minissdpc.c"
-		"miniupnpc/minisoap.c"
-		"miniupnpc/minixml.c"
-		"miniupnpc/connecthostport.c"
-		"miniupnpc/receivedata.c"
-		"miniupnpc/portlistingparse.c"
-		"miniupnpc/upnpreplyparse.c"
+	target_sources_from_path(thirdparty-upnp-lib PRIVATE "${__THIRDPARTY_UPNP_PATH}/miniupnpc"
+		"igd_desc_parse.c"
+		"miniupnpc.c"
+		"minixml.c"
+		"minisoap.c"
+		"minissdpc.c"
+		"miniwget.c"
+		"upnpcommands.c"
+		"upnpdev.c"
+		"upnpreplyparse.c"
+		"connecthostport.c"
+		"portlistingparse.c"
+		"receivedata.c"
+		"addr_is_reserved.c"
 	)
 
 endif()

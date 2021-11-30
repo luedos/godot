@@ -13,12 +13,13 @@ add_module_lib(bullet-lib
 if(GODOT_BUILTIN_BULLET)
 	set(__THIRPARTY_BULLET_PATH "${GODOT_SOURCE_DIR}/thirdparty/bullet")
 
-	target_include_directories(bullet-env SYSTEM INTERFACE 
+	target_include_directories(bullet-env INTERFACE 
 		"${__THIRPARTY_BULLET_PATH}" 
 	)
 
 	target_compile_definitions(bullet-env INTERFACE 
 		"BT_USE_OLD_DAMPING_METHOD"
+		"BT_THREADSAFE"
 	)
 
 	add_module_lib(thirdparty-bullet-lib
@@ -29,7 +30,7 @@ if(GODOT_BUILTIN_BULLET)
 			bullet-env
 	)
 
-	target_sources_from_path(thirdparty-bullet-lib PRIVATE "${__THIRPARTY_BULLET_PATH}"	
+	target_sources_from_path(thirdparty-bullet-lib PRIVATE "${__THIRPARTY_BULLET_PATH}"
 		# BulletCollision
 		"BulletCollision/BroadphaseCollision/btAxisSweep3.cpp"
 		"BulletCollision/BroadphaseCollision/btBroadphaseProxy.cpp"
@@ -192,6 +193,7 @@ if(GODOT_BUILTIN_BULLET)
 		"BulletSoftBody/btDeformableContactProjection.cpp"
 		"BulletSoftBody/btDeformableMultiBodyDynamicsWorld.cpp"
 		"BulletSoftBody/btDeformableContactConstraint.cpp"
+		"BulletSoftBody/poly34.cpp"
 		# clew
 		"clew/clew.c"
 		# LinearMath
@@ -201,6 +203,7 @@ if(GODOT_BUILTIN_BULLET)
 		"LinearMath/btGeometryUtil.cpp"
 		"LinearMath/btPolarDecomposition.cpp"
 		"LinearMath/btQuickprof.cpp"
+		"LinearMath/btReducedVector.cpp"
 		"LinearMath/btSerializer.cpp"
 		"LinearMath/btSerializer64.cpp"
 		"LinearMath/btThreads.cpp"

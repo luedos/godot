@@ -93,6 +93,7 @@ if(GODOT_BUILTIN_ZSTD)
 		"compress/zstdmt_compress.c"
 		"compress/zstd_compress_literals.c"
 		"compress/zstd_compress_sequences.c"
+		"compress/zstd_compress_superblock.c"
 		"decompress/huf_decompress.c"
 		"decompress/zstd_ddict.c"
 		"decompress/zstd_decompress_block.c"

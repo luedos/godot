@@ -6,7 +6,7 @@ function(${__MODULE_NAME}_configure_module)
 endfunction()
 
 function(${__MODULE_NAME}_get_module_can_build __OUTPUT)
-	if (GODOT_PLATFORM MATCHES "(iphone|osx|windows)")
+	if (GODOT_PLATFORM MATCHES "(osx|windows)")
 		set(${__OUTPUT} true PARENT_SCOPE)
 	else()
 		set(${__OUTPUT} false PARENT_SCOPE)

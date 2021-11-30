@@ -18,6 +18,14 @@ macro(optionally_return __OUTPUT_NAME)
 
 endmacro()
 
+# Most of the times, if you set parent scope variable, you also want to set current scope.
+macro(set_parent_var __NAME)
+	
+	set("${__NAME}" "${ARGN}")
+	set("${__NAME}" "${ARGN}" PARENT_SCOPE)
+
+endmacro()
+
 # Basically just adds empty quotes between semicolums, 
 # so then the expression will be expanded into the method call (or if statement),
 # empty elements will not disappear.
@@ -175,6 +183,57 @@ function(set_bool_option __NAME __VALUE)
 	cmake_parse_arguments(PARSE_ARGV 2 __ARGS "${__OPTIONS}" "${__VALUES}" "${__MULTIVALUE}")
 
 	set("${__NAME}" "${__VALUE}" CACHE BOOL "${__ARGS_DESCRIPTION}")
+
+endfunction()
+
+function(force_set_option __NAME __VALUE)
+	assert_if_empty(__NAME)
+
+	get_property(__HELPSTRING CACHE "${__NAME}" PROPERTY HELPSTRING)
+	get_property(__TYPE CACHE "${__NAME}" PROPERTY HELPSTRING)
+
+	set("${__NAME}" "${__VALUE}" CACHE "${__TYPE}" "${__HELPSTRING}" FORCE)
+
+endfunction()
+
+# Specifically glob only directories.
+function(file_glob_dirs __OUTPUT __EXPRESSION)
+
+	set(__OPTIONS RECURSIVE FOLLOW_SYMLINKS)
+	set(__VALUES RELATIVE)
+	set(__MULTIVALUE "")
+	cmake_parse_arguments(PARSE_ARGV 2 __ARGS "${__OPTIONS}" "${__VALUES}" "${__MULTIVALUE}")
+
+	set(__GLOB_TYPE "GLOB")
+	if(__ARGS_RECURSIVE)
+		set(__GLOB_TYPE "GLOB_RECURSE")
+	endif()
+
+	set(__ADDITIONAL_ARGS "")
+	if(__ARGS_RECURSIVE AND __ARGS_FOLLOW_SYMLINKS)
+		list(APPEND __ADDITIONAL_ARGS "FOLLOW_SYMLINKS")
+	endif()
+
+	if(NOT "${__ARGS_RELATIVE}" STREQUAL "")
+		list(APPEND __ADDITIONAL_ARGS "RELATIVE" "${__ARGS_RELATIVE}")
+	endif()
+
+	file(${__GLOB_TYPE} __GLOB_LIST LIST_DIRECTORIES TRUE ${__ADDITIONAL_ARGS})
+	set(__RET_LIST "")
+	foreach(__DIR IN LISTS __GLOB_LIST)
+		if(NOT "${__ARGS_RELATIVE}" STREQUAL "" AND NOT IS_ABSOLUTE "${__DIR}")
+			join_paths(__ABSOLUTE_DIR "${__ARGS_RELATIVE}" "${__DIR}")
+		else()
+			set(__ABSOLUTE_DIR "${__DIR}")
+		endif()
+
+		# Checking absolute directory, but appending the directory returned by glob
+		if(IS_DIRECTORY "${__ABSOLUTE_DIR}")
+			list(APPEND __RET_LIST "${__DIR}")
+		endif()
+	endforeach()
+
+	set("${__OUTPUT}" "${__RET_LIST}" PARENT_SCOPE)
 
 endfunction()
 
@@ -361,7 +420,7 @@ function(is_module __PATH __OUTPUT)
 endfunction()
 
 # Appends all paths from base directories passed through ARGN if they are modules.
-# Important note which you can forget. This function requere not the actual models dirs, but the parent dirs for module dirs:
+# Important note which you can forget. This function require not the actual modules dirs, but the parent dirs for module dirs:
 # input dir: some/dir
 # modules dirs: 
 #   - some/dir/module1
@@ -371,35 +430,67 @@ function(get_modules_paths __OUTPUT)
 
 	assert_if_empty(__OUTPUT)
 
+	set(__OPTIONS_ARGS 
+		RECURSIVE	
+	)
+	set(__ONE_VALUE_ARGS "")
+	set(__MULTI_VALUE_ARGS "")
+	cmake_parse_arguments(PARSE_ARGV 2 __ARGS "${__OPTIONS_ARGS}" "${__ONE_VALUE_ARGS}" "${__MULTI_VALUE_ARGS}")
+
 	# local variable
 	unset(__MODULE_VALID)
 	unset(__MODULES_DIRS)
-	unset(__PARENT_GLOB)
-	unset(__PATH_REGEX_MATCH)
-	unset(__RET_LIST)
+	set(__RET_LIST "")
+	set(__SEARCH_LIST "")
 
-	foreach(__PARENT_DIR IN LISTS ARGN)
-		# we need normilized absolute directory  
-		if(NOT IS_ABSOLUTE __PARENT_DIR)
-			join_paths(__PARENT_DIR "${GODOT_SOURCE_DIR}" "${__PARENT_DIR}")
-		else()
-			normilize_path(__PARENT_DIR "${__PARENT_DIR}")
+	if("${__SEARCH_LIST}" STREQUAL "")
+		set("${__OUTPUT}" "" PARENT_SCOPE)
+		return()
+	endif()
+
+	# The first check we doing manually, because even if RECURSIVE is not specified,
+	# we want to glob directories from the first level.
+	# So we will make first check outside of while loop, glob dirs we need, 
+	# and inside while loop itself ignore globbing if we are not RECURSIVE
+	foreach(__DIR IN LISTS __ARGS_UNPARSED_ARGUMENTS)
+		normilize_path(__DIR "${__DIR}" ABSOLUTE)
+
+		is_module("${__DIR}" __MODULE_VALID)
+		if(__MODULE_VALID)
+			list(APPEND __RET_LIST "${__DIR}")
+			continue()
 		endif()
 
-		# because path was normilized, we can safely just add slash in the end
-		set(__PARENT_DIR "${__PARENT_DIR}/*")
-		file(GLOB __MODULES_DIRS LIST_DIRECTORIES true "${__PARENT_DIR}")
-
-		foreach(__DIR IN LISTS __MODULES_DIRS)
-
-			is_module("${__DIR}" __MODULE_VALID)
-			if(__MODULE_VALID)
-				list(APPEND __RET_LIST "${__DIR}")
-			endif()		
-
-		endforeach()
-
+		file_glob_dirs(__MODULE_DIRS "${__DIR}")
+		list(APPEND __SEARCH_LIST ${__MODULE_DIRS})
 	endforeach()
+
+	while(NOT "${__SEARCH_LIST}" STREQUAL "")
+
+		list(POP_FRONT __SEARCH_LIST __DIR)
+		# Each path should be normilized!
+		normilize_path(__DIR "${__DIR}" ABSOLUTE)
+		
+		is_module("${__DIR}" __MODULE_VALID)
+		if(__MODULE_VALID)
+			list(APPEND __RET_LIST "${__DIR}")
+			# nothing to do more.
+			continue()
+		endif()
+
+		list(FIND __RET_LIST "${__DIR}" __RET_INDEX)
+		if(NOT __RET_INDEX EQUAL -1)
+			# if we have already been here, no need to recheck thi path.
+			continue()
+		endif()
+
+		# As said before, if we are not recursive, we will not add additional folders into search
+		if(__ARGS_RECURSIVE)
+			file_glob_dirs(__MODULE_DIRS "${__DIR}")
+			list(APPEND __SEARCH_LIST ${__MODULE_DIRS})
+		endif()
+
+	endwhile()
 
 	set("${__OUTPUT}" "${__RET_LIST}" PARENT_SCOPE)
 endfunction()
@@ -1280,8 +1371,9 @@ function(add_lib __NAME)
 		if ("${__ARGS_OUTPUT_NAME}" STREQUAL "")
 			# seting output name
 			string(REGEX REPLACE "-lib$" "" __LIB_NAME "${__NAME}")
+		get_target_property(__EXTRA_SUFFIX global-env EXTRA_SUFFIX)
 			set_target_properties("${__NAME}" PROPERTIES 
-				OUTPUT_NAME "${__LIB_NAME}${EXTRA_SUFFIX}"
+				OUTPUT_NAME "${__LIB_NAME}${__EXTRA_SUFFIX}"
 			)
 		else()
 			set_target_properties("${__NAME}" PROPERTIES 
@@ -1422,8 +1514,9 @@ function(add_exe __NAME)
 	# defining executable name..
 	if ("${__ARGS_OUTPUT_NAME}" STREQUAL "")
 		string(REGEX REPLACE "-exe$" "" __EXE_NAME "${__NAME}")
+		get_target_property(__EXTRA_SUFFIX global-env EXTRA_SUFFIX)
 		set_target_properties("${__NAME}" PROPERTIES 
-			OUTPUT_NAME "${__EXE_NAME}${EXTRA_SUFFIX}"
+			OUTPUT_NAME "${__EXE_NAME}${__EXTRA_SUFFIX}"
 		)
 	else()
 		set_target_properties("${__NAME}" PROPERTIES 

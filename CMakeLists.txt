@@ -18,31 +18,71 @@ include(methods.cmake)
 # package config is used by the project here and there
 find_package(PkgConfig QUIET)
 
+
 ############### Processing platforms ###############
 
-# Deducing current platform.
-# Main way to know which platform we are building, is with CMAKE_SYSTEM_NAME. 
-# So first of all we transforming CMAKE_SYSTEM_NAME into GODOT_PLATFORM, 
-# because system name, and godot platform, is sometimes has different names for same thing.
-string(TOLOWER "${CMAKE_SYSTEM_NAME}" __SYSTEM_NAME)
-if(__SYSTEM_NAME MATCHES "(windows|win32)")
-	set(GODOT_PLATFORM "windows") # windows case
-elseif(__SYSTEM_NAME MATCHES "(x11|linux)")
-	set(GODOT_PLATFORM "x11")
-else()
-	# For now we are not supporting any other platforms..
-	message(FATAL_ERROR "Platform \"${CMAKE_SYSTEM_NAME}\" is not supported.")
+# Platform of the godot is decided by the system,
+# and if you want to change it, you must change CMAKE_SYSTEM_NAME.
+# Because this will not only let the godot know which platform you are using,
+# but also cmake itself, which then will instruct compiler as well.
+# For that is suggested to write some toolchain files.
+# That said, you also has the ability to override godot platform, in toolchain file or console for example,
+# by specifying GODOT_PLATFORM variable. That is useful if you want something like "server" as a platform.
+if ("${GODOT_PLATFORM}" STREQUAL "")
+	string(TOLOWER "${CMAKE_SYSTEM_NAME}" __SYSTEM_NAME)
+	if(__SYSTEM_NAME MATCHES "(windows|win32)")
+		set(GODOT_PLATFORM "windows") # windows case
+	elseif(__SYSTEM_NAME MATCHES "(x11|linux)")
+		set(GODOT_PLATFORM "x11")
+	else()
+		# For now we are not supporting any other platforms..
+		message(FATAL_ERROR "Platform \"${CMAKE_SYSTEM_NAME}\" is not supported.")
+	endif()
 endif()
 
-#[[
-elseif(__SYSTEM_NAME MATCHES "(linux|x11|bsd|linuxbsd)")
-	set(GODOT_PLATFORM "x11") # linux case. x11 is godot name for linux
-elseif(__SYSTEM_NAME STREQUAL "android")
-	set(GODOT_PLATFORM "android") # android case
+# Just in case we provided platform from some options
+if(GODOT_PLATFORM MATCHES "(linux|dragonfly|freebsd|netbsd|openbsd|linuxbsd|bsd)")
+	set(GODOT_PLATFORM "x11")
+endif()
+
+############### Processing processor ###############
+
+set(PROCESSOR_IS_X86 FALSE)
+set(PROCESSOR_IS_ARM FALSE)
+set(PROCESSOR_IS_AARCH64 FALSE)
+set(PROCESSOR_IS_POWER FALSE)
+set(PROCESSOR_IS_MIPS FALSE)
+set(PROCESSOR_IS_RISCV FALSE)
+
+string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" __PROCESSOR_ARCHITECTURE)
+if(GODOT_PLATFORM STREQUAL "android")
+	string(TOLOWER "${CMAKE_ANDROID_ARCH}" __PROCESSOR_ARCHITECTURE)
+endif()
+
+if(__PROCESSOR_ARCHITECTURE MATCHES "^mips")
+	set(PROCESSOR_IS_MIPS TRUE)
+elseif(__PROCESSOR_ARCHITECTURE MATCHES "^arm")
+	set(PROCESSOR_IS_ARM TRUE)
+elseif(__PROCESSOR_ARCHITECTURE MATCHES "^aarch64")
+	set(PROCESSOR_IS_AARCH64 TRUE)
+elseif(__PROCESSOR_ARCHITECTURE MATCHES "(^x86)|(amd64)|(^i.86$)")
+	set(PROCESSOR_IS_X86 TRUE)
+elseif(__PROCESSOR_ARCHITECTURE MATCHES "^(powerpc|ppc)")
+	set(PROCESSOR_IS_POWER TRUE)
+elseif(__PROCESSOR_ARCHITECTURE MATCHES "^risc")
+	# I'm not sure if this is will work.. I've never tested this architecture, 
+	# and haven't found what cmake will write into CMAKE_SYSTEM_PROCESSOR in this case.
+	set(PROCESSOR_IS_RISCV TRUE)
 else()
-	set(GODOT_PLATFORM "${__SYSTEM_NAME}") # default case, for some specific platforms like javascript (a.k.a. webassembly) etc.
-endif() # everything else for now is not supported
-]]
+	# This is mostly mean that our script will go blind folded into build process, 
+	# but that doesn't nessecerely mean that build will failed.
+	message(WARNING "The target architecture \"${__PROCESSOR_ARCHITECTURE}\" wasn't processed, this can lead to some problems in build time")
+endif()
+
+set(PROCESSOR_BITS 64)
+if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+	set(PROCESSOR_BITS 32)
+endif()
 
 #[=[
 DOCUMENTATION FOR PLATFORMS
@@ -147,65 +187,74 @@ execute_python_method(methods save_active_platforms
 
 # Target build options
 set_string_option	(GODOT_BIN_DIRECTORY			"bin/$<CONFIG>"		DESCRIPTION "Build directory. (can use generator expression)")
-set_bool_option		(GODOT_BUILD_TOOLS 				true 	DESCRIPTION	"Build the tools (a.k.a. the Godot editor). By itself, this option does nothing. By enableing this option build will add two additional configurations: ToolsDebug and ToolsRelWithDebInfo. Tools will be build only by choosing those configurations.")
-set_bool_option		(GODOT_USE_LTO					false	DESCRIPTION "Use link-time optimization.")
-set_bool_option		(GODOT_USE_PRECISE_MATH_CHECKS 	false 	DESCRIPTION "Math checks use very precise epsilon (debug option).")
-set_path_option		(GODOT_PROFILE 					"" 		DESCRIPTION "Path to the profile file." FILE)
+set_bool_option		(GODOT_BUILD_TOOLS 				TRUE 	DESCRIPTION	"Build the tools (a.k.a. the Godot editor). By itself, this option does nothing. By enableing this option build will add two additional configurations: ToolsDebug and ToolsRelWithDebInfo. Tools will be build only by choosing those configurations.")
+set_bool_option		(GODOT_USE_LTO					FALSE	DESCRIPTION "Use link-time optimization.")
+set_bool_option		(GODOT_USE_PRECISE_MATH_CHECKS 	FALSE 	DESCRIPTION "Math checks use very precise epsilon (debug option).")
+# Instead of profile, cmake can just use toolchain files
+# set_path_option		(GODOT_PROFILE 					"" 		DESCRIPTION "Path to the profile file." FILE)
 
 # Components
-set_bool_option		(GODOT_DEPRECATED 			true 	DESCRIPTION "Enable deprecated features.")
-set_bool_option		(GODOT_GDSCRIPT 			true 	DESCRIPTION "Enable GDScript support.")
-set_bool_option		(GODOT_MINIZIP 				true 	DESCRIPTION "Enable ZIP archive support using minizip.")
-set_bool_option		(GODOT_XAUDIO2 				false 	DESCRIPTION "Enable the XAudio2 audio driver.")
+set_bool_option		(GODOT_DEPRECATED 			TRUE 	DESCRIPTION "Enable deprecated features.")
+set_bool_option		(GODOT_GDSCRIPT 			TRUE 	DESCRIPTION "Enable GDScript support.")
+set_bool_option		(GODOT_MINIZIP 				TRUE 	DESCRIPTION "Enable ZIP archive support using minizip.")
+set_bool_option		(GODOT_XAUDIO2 				FALSE 	DESCRIPTION "Enable the XAudio2 audio driver.")
 set_string_option	(GODOT_CUSTOM_MODULES 		"" 		DESCRIPTION	"A list of comma-separated directory paths containing custom modules to build.")
 # Technicaly you will not find this option in the SCons SConstruct. But actually this is an option which is used in gdnative module.
-set_bool_option		(GODOT_GDNATIVE_WRAPPER		false	DESCRIPTION	"")
+set_bool_option		(GODOT_GDNATIVE_WRAPPER		FALSE	DESCRIPTION	"")
+set_bool_option		(GODOT_CUSTOM_MODULES_RECURSIVE TRUE DESCRIPTION "Detect custom modules recursively for each specified path.")
 
 # Advanced options
 # verbose 	# Enable verbose output for the compilation
 # progress 	# Show a progress indicator during compilation
 set_string_option	(GODOT_WARNINGS				"all" 	DESCRIPTION "Level of compilation warnings (\"extra\", \"all\", \"moderate\", \"no\")" ENUM "extra" "all" "moderate" "no")
-set_bool_option		(GODOT_WERROR 				false 	DESCRIPTION "Treat compiler warnings as errors.")
-set_bool_option		(GODOT_DEV 					false 	DESCRIPTION "If yes, alias for verbose=yes warnings=extra werror=yes")
+set_bool_option		(GODOT_WERROR 				FALSE 	DESCRIPTION "Treat compiler warnings as errors.")
+# Those options (GODOT_DEV/GODOT_PRODUCTION) works not the same as in scons, because in scons those options are not alises for other options. 
+# In scons "dev" and "production" options set defaults for another options, and not options themself.
+# To do so, we need to know if user setted other options directly via console or not, and we can't do this check in cmake.
+# Because of that, those two options will be actual aliaces, and not just defaults setters. 
+set_bool_option		(GODOT_PRODUCTION			FALSE 	DESCRIPTION "Set defaults to build Godot for use in production.")
+set_bool_option		(GODOT_DEV 					FALSE 	DESCRIPTION "If yes, alias for verbose=yes warnings=extra werror=yes")
 set_string_option	(GODOT_EXTRA_SUFFIX			"" 		DESCRIPTION "Custom extra suffix added to the base filename of all generated binary files.")
 # vsproj 	# NO NEED
 # macports_clang	# Build using Clang from MacPorts ("no", "5.0", "devel")
 # TODO: not forget to actually implement forsing to True if mingw  
-set_bool_option		(GODOT_SPLIT_LIBMODULES		false	DESCRIPTION "Split intermediate libmodules.a in smaller chunks to prevent exceeding linker command line size (forced to True when using MinGW).")
-set_bool_option		(GODOT_DISABLE_3D			false	DESCRIPTION "Disable 3D nodes for a smaller executable.")
-set_bool_option		(GODOT_DISABLE_ADVANCE_GUI 	false	DESCRIPTION "Disable advanced GUI nodes and behaviors.")
-set_bool_option		(GODOT_NO_EDITOR_SPLASH 	false	DESCRIPTION "Don't use the custom splash screen for the editor.")
+set_bool_option		(GODOT_SPLIT_LIBMODULES		FALSE	DESCRIPTION "Split intermediate libmodules.a in smaller chunks to prevent exceeding linker command line size (forced to True when using MinGW).")
+set_bool_option		(GODOT_DISABLE_3D			FALSE	DESCRIPTION "Disable 3D nodes for a smaller executable.")
+set_bool_option		(GODOT_DISABLE_ADVANCE_GUI 	FALSE	DESCRIPTION "Disable advanced GUI nodes and behaviors.")
+set_bool_option		(GODOT_NO_EDITOR_SPLASH 	FALSE	DESCRIPTION "Don't use the custom splash screen for the editor.")
 set_string_option	(GODOT_SYSTEM_CERTS_PATH 	""		DESCRIPTION "Use this path as SSL certificates default for editor (for package maintainers).")
+set_string_option	(GODOT_LTO_JOBS_COUNT		"1"		DESCRIPTION "Number of jobs for lto (not sure what exactly this meen)")
 
 # Thirdparty libraries
-set_bool_option		(GODOT_BUILTIN_BULLET		true 	DESCRIPTION "Use the built-in Bullet library.")
-set_bool_option		(GODOT_BUILTIN_CERTS		true 	DESCRIPTION "Use the built-in SSL certificates bundles.")
-set_bool_option		(GODOT_BUILTIN_ENET			true 	DESCRIPTION "Use the built-in ENet library.")
-set_bool_option		(GODOT_BUILTIN_FREETYPE		true 	DESCRIPTION "Use the built-in FreeType library.")
-set_bool_option		(GODOT_BUILTIN_LIBOGG		true 	DESCRIPTION "Use the built-in libogg library.")
-set_bool_option		(GODOT_BUILTIN_LIBPNG		true 	DESCRIPTION "Use the built-in libpng library.")
-set_bool_option		(GODOT_BUILTIN_LIBTHEORA	true 	DESCRIPTION "Use the built-in libtheora library.")
-set_bool_option		(GODOT_BUILTIN_LIBVORBIS	true 	DESCRIPTION "Use the built-in libvorbis library.")
-set_bool_option		(GODOT_BUILTIN_LIBVPX		true 	DESCRIPTION "Use the built-in libvpx library.")
-set_bool_option		(GODOT_BUILTIN_LIBWEBP		true 	DESCRIPTION "Use the built-in libwebp library.")
-set_bool_option		(GODOT_BUILTIN_WSLAY		true 	DESCRIPTION "Use the built-in wslay library.")
-set_bool_option		(GODOT_BUILTIN_MBEDTLS		true 	DESCRIPTION "Use the built-in mbedTLS library.")
-set_bool_option		(GODOT_BUILTIN_MINIUPNPC	true 	DESCRIPTION "Use the built-in miniupnpc library.")
-set_bool_option		(GODOT_BUILTIN_OPUS			true 	DESCRIPTION "Use the built-in Opus library.")
-set_bool_option		(GODOT_BUILTIN_PCRE2		true 	DESCRIPTION "Use the built-in PCRE2 library.")
-set_bool_option		(GODOT_BUILTIN_PCRE2_WITH_JIT true 	DESCRIPTION "Use JIT compiler for the built-in PCRE2 library.")
-set_bool_option		(GODOT_BUILTIN_RECAST		true 	DESCRIPTION "Use the built-in Recast library.")
-set_bool_option		(GODOT_BUILTIN_SQUISH		true 	DESCRIPTION "Use the built-in squish library.")
-set_bool_option		(GODOT_BUILTIN_XATLAS		true 	DESCRIPTION "Use the built-in xatlas library.")
-set_bool_option		(GODOT_BUILTIN_ZLIB			true 	DESCRIPTION "Use the built-in zlib library.")
-set_bool_option		(GODOT_BUILTIN_ZSTD			true 	DESCRIPTION "Use the built-in Zstd library.")
+set_bool_option		(GODOT_BUILTIN_BULLET		TRUE 	DESCRIPTION "Use the built-in Bullet library.")
+set_bool_option		(GODOT_BUILTIN_CERTS		TRUE 	DESCRIPTION "Use the built-in SSL certificates bundles.")
+set_bool_option		(GODOT_BUILTIN_EMBREE		TRUE 	DESCRIPTION "Use the built-in Embree library.")
+set_bool_option		(GODOT_BUILTIN_ENET			TRUE 	DESCRIPTION "Use the built-in ENet library.")
+set_bool_option		(GODOT_BUILTIN_FREETYPE		TRUE 	DESCRIPTION "Use the built-in FreeType library.")
+set_bool_option		(GODOT_BUILTIN_LIBOGG		TRUE 	DESCRIPTION "Use the built-in libogg library.")
+set_bool_option		(GODOT_BUILTIN_LIBPNG		TRUE 	DESCRIPTION "Use the built-in libpng library.")
+set_bool_option		(GODOT_BUILTIN_LIBTHEORA	TRUE 	DESCRIPTION "Use the built-in libtheora library.")
+set_bool_option		(GODOT_BUILTIN_LIBVORBIS	TRUE 	DESCRIPTION "Use the built-in libvorbis library.")
+set_bool_option		(GODOT_BUILTIN_LIBVPX		TRUE 	DESCRIPTION "Use the built-in libvpx library.")
+set_bool_option		(GODOT_BUILTIN_LIBWEBP		TRUE 	DESCRIPTION "Use the built-in libwebp library.")
+set_bool_option		(GODOT_BUILTIN_WSLAY		TRUE 	DESCRIPTION "Use the built-in wslay library.")
+set_bool_option		(GODOT_BUILTIN_MBEDTLS		TRUE 	DESCRIPTION "Use the built-in mbedTLS library.")
+set_bool_option		(GODOT_BUILTIN_MINIUPNPC	TRUE 	DESCRIPTION "Use the built-in miniupnpc library.")
+set_bool_option		(GODOT_BUILTIN_OPUS			TRUE 	DESCRIPTION "Use the built-in Opus library.")
+set_bool_option		(GODOT_BUILTIN_PCRE2		TRUE 	DESCRIPTION "Use the built-in PCRE2 library.")
+set_bool_option		(GODOT_BUILTIN_PCRE2_WITH_JIT TRUE 	DESCRIPTION "Use JIT compiler for the built-in PCRE2 library.")
+set_bool_option		(GODOT_BUILTIN_RECAST		TRUE 	DESCRIPTION "Use the built-in Recast library.")
+set_bool_option		(GODOT_BUILTIN_SQUISH		TRUE 	DESCRIPTION "Use the built-in squish library.")
+set_bool_option		(GODOT_BUILTIN_XATLAS		TRUE 	DESCRIPTION "Use the built-in xatlas library.")
+set_bool_option		(GODOT_BUILTIN_ZLIB			TRUE 	DESCRIPTION "Use the built-in zlib library.")
+set_bool_option		(GODOT_BUILTIN_ZSTD			TRUE 	DESCRIPTION "Use the built-in Zstd library.")
 
 # Generator expressions for easier working with build types which can be used in the future.
-set(IS_OPTIMIZED_GEN_EXPR 		$<CONFIG:Release,MinSizeRel,RelWithDebInfo>)
-set(IS_RELEASE_GEN_EXPR 		$<CONFIG:Release,MinSizeRel>)
-set(IS_DEBUG_INFO_GEN_EXPR 		$<CONFIG:Debug,RelWithDebInfo>)
-set(IS_DEBUG_GEN_EXPR 			$<CONFIG:Debug>)
-set(IS_OPT_DEBUG_GEN_EXPR 		$<CONFIG:RelWithDebInfo>)
+set(IS_OPTIMIZED_GEN_EXPR      $<CONFIG:Release,MinSizeRel,RelWithDebInfo>)
+set(IS_RELEASE_GEN_EXPR        $<CONFIG:Release,MinSizeRel>)
+set(IS_DEBUG_INFO_GEN_EXPR     $<CONFIG:Debug,RelWithDebInfo>)
+set(IS_DEBUG_GEN_EXPR          $<CONFIG:Debug>)
+set(IS_OPT_DEBUG_GEN_EXPR      $<CONFIG:RelWithDebInfo>)
 
 if(MINGW)
 	set(GODOT_SPLIT_LIBMODULES TRUE CACHE BOOL "" FORCE)
@@ -218,13 +267,6 @@ else()
 	normilize_path(GODOT_BIN_DIRECTORY "${GODOT_BIN_DIRECTORY}")
 endif()
 
-# Processing LTO
-if(GODOT_USE_LTO)
-	set(CMAKE_INTERPROCEDURAL_OPTIMIZATION true)
-else()
-	set(CMAKE_INTERPROCEDURAL_OPTIMIZATION false)
-endif()
-
 ############### Creating the environment ###############
 # This is basically the analog of the SCons Environment variable.
 # This environment library can be configured later, from platform/module scripts (same as it done in scons)
@@ -233,11 +275,12 @@ add_env(global-env)
 
 # setting some "global" variables, which can be appended by modules
 set_target_properties(global-env 
-	PROPERTIES 
-		DISABLED_MODULES "" # all disabled modules
+	PROPERTIES
 		USE_PTRCALL false # do we need to define PTRCALL_ENABLED. This variable can be overriten on module configuration
 		X86_LIBTHEORA_OPT_GCC false
 		X86_LIBTHEORA_OPT_VC false
+		EXTRA_SUFFIX ""
+		MODULE_VERSION_STRING ""
 )
 
 target_include_directories(global-env INTERFACE
@@ -254,8 +297,6 @@ if(NOT GODOT_PLATFORM IN_LIST PLATFORMS_LIST)
 elseif(NOT ${GODOT_PLATFORM}_PLATFROM_CAN_BUILD)
 	message(FATAL_ERROR "Platform \"${GODOT_PLATFORM}\" exist, but can't be built.")
 endif()
-
-cmake_language(CALL ${GODOT_PLATFORM}_configure_platform)
 
 ############### Processing modules ###############
 
@@ -297,8 +338,46 @@ some/provided/path/module3/
 ...
 ]=]
 
-unset(__MODULE_DIRS) # just to be sure
-get_modules_paths(__MODULES_DIRS "modules" ${GODOT_CUSTOM_MODULES})
+set(__MODULE_DIRS "") # just to be sure
+# Built in directories we are detecting without recursion
+get_modules_paths(__MODULES_DIRS "modules")
+
+set(__ADDITIONAL_ARGS "")
+if(GODOT_CUSTOM_MODULES_RECURSIVE)
+	set(__ADDITIONAL_ARGS "RECURSIVE")
+endif()
+get_modules_paths(__TEMP_MODULES_DIRS ${__ADDITIONAL_ARGS} ${GODOT_CUSTOM_MODULES})
+list(APPEND __MODULES_DIRS ${__TEMP_MODULES_DIRS})
+
+# Provide default include path for both the custom module search `path`
+# and the base directory containing custom modules, as it may be different
+# from the built-in "modules" name (e.g. "custom_modules/summator/summator.h"),
+# so it can be referenced simply as `#include "summator/summator.h"`
+# independently of where a module is located on user's filesystem.
+
+# Comment from cmake implementer:
+# I'm not sure, if this is a good idea to prepend include directories 
+# not only with user input, but also with parent directory of that input..
+# This will definetly create a lot of garbage includes, so I would propose to only 
+# include directories provided by the user.. This will work in most situations, 
+# because user will provide a folder which containes modules, and not module folders directly,
+# and so the desired result will be achieved by the build system.
+# IMHO, the logic which tries to force scons is simply not intuitive.
+# But here I will replicate scons logic as best as I can.
+set(__ADDITIONAL_INCLUDES "")
+foreach(__MODULE_SUBDIR IN LISTS GODOT_CUSTOM_MODULES)
+	normilize_path(__MODULE_SUBDIR "${__MODULE_SUBDIR}" ABSOLUTE)
+	list(APPEND __ADDITIONAL_INCLUDES "${__MODULE_SUBDIR}")
+
+	# I would prefer to remove this logic, but this is basically what scons version is doing,
+	# so, as I said above, I will do the same..
+	if(TRUE)
+		get_filename_component(__PARENT_DIR "${__MODULE_SUBDIR}" DIRECTORY)
+		list(APPEND __ADDITIONAL_INCLUDES "${__PARENT_DIR}")
+	endif()
+endforeach()
+list(REMOVE_DUPLICATES __ADDITIONAL_INCLUDES)
+target_include_directories(global-env INTERFACE ${__ADDITIONAL_INCLUDES})
 
 # those lists are sync with each other
 set(MODULES_IDS "") # all modules ids (a.k.a. folder names)
@@ -358,19 +437,6 @@ execute_python_method(methods cmake_write_modules
 		ARR_VAR "MODULES_PATHS"
 )
 
-# detecting some modules which requred for the tools
-foreach(__MODULE_ID "regex")
-	if (NOT ${__MODULE_ID}_IS_MODULE_ENABLED)
-		
-		if(GODOT_BUILD_TOOLS)
-			set(GODOT_BUILD_TOOLS false)
-			message(WARNING "Because of build option '${__MODULE_ID}_IS_MODULE_ENABLED=false', and usage of multiconfigurational generator, the tools will be turened off.")
-			break() # tools are already off, nothing to check
-		endif()
-
-	endif()	
-endforeach()
-
 ############### Processing new configurations ###############
 
 if(GODOT_BUILD_TOOLS)
@@ -413,10 +479,40 @@ else()
 
 endif()
 
+# We will clean up all flags which were added by the cmake itself, 
+# because all those flags will be specifically added by the platforms
+
+foreach(__LANG "CXX" "C" "OBJCXX" "OBJC")
+
+	set(CMAKE_${__LANG}_FLAGS "")
+
+	foreach(__BUILD_TYPE IN LISTS __POSSIBLE_BUILD_TYPES)
+		string(TOUPPER "${__BUILD_TYPE}" __BUILD_TYPE)
+		set(CMAKE_${__LANG}_FLAGS_${__BUILD_TYPE} "")
+	endforeach()
+endforeach()
+
 ############### Processing some defines ###############
+# Build type defines - more platform-specific ones can be in detect.py.
+
+# DEBUG_ENABLED enables debugging *features* and debug-only code, which is intended
+# to give *users* extra debugging information for their game development.
+target_compile_definitions(global-env INTERFACE $<${IS_DEBUG_INFO_GEN_EXPR}:DEBUG_ENABLED>)
+
+# DEV_ENABLED enables *engine developer* code which should only be compiled for those
+# working on the engine itself.
+target_compile_definitions(global-env INTERFACE $<${IS_DEBUG_GEN_EXPR}:DEV_ENABLED>)
 
 if(GODOT_USE_PRECISE_MATH_CHECKS)
 	target_compile_definitions(global-env INTERFACE "PRECISE_MATH_CHECKS")
+endif()
+
+if(GODOT_NO_EDITOR_SPLASH)
+	target_compile_definitions(global-env INTERFACE "NO_EDITOR_SPLASH")
+endif()
+
+if(NOT GODOT_DEPRECATED)
+	target_compile_definitions(global-env INTERFACE "DISABLE_DEPRECATED")
 endif()
 
 target_compile_definitions(global-env INTERFACE 
@@ -424,20 +520,16 @@ target_compile_definitions(global-env INTERFACE
 	$<${IS_RELEASE_GEN_EXPR}:NDEBUG> # if we are the full release..
 )
 
-if(GODOT_NO_EDITOR_SPLASH)
-	target_compile_definitions(global-env INTERFACE "NO_EDITOR_SPLASH")
-endif()
-
-if(GODOT_DEPRECATED)
-	target_compile_definitions(global-env INTERFACE "DISABLE_DEPRECATED")
-endif()
-
 # are we using MSVC..
 set(__IS_MSVC_GEN_EXPR $<BOOL:${MSVC}>)
 
 # are we using gcc..
 set(__IS_GCC_GEN_EXPR
 	$<OR:$<CXX_COMPILER_ID:GNU>,$<C_COMPILER_ID:GNU>,$<OBJCXX_COMPILER_ID:GNU>,$<OBJC_COMPILER_ID:GNU>>)
+
+# are we using clang.......
+set(__IS_CLANG_GEN_EXPR
+	$<OR:$<CXX_COMPILER_ID:Clang>,$<C_COMPILER_ID:Clang>,$<OBJCXX_COMPILER_ID:Clang>,$<OBJC_COMPILER_ID:Clang>>)
 
 # if compiler for c/cxx is gcc and its version is >= 7.0.0
 set(__CXX_GCC_7VER_GEN_EXPR 		$<AND:$<CXX_COMPILER_ID:GNU>,$<VERSION_GREATER_EQUAL:$<CXX_COMPILER_VERSION>,7.0.0>>)
@@ -459,16 +551,39 @@ set(__GCC_9VER_GEN_EXPR
 
 target_compile_options(global-env INTERFACE $<${__IS_MSVC_GEN_EXPR}:/EHsc;/utf-8>)
 
+if(GODOT_DEV)
+	set(GODOT_WARNINGS "extra")
+	set(GODOT_WERROR TRUE)
+endif()
+
+if(GODOT_PRODUCTION)
+	set(GODOT_USE_STATIC_CPP TRUE)
+	set(GODOT_USE_LTO TRUE)
+	if(MSVC)
+		message(FATAL_ERROR 
+			"WARNING: For `production` Windows builds, you should use MinGW with GCC "
+			"or Clang instead of Visual Studio, as they can better optimize the "
+			"GDScript VM in a very significant way. MSVC LTO also doesn't work "
+			"reliably for our use case."
+			"If you want to use MSVC nevertheless for production builds, set "
+			"`GODOT_USE_LTO=FALSE` and use 'Release' or 'MinSizeRel' targets instead of the `GODOT_PRODUCTION=TRUE` option.")
+	endif()
+endif()
+
+cmake_language(CALL ${GODOT_PLATFORM}_configure_platform)
+
 # applying warnings level
 
 set(__MSVC_DISABLE_WARNINGS "/wd4267" "/wd4244" "/wd4305" "/wd4018" "/wd4800")
-set(__ALL_PLUS_WARNINGS "-Wwrite-strings")
-set(__OPTIONAL_SHADOW_LOCAL_WARNINGS $<${__GCC_7VER_GEN_EXPR}:-Wshadow-local>)
-
-if (GODOT_DEV)
-	set(GODOT_WARNINGS "extra")
-	set(GODOT_WERROR true)
-endif()
+set(__GNU_COMMON_WARNINGS 
+	# only for gcc
+	$<${__IS_GCC_GEN_EXPR}:-Wno-misleading-indentation>
+	# only for gcc greater then 7.0.0
+	$<${__GCC_7VER_GEN_EXPR}:-Wshadow-local>
+	# only for clang
+	# TODO: here also must be emcc (aka Emscripten Compiler Frontend), but I'm not sure how to check it in cmake
+	$<${__IS_CLANG_GEN_EXPR}:-Wno-ordered-compare-function-pointers>
+)	
 
 if (GODOT_WARNINGS STREQUAL "extra")
 
@@ -476,7 +591,7 @@ if (GODOT_WARNINGS STREQUAL "extra")
 		# only for MSVC
 		$<${__IS_MSVC_GEN_EXPR}:/Wall>
 		# general parameters for not MSVC
-		$<$<NOT:${__IS_MSVC_GEN_EXPR}>:-Wall;-Wextra;-Wno-unused-parameter;${__ALL_PLUS_WARNINGS};${__OPTIONAL_SHADOW_LOCAL_WARNINGS}> 
+		$<$<NOT:${__IS_MSVC_GEN_EXPR}>:-Wall;-Wextra;-Wwrite-strings;-Wno-unused-parameter;${__COMMON_WARNINGS}> 
 		# not MSVC, only for c++
 		$<$<AND:$<NOT:${__IS_MSVC_GEN_EXPR}>,$<COMPILE_LANGUAGE:CXX>>:-Wctor-dtor-privacy;-Wnon-virtual-dtor> 
 		# only for gcc
@@ -490,12 +605,12 @@ if (GODOT_WARNINGS STREQUAL "extra")
 elseif(GODOT_WARNINGS STREQUAL "all")
 
 	target_compile_options(warnings-env INTERFACE
-		$<IF:${__IS_MSVC_GEN_EXPR},/W3;${__MSVC_DISABLE_WARNINGS},-Wall;${__OPTIONAL_SHADOW_LOCAL_WARNINGS}>)
+		$<IF:${__IS_MSVC_GEN_EXPR},/W3;${__MSVC_DISABLE_WARNINGS},-Wall;${__GNU_COMMON_WARNINGS}>)
 
 elseif(GODOT_WARNINGS STREQUAL "moderate")
 
 	target_compile_options(warnings-env INTERFACE
-		$<IF:${__IS_MSVC_GEN_EXPR},/W2;${__MSVC_DISABLE_WARNINGS},-Wall;-Wno-unused;${__OPTIONAL_SHADOW_LOCAL_WARNINGS}>)
+		$<IF:${__IS_MSVC_GEN_EXPR},/W2;${__MSVC_DISABLE_WARNINGS},-Wall;-Wno-unused;${__GNU_COMMON_WARNINGS}>)
 
 else()
 	
@@ -528,8 +643,6 @@ set(MODULES_CLASSES "")
 set(CLASSES_DOC_PATHS "")
 # to keep track of all icons paths
 set(MODULES_ICONS_PATHS "")
-# just to be sure
-unset(__VERSION_STRING)
 # Actually enabled modules which can be built
 set(MODULES_LIST "") 
 
@@ -552,17 +665,6 @@ foreach(__MODULE_ID IN LISTS MODULES_IDS)
 	if(${__MODULE_ID}_MODULE_CAN_BUILD)
 
 		cmake_language(CALL ${__MODULE_ID}_configure_module)
-
-		if(COMMAND "${__MODULE_ID}_get_version_string")
-			# getting additional version string from the module.
-			unset(__MODULE_VERSION_STRING)
-			cmake_language(CALL "${__MODULE_ID}_get_version_string" __MODULE_VERSION_STRING)
-			# if module was returned from module function
-			if(NOT "${__MODULE_VERSION_STRING}" STREQUAL "")
-				# add this string to the total version string
-				set(__VERSION_STRING "${__VERSION_STRING}.${__MODULE_VERSION_STRING}")
-			endif()
-		endif()
 
 		# configuring documentation
 		if(COMMAND "${__MODULE_ID}_get_doc_classes" AND COMMAND "${__MODULE_ID}_get_doc_relative_path")
@@ -604,45 +706,54 @@ foreach(__MODULE_ID IN LISTS MODULES_IDS)
 
 endforeach()
 
+get_target_property(__MODULE_VERSION_STRING global-env MODULE_VERSION_STRING)
 execute_python_method(methods update_version
 	PYTHON_ARGS
-		STR_VAR "__VERSION_STRING"
+		STR_VAR "__MODULE_VERSION_STRING"
 )
 
-# processing extra suffix 
-set(EXTRA_SUFFIX "")
+# If I correct, order of suffixes should work like that:
+# 1. Suffix specified by the platform (or the platform name itself)
+# 2. ".opt" if build is optimized
+# 3. Debug suffix (.debug or .tools if tools enabled)
+# 4. Processor bits count (.64/.32)
+# 5. Anything user specifies in GODOT_EXTRA_SUFFIX
+# 6. Anything platform will add in <platform_id>_configure_platform method
+# And only for godot main program:
+# 7. Anything modules could have added into MODULE_VERSION_STRING (specifically mono)
+
+# Processing suffix for the godot program and libraries
+# This variable will be used by add_lib and add_exe functions,
+# as a default suffix for libraries and executables.
+set(__SUFFIX "")
 
 if(COMMAND "${GODOT_PLATFORM}_get_program_suffix")
-	cmake_language(CALL "${GODOT_PLATFORM}_get_program_suffix" ${GODOT_PLATFORM}_PROGRAM_SUFFIX)
+	cmake_language(CALL "${GODOT_PLATFORM}_get_program_suffix" __${GODOT_PLATFORM}_PROGRAM_SUFFIX)
 else()
-	set(${GODOT_PLATFORM}_PROGRAM_SUFFIX ${GODOT_PLATFORM})
+	set(__${GODOT_PLATFORM}_PROGRAM_SUFFIX ${GODOT_PLATFORM})
 endif()
 
-set(EXTRA_SUFFIX "${EXTRA_SUFFIX}.${${GODOT_PLATFORM}_PROGRAM_SUFFIX}")
+set(__SUFFIX "${__SUFFIX}.${__${GODOT_PLATFORM}_PROGRAM_SUFFIX}")
 
 # extra suffix for all optimized versions
-set(EXTRA_SUFFIX "${EXTRA_SUFFIX}$<${IS_OPTIMIZED_GEN_EXPR}:.opt>")
+set(__SUFFIX "${__SUFFIX}$<${IS_OPTIMIZED_GEN_EXPR}:.opt>")
 
 # extra suffix for all versions with debug info 
 if(GODOT_BUILD_TOOLS)
-	set(EXTRA_SUFFIX "${EXTRA_SUFFIX}$<${IS_DEBUG_INFO_GEN_EXPR}:.tools>")
+	set(__SUFFIX "${__SUFFIX}$<${IS_DEBUG_INFO_GEN_EXPR}:.tools>")
 else()
-	set(EXTRA_SUFFIX "${EXTRA_SUFFIX}$<${IS_DEBUG_INFO_GEN_EXPR}:.debug>") 
+	set(__SUFFIX "${__SUFFIX}$<${IS_DEBUG_INFO_GEN_EXPR}:.debug>") 
 endif()
 
-if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-	set(EXTRA_SUFFIX "${EXTRA_SUFFIX}.64")
-elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
-	set(EXTRA_SUFFIX "${EXTRA_SUFFIX}.32")
-else()
-	message(NOTICE "Target architecture wasn't deduced buy the \"CMAKE_SIZEOF_VOID_P\" (${CMAKE_SIZEOF_VOID_P}). This will result in absence of architecture sign in the program suffix.")
-endif()
-
-set(EXTRA_SUFFIX "${EXTRA_SUFFIX}${__VERSION_STRING}")
+set(__SUFFIX "${__SUFFIX}.${PROCESSOR_BITS}")
 
 if(NOT GODOT_EXTRA_SUFFIX STREQUAL "")
-	set(EXTRA_SUFFIX "${EXTRA_SUFFIX}.${GODOT_EXTRA_SUFFIX}")
+	set(__SUFFIX "${__SUFFIX}.${GODOT_EXTRA_SUFFIX}")
 endif()
+
+# Prepend extra suffix
+get_target_property(__EXTRA_SUFFIX global-env EXTRA_SUFFIX)
+set_target_properties(global-env PROPERTIES EXTRA_SUFFIX "${__SUFFIX}${__EXTRA_SUFFIX}")
 
 ############### Processing some defines after modules were processed ###############
 
@@ -665,10 +776,6 @@ if (GODOT_DISABLE_3D)
 	target_compile_definitions(global-env INTERFACE "_3D_DISABLED") 
 endif()
 
-if (GODOT_GDSCRIPT)
-	target_compile_definitions(global-env INTERFACE "GDSCRIPT_ENABLED") 
-endif()
-
 if (GODOT_DISABLE_ADVANCE_GUI)
 	
 	assert("Build option 'GODOT_DISABLE_ADVANCE_GUI=true' cannot be used with 'GODOT_BUILD_TOOLS=true' (editor), only with 'GODOT_BUILD_TOOLS=false' (export template)."
@@ -681,6 +788,19 @@ endif()
 if (GODOT_MINIZIP)
 	target_compile_definitions(global-env INTERFACE "MINIZIP_ENABLED") 
 endif()
+
+# detecting some modules which requred for the tools
+foreach(__MODULE_ID "freetype")
+	if (NOT ${__MODULE_ID}_IS_MODULE_ENABLED)
+		
+		if(GODOT_BUILD_TOOLS)
+			set(GODOT_BUILD_TOOLS false)
+			message(WARNING "Because of build option '${__MODULE_ID}_IS_MODULE_ENABLED=false', and usage of multiconfigurational generator, the tools will be turened off.")
+			break() # tools are already off, nothing to check
+		endif()
+
+	endif()	
+endforeach()
 
 # this is basically a library to hold all the other main libraries (like cor-lib, scene-lib, modules-lib etc.)
 add_library(global-libs-list INTERFACE)

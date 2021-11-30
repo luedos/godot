@@ -10,7 +10,13 @@ add_module_lib(ws-lib
 		warnings-env
 )
 
-if(GODOT_BUILTIN_WSLAY AND NOT GODOT_PLATFORM STREQUAL "javascript")	
+if(GODOT_PLATFORM STREQUAL "javascript")
+	#TODO: Actially implement function target_add_js_library
+	# This function basically should add input files input target_link_libraries as '--js-library "<library>"'
+	target_add_js_library(global-libs-list "library_godot_websocket.js")
+endif()
+
+if(GODOT_BUILTIN_WSLAY)	
 
 	set(__THIRDPARTY_WSLAY_PATH "${GODOT_SOURCE_DIR}/thirdparty/wslay")
 

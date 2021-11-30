@@ -7,8 +7,19 @@ endfunction()
 
 function(${__MODULE_NAME}_get_module_can_build __OUTPUT)
 	if (GODOT_BUILD_TOOLS)
-		set(${__OUTPUT} true PARENT_SCOPE)
+		set(${__OUTPUT} TRUE PARENT_SCOPE)
 	else()
-		set(${__OUTPUT} false PARENT_SCOPE)
+		set(${__OUTPUT} FALSE PARENT_SCOPE)
 	endif()
+endfunction()
+
+function(${__MODULE_NAME}_get_doc_classes __OUTPUT)
+	set(${__OUTPUT}
+		"EditorSceneImporterFBX"
+		PARENT_SCOPE
+	)
+endfunction()
+
+function(${__MODULE_NAME}_get_doc_relative_path __OUTPUT)
+	set(${__OUTPUT} "doc_classes" PARENT_SCOPE)
 endfunction()

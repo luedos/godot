@@ -16,8 +16,9 @@ if(GODOT_BUILTIN_LIBPNG)
 	target_include_directories(global-env INTERFACE "${__THIRDPARTY_LIBPNG_PATH}")
 
 	# Currently .ASM filter_neon.S does not compile on NT.
-	#TODO: Do not forget that this variable is seted in the android configuration
-	if(NEON_ENABLED AND NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
+	#TODO: this variable is defined only in android platform. Don't forget to add it if we will add android platform.
+	get_target_property(__NEON_ENABLED global-env NEON_ENABLED)
+	if(__NEON_ENABLED AND NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
 		target_compile_definitions(drivers-png-lib PRIVATE "PNG_ARM_NEON_OPT=2")
 	else()
 		target_compile_definitions(drivers-png-lib PRIVATE "PNG_ARM_NEON_OPT=0")
@@ -49,7 +50,7 @@ if(GODOT_BUILTIN_LIBPNG)
 		"pngwutil.c"
 	)
 
-	if(NEON_ENABLED AND NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
+	if(__NEON_ENABLED AND NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
 		#TODO: add support for the S_compiler.
 		# Biggest problem here is that s_compiler is different from regular compiler.. somewhy..
 		# reserach possibility to add new languages into cmake (and add specific compilers to those languages)

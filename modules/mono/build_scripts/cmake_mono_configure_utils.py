@@ -49,7 +49,7 @@ def make_template_dir(env, mono_root, output_dir):
     copy_mono_shared_libs(env, mono_root, template_mono_root_dir)
 
 
-def copy_mono_root_files(env, mono_root, output_dir):
+def copy_mono_root_files(env, mono_root, output_dir, mono_blc):
     from glob import glob
     from shutil import copy
     from shutil import rmtree
@@ -73,7 +73,7 @@ def copy_mono_root_files(env, mono_root, output_dir):
 
     # Copy framework assemblies
 
-    mono_framework_dir = os.path.join(mono_root, "lib", "mono", "4.5")
+    mono_framework_dir = mono_blc or os.path.join(mono_root, "lib", "mono", "4.5")
     mono_framework_facades_dir = os.path.join(mono_framework_dir, "Facades")
 
     editor_mono_framework_dir = os.path.join(editor_mono_root_dir, "lib", "mono", "4.5")
@@ -160,12 +160,16 @@ def copy_mono_shared_libs(env, mono_root, target_mono_root_dir):
         if not os.path.isdir(target_mono_lib_dir):
             os.makedirs(target_mono_lib_dir)
 
+        src_mono_lib_dir = os.path.join(mono_root, "lib")
+
         lib_file_names = []
         if platform == "osx":
-            lib_file_names = [
-                lib_name + ".dylib"
-                for lib_name in ["libmono-btls-shared", "libmono-native-compat", "libMonoPosixHelper"]
-            ]
+            lib_file_names = [lib_name + ".dylib" for lib_name in ["libmono-btls-shared", "libMonoPosixHelper"]]
+
+            if os.path.isfile(os.path.join(src_mono_lib_dir, "libmono-native-compat.dylib")):
+                lib_file_names += ["libmono-native-compat.dylib"]
+            else:
+                lib_file_names += ["libmono-native.dylib"]
         elif is_unix_like(platform):
             lib_file_names = [
                 lib_name + ".so"
@@ -182,4 +186,4 @@ def copy_mono_shared_libs(env, mono_root, target_mono_root_dir):
             ]
 
         for lib_file_name in lib_file_names:
-            copy_if_exists(os.path.join(mono_root, "lib", lib_file_name), target_mono_lib_dir)
+            copy_if_exists(os.path.join(src_mono_lib_dir, lib_file_name), target_mono_lib_dir)

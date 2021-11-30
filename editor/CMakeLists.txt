@@ -1,4 +1,5 @@
 
+# basically creates a python dict value there keys are classes names, and values are those classes paths
 function(__generate_python_class_map __OUTPUT __CLASSES_LIST __VALUES_SUFFIX)
 
 	file(TO_CMAKE_PATH "${GODOT_SOURCE_DIR}" __ROOT_PATH)
@@ -49,7 +50,7 @@ if(GODOT_BUILD_TOOLS)
 	)
 	
 	foreach(__PLATFORM IN LISTS PLATFORMS_EXPORTERS)
-		target_sources(editor-lib PRIVATE "${GODOT_SOURCE_DIR}/platform/${__PLATFORM}/export/export.cpp")
+		target_glob_sources(editor-lib PRIVATE "${GODOT_SOURCE_DIR}/platform/${__PLATFORM}/export/*.cpp")
 	endforeach()
 
 	file(GLOB __CLASSES_DOCS LIST_DIRECTORIES false "${GODOT_SOURCE_DIR}/doc/classes/*.xml")
@@ -60,6 +61,7 @@ if(GODOT_BUILD_TOOLS)
 		list(APPEND __CLASSES_DOCS ${__TEMP_CLASSES_DOCS})
 	endforeach()
 
+	list(SORT __CLASSES_DOCS)
 	# generating map for the python, from all godot docs.
 	__generate_python_class_map(__PYTHON_CLASS_MAP MODULES_CLASSES _CLASS_PATH)
 	execute_python_method(editor_builders cmake_make_doc_data_class_path
@@ -69,7 +71,7 @@ if(GODOT_BUILD_TOOLS)
 		APPEND_SYS_PATH "${GODOT_SOURCE_DIR}"
 	)
 
-	set(__GEN_HEADERS "")
+	set(__GEN_HEADERS)
 
 	set(__CLASSES_HEADER_FILE "${GODOT_SOURCE_DIR}/editor/doc_data_compressed.gen.h")
 	list(APPEND __GEN_HEADERS ${__CLASSES_HEADER_FILE})
@@ -79,26 +81,54 @@ if(GODOT_BUILD_TOOLS)
 		APPEND_SYS_PATH "${GODOT_SOURCE_DIR}"
 		BY_FILE "docs_header"
 	)
+	
+	# Editor interface and class reference translations incur a significant size
+	# cost for the editor binary (see godot-proposals#3421).
+	# To limit it, we only include translations with a high enough completion
+	# ratio (30% for the editor UI, 10% for the class reference).
+	# Generated with `make include-list` for each resource.
+	# Note: In 3.x, we also exclude languages that depend on complex text
+	# layouts to be displayed properly: ar,bn,fa,he,hi,ml,si,ta,te,ur.
 
-	# Translations
-	set(__TRANSLATION_HEADER_FILE "${GODOT_SOURCE_DIR}/editor/translations.gen.h")
-	list(APPEND __GEN_HEADERS ${__TRANSLATION_HEADER_FILE})
-	file(GLOB __TRANSLATION_FILES LIST_DIRECTORIES false "${CMAKE_CURRENT_SOURCE_DIR}/translations/*.po")
-	add_python_generator_command(editor_builders cmake_make_translations_header
-		SOURCE_FILES ${__TRANSLATION_FILES}
-		TARGET_FILES "${__TRANSLATION_HEADER_FILE}"
+	# Editor translations
+	set(__EDITOR_TRANSLATION_HEADER_FILE "${CMAKE_CURRENT_SOURCE_DIR}/editor_translations.gen.h")
+	set(__EDITOR_TRANSLATION_FILES 
+		"bg;ca;cs;de;el;eo;es_AR;es;fi;fr;gl;hu;id;it;ja;ko;lv;ms;nb;nl;pl;pt_BR;pt;ro;ru;sk;sv;th;tr;uk;vi;zh_CN;zh_TW"
+	)
+	list(TRANSFORM __EDITOR_TRANSLATION_FILES APPEND ".po")
+	list(TRANSFORM __EDITOR_TRANSLATION_FILES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/translations/")
+	list(APPEND __GEN_HEADERS ${__EDITOR_TRANSLATION_HEADER_FILE})
+	add_python_generator_command(editor_builders cmake_make_editor_translations_header
+		SOURCE_FILES ${__EDITOR_TRANSLATION_FILES}
+		TARGET_FILES "${__EDITOR_TRANSLATION_HEADER_FILE}"
 		APPEND_SYS_PATH "${GODOT_SOURCE_DIR}"
-		BY_FILE "translations_header"
+		BY_FILE "editor_translations_header"
 	)
 
-    # Fonts
+	# Documentation translations
+	set(__DOC_TRANSLATION_HEADER_FILE "${CMAKE_CURRENT_SOURCE_DIR}/doc_translations.gen.h")
+	set(__DOC_TRANSLATION_FILES 
+		"de;es;fr;ja;zh_CN"
+	)
+	list(TRANSFORM __DOC_TRANSLATION_FILES APPEND ".po")
+	list(TRANSFORM __DOC_TRANSLATION_FILES PREPEND "${GODOT_SOURCE_DIR}/doc/translations/")
+	list(APPEND __GEN_HEADERS ${__DOC_TRANSLATION_HEADER_FILE})
+	add_python_generator_command(editor_builders cmake_make_doc_translations_header
+		SOURCE_FILES ${__DOC_TRANSLATION_FILES}
+		TARGET_FILES "${__DOC_TRANSLATION_HEADER_FILE}"
+		APPEND_SYS_PATH "${GODOT_SOURCE_DIR}"
+		BY_FILE "doc_translations_header"
+	)
+
+	# Fonts
 	set(__FONTS_HEADER_FILE "${GODOT_SOURCE_DIR}/editor/builtin_fonts.gen.h")
 	list(APPEND __GEN_HEADERS ${__FONTS_HEADER_FILE})
 
-    file(GLOB __TEMP_FONTS_FILES LIST_DIRECTORIES false "${GODOT_SOURCE_DIR}/thirdparty/fonts/*.ttf")
-    set(__FONTS_FILES ${__TEMP_FONTS_FILES})
-    file(GLOB __TEMP_FONTS_FILES LIST_DIRECTORIES false "${GODOT_SOURCE_DIR}/thirdparty/fonts/*.otf")
-    set(__FONTS_FILES ${__FONTS_FILES} ${__TEMP_FONTS_FILES})
+	file(GLOB __TEMP_FONTS_FILES LIST_DIRECTORIES false "${GODOT_SOURCE_DIR}/thirdparty/fonts/*.ttf")
+	set(__FONTS_FILES ${__TEMP_FONTS_FILES})
+	file(GLOB __TEMP_FONTS_FILES LIST_DIRECTORIES false "${GODOT_SOURCE_DIR}/thirdparty/fonts/*.otf")
+	list(APPEND __FONTS_FILES ${__TEMP_FONTS_FILES})
+	list(SORT __FONTS_FILES)
 	add_python_generator_command(editor_builders cmake_make_fonts_header
 		SOURCE_FILES ${__FONTS_FILES}
 		TARGET_FILES "${__FONTS_HEADER_FILE}"

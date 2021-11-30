@@ -6,9 +6,16 @@ function(${__MODULE_NAME}_configure_module)
 endfunction()
 
 function(${__MODULE_NAME}_get_module_can_build __OUTPUT)
-	if (GODOT_PLATFORM STREQUAL "iphone")
-		set(${__OUTPUT} true PARENT_SCOPE)
-	else()
-		set(${__OUTPUT} false PARENT_SCOPE)
-	endif()
+	set(${__OUTPUT} true PARENT_SCOPE)
+endfunction()
+
+function(${__MODULE_NAME}_get_doc_classes __OUTPUT)
+	set(${__OUTPUT}
+		"WebXRInterface"
+		PARENT_SCOPE
+	)
+endfunction()
+
+function(${__MODULE_NAME}_get_doc_relative_path __OUTPUT)
+	set(${__OUTPUT} "doc_classes" PARENT_SCOPE)
 endfunction()

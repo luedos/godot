@@ -50,7 +50,7 @@ set_target_properties(global-env PROPERTIES USE_PTRCALL true)
 
 if(GODOT_GDNATIVE_WRAPPER)
 	set(__GDNATIVE_WRAPPER_TARGETS "${CMAKE_CURRENT_SOURCE_DIR}/gdnative_wrapper_code.gen.cpp")
-	add_python_generator_command(gdnative_builders cmake_build_gdnative_api_struct
+	add_python_generator_command(gdnative_builders cmake_build_gdnative_wrapper_code
 		SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/gdnative_api.json"
 		TARGET_FILES ${__GDNATIVE_WRAPPER_TARGETS}
 	)

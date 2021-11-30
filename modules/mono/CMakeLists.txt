@@ -41,9 +41,10 @@ inline_if(__IS_UNIX_LIKE
 	GODOT_PLATFORM MATCHES "(osx|x11|server|android|haiku|iphone)"
 )
 
-inline_if(__IS_IOS_SIM 		__IS_IOS AND (CMAKE_SYSTEM_PROCESSOR STREQUAL "x86" OR CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64"))
+#TODO: don't forget to add GODOT_IOS_SIMULATOR if I will ever be working with apple products (probably not..).
+inline_if(__IS_IOS_SIM 		__IS_IOS AND GODOT_IOS_SIMULATOR)
 inline_if(__MODULE_SUPPORTS_TOOLS NOT GODOT_PLATFORM MATCHES "(android|javascript|iphone)")
-
+set(__MONO_BCL GODOT_MONO_BCL)
 
 # basiaclly defining a map
 set(__SUPPORTED_ANDROID_ARCH_DIRS "armv7" "arm64v8" "x86" "x86_64")
@@ -53,11 +54,6 @@ set(__x86_ANDROID_ARCH_DIR			"x86")
 set(__x86_64_ANDROID_ARCH_DIR		"x86_64")
 set(__ANDROID_OUTPUT_DIR "${GODOT_SOURCE_DIR}/platform/android/java/lib/libs/$<IF:${IS_RELEASE_GEN_EXPR},release,debug>/${__${GODOT_ANDROID_ARCH}_ANDROID_ARCH_DIR}")
 
-if(CMAKE_SIZEOF_VOID_P EQUAL 4)
-	set(__BITS 32)
-else()
-	set(__BITS 64)
-endif()	
 set(__MONO_LIB_NAMES "mono-2.0-sgen" "monosgen-2.0")
 
 # This custom command is basically allow us to create custom target with dynamic COMMAND parameter.
@@ -284,11 +280,6 @@ endif()
 
 # Configure Mono
 
-if($ENV{TRAVIS})
-	# Travis CI may have a Mono version lower than 5.12
-	target_compile_definitions(mono-lib PRIVATE "NO_PENDING_EXCEPTIONS")
-endif()
-
 if(__IS_ANDROID AND NOT GODOT_ANDROID_ARCH IN_LIST __SUPPORTED_ANDROID_ARCH_DIRS)
 	message(FATAL_ERROR "This module does not support the specified 'android_arch': ${GODOT_ANDROID_ARCH} (possible architectures are: ${__SUPPORTED_ANDROID_ARCH_DIRS})")
 endif()
@@ -331,7 +322,7 @@ if(__IS_WINDOWS)
 		execute_python_method(mono_reg_utils cmake_find_mono_root_dir
 			MODULE_DIR "build_scripts"
 			PYTHON_ARGS 
-				RAW_VAR "__BITS"
+				RAW_VAR "PROCESSOR_BITS"
 			OUTPUT_VARIABLE __MONO_ROOT
 		)
 	endif()
@@ -544,8 +535,9 @@ else()
 		target_compile_definitions(mono-lib PRIVATE "_REENTRANT")
 
 		if(GODOT_MONO_STATIC)
-
-			target_link_options(global-env INTERFACE "-rdynamic")
+			if (NOT __IS_JAVASCRIPT)
+				target_link_options(global-env INTERFACE "-rdynamic")
+			endif()
 
 			join_paths(__MONO_LIB_FILE "${__MONO_LIB_PATH}" "lib${__MONO_LIB}.a")
 
@@ -556,11 +548,15 @@ else()
 					target_link_options(global-env PRIVATE "-Wl,-force_load,${__MONO_LIB_FILE}")
 
 				else()
-
+					ternary_if(__MONO_LIBRARY_SUFFIX
+						"simulator.a" # true
+						"a" # false
+						__IS_IOS_SIM
+					)
 					function(__copy_mono_lib __LIB_NAME)
 						__copy_path(FILE 
 							"${__MONO_LIB_PATH}/${__LIB_NAME}.a" 
-							"${GODOT_BIN_DIRECTORY}/${__LIB_NAME}.iphone.${CMAKE_SYSTEM_PROCESSOR}.a"
+							"${GODOT_BIN_DIRECTORY}/${__LIB_NAME}.iphone.${CMAKE_SYSTEM_PROCESSOR}.${__MONO_LIBRARY_SUFFIX}"
 						)
 					endfunction()
 
@@ -728,7 +724,7 @@ endif()
 parse_to_python_map(__FAKE_ENV_MAP FROM_ARGS
 	STR_VAL "target" "$<${IS_RELEASE_GEN_EXPR}:release>$<${IS_DEBUG_GEN_EXPR}:debug>$<${IS_OPT_DEBUG_GEN_EXPR}:release_debug>"
 	STR_VAR "platform" "GODOT_PLATFORM"
-	RAW_VAR "bits" "__BITS"
+	RAW_VAR "bits" "PROCESSOR_BITS"
 	STR_VAL "android_output_dir" "${__ANDROID_OUTPUT_DIR}"
 )
 
@@ -799,7 +795,7 @@ if(GODOT_COPY_MONO_ROOT)
 		endif()
 
 		set(__COMMAND "android_dir='${__ANDROID_OUTPUT_DIR}'; import build_scripts.cmake_mono_configure_utils as cmake_mono_configure_utils; ") # initial setup
-		set(__COMMAND "${__COMMAND} cmake_mono_configure_utils.copy_mono_root_files(env=${__FAKE_ENV_MAP}, mono_root='${__MONO_ROOT}', output_dir='${GODOT_BIN_DIRECTORY}') ") # calling copy_mono_root_files if tools are enabled
+		set(__COMMAND "${__COMMAND} cmake_mono_configure_utils.copy_mono_root_files(env=${__FAKE_ENV_MAP}, mono_root='${__MONO_ROOT}', output_dir='${GODOT_BIN_DIRECTORY}', mono_blc='${GODOT_MONO_BCL}') ") # calling copy_mono_root_files if tools are enabled
 
 		add_custom_target(mono-copy-root-gen
 			COMMAND "python" "-c" "${__COMMAND}"
@@ -836,7 +832,7 @@ if(GODOT_BUILD_TOOLS AND GODOT_MONO_GLUE AND GODOT_BUILD_CIL)
 		parse_to_python_map(__FAKE_ENV_MAP FROM_ARGS
 			RAW_VAL "target" "target_var"
 			STR_VAR "platform" "GODOT_PLATFORM"
-			RAW_VAR "bits" "__BITS"
+			RAW_VAR "bits" "PROCESSOR_BITS"
 			BOOL_VAR "tools" "GODOT_BUILD_TOOLS"
 			STR_VAR "mono_prefix" "GODOT_MONO_PREFIX"
 			STR_VAL "module_dir" "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -893,7 +889,7 @@ if(GODOT_BUILD_TOOLS AND GODOT_MONO_GLUE AND GODOT_BUILD_CIL)
 	parse_to_python_map(__FAKE_ENV_MAP FROM_ARGS
 		RAW_VAL "target" "target_var"
 		STR_VAR "platform" "GODOT_PLATFORM"
-		RAW_VAR "bits" "__BITS"
+		RAW_VAR "bits" "PROCESSOR_BITS"
 		BOOL_VAR "tools" "GODOT_BUILD_TOOLS"
 		STR_VAR "mono_prefix" "GODOT_MONO_PREFIX"
 		STR_VAL "module_dir" "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -942,11 +938,13 @@ endif()
 
 target_glob_sources(mono-lib PRIVATE "utils/*.cpp")
 target_glob_sources(mono-lib PRIVATE "mono_gd/support/*.cpp")
-
+target_sources(mono-lib PRIVATE "glue/mono_glue.gen.cpp")
 
 if(GODOT_PLATFORM MATCHES "(osx|iphone)")
 	target_glob_sources(mono-lib PRIVATE "mono_gd/support/*.mm")
 	target_glob_sources(mono-lib PRIVATE "mono_gd/support/*.m")
+elseif(GODOT_PLATFORM STREQUAL "android")
+	target_sources(mono-lib PRIVATE "mono_gd/android_mono_config.gen.cpp")
 endif()
 
 if(GODOT_BUILD_TOOLS)
