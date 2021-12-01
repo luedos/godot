@@ -21,6 +21,10 @@ add_exe(godot-exe
 		"detect_prime.cpp"
 )
 
+if(GODOT_UDEV)
+	target_sources(godot-exe PRIVATE "libudev-so_wrap.c")
+endif()
+
 set(__STRIP_TARGET_ARR $<TARGET_FILE:godot-exe>.debugsymbols)
 set(__STRIP_SOURCE_ARR $<TARGET_FILE:godot-exe>)
 

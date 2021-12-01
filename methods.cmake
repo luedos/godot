@@ -199,6 +199,8 @@ endfunction()
 # Specifically glob only directories.
 function(file_glob_dirs __OUTPUT __EXPRESSION)
 
+	assert_if_empty(__OUTPUT __EXPRESSION)
+
 	set(__OPTIONS RECURSIVE FOLLOW_SYMLINKS)
 	set(__VALUES RELATIVE)
 	set(__MULTIVALUE "")
@@ -218,7 +220,7 @@ function(file_glob_dirs __OUTPUT __EXPRESSION)
 		list(APPEND __ADDITIONAL_ARGS "RELATIVE" "${__ARGS_RELATIVE}")
 	endif()
 
-	file(${__GLOB_TYPE} __GLOB_LIST LIST_DIRECTORIES TRUE ${__ADDITIONAL_ARGS})
+	file("${__GLOB_TYPE}" __GLOB_LIST LIST_DIRECTORIES TRUE ${__ADDITIONAL_ARGS} "${__EXPRESSION}")
 	set(__RET_LIST "")
 	foreach(__DIR IN LISTS __GLOB_LIST)
 		if(NOT "${__ARGS_RELATIVE}" STREQUAL "" AND NOT IS_ABSOLUTE "${__DIR}")
@@ -412,7 +414,11 @@ function(is_module __PATH __OUTPUT)
 
 	assert_if_empty(__OUTPUT)
 
-	if (IS_DIRECTORY "${__PATH}" AND EXISTS "${__PATH}/CMakeLists.txt")
+	if (IS_DIRECTORY "${__PATH}" 
+		AND EXISTS "${__PATH}/CMakeLists.txt"
+		AND EXISTS "${__PATH}/config.cmake"
+		AND EXISTS "${__PATH}/register_types.h"
+	)
 		set(${__OUTPUT} true PARENT_SCOPE)
 	else()
 		set(${__OUTPUT} false PARENT_SCOPE)
@@ -435,15 +441,15 @@ function(get_modules_paths __OUTPUT)
 	)
 	set(__ONE_VALUE_ARGS "")
 	set(__MULTI_VALUE_ARGS "")
-	cmake_parse_arguments(PARSE_ARGV 2 __ARGS "${__OPTIONS_ARGS}" "${__ONE_VALUE_ARGS}" "${__MULTI_VALUE_ARGS}")
+	cmake_parse_arguments(PARSE_ARGV 1 __ARGS "${__OPTIONS_ARGS}" "${__ONE_VALUE_ARGS}" "${__MULTI_VALUE_ARGS}")
 
 	# local variable
 	unset(__MODULE_VALID)
 	unset(__MODULES_DIRS)
 	set(__RET_LIST "")
 	set(__SEARCH_LIST "")
-
-	if("${__SEARCH_LIST}" STREQUAL "")
+	
+	if("${__ARGS_UNPARSED_ARGUMENTS}" STREQUAL "")
 		set("${__OUTPUT}" "" PARENT_SCOPE)
 		return()
 	endif()
@@ -461,7 +467,7 @@ function(get_modules_paths __OUTPUT)
 			continue()
 		endif()
 
-		file_glob_dirs(__MODULE_DIRS "${__DIR}")
+		file_glob_dirs(__MODULE_DIRS "${__DIR}/*")
 		list(APPEND __SEARCH_LIST ${__MODULE_DIRS})
 	endforeach()
 
@@ -486,7 +492,7 @@ function(get_modules_paths __OUTPUT)
 
 		# As said before, if we are not recursive, we will not add additional folders into search
 		if(__ARGS_RECURSIVE)
-			file_glob_dirs(__MODULE_DIRS "${__DIR}")
+			file_glob_dirs(__MODULE_DIRS "${__DIR}/*")
 			list(APPEND __SEARCH_LIST ${__MODULE_DIRS})
 		endif()
 

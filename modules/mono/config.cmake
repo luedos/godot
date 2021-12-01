@@ -14,7 +14,7 @@ function(${__MODULE_NAME}_configure_module)
 	set_target_properties(global-env 
 		PROPERTIES 
 		USE_PTRCALL true
-		MODULE_VERSION_STRING "${MODULE_VERSION_STRING}.mono"
+		MODULE_VERSION_STRING "${__MODULE_VERSION_STRING}.mono"
 	)
 
 	if(GODOT_PLATFORM STREQUAL "iphone" OR GODOT_PLATFORM STREQUAL "javascript")

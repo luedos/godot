@@ -1,5 +1,5 @@
 
-add_lib(webxr-lib 
+add_module_lib(webxr-lib 
 	COMPONENTS
 		modules-env
 		warnings-env

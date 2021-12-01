@@ -227,18 +227,6 @@ def is_module(path):
             return False
     return True
 
-# composes OrderedDict from modules_ids and modules_paths arrays and calls write_modules
-def cmake_write_modules(modules_ids, modules_paths):
-    from collections import OrderedDict
-    length = min(len(modules_ids), len(modules_paths))
-    modules_list = OrderedDict()
-    for i in range(length):
-        name = modules_ids[i]
-        path = modules_paths[i]
-        modules_list[name] = path
-
-    write_modules(modules_list)
-
 def write_modules(modules):
     includes_cpp = ""
     register_cpp = ""

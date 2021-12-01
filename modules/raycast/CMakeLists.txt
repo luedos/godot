@@ -21,7 +21,7 @@ if(GODOT_BUILTIN_EMBREE)
 
 	set(__THIRDPARTY_PVR_PATH "${GODOT_SOURCE_DIR}/thirdparty/embree")
 
-	target_include_directories(raycast-env INTERFACE "${__THIRDPARTY_PVR_PATH}")
+	target_include_directories(raycast-env INTERFACE "${__THIRDPARTY_PVR_PATH}/include")
 
 	target_sources_from_path(thirdparty-raycast-lib PRIVATE "${__THIRDPARTY_PVR_PATH}"
 		"common/sys/sysinfo.cpp"

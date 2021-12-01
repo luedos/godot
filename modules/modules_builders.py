@@ -9,9 +9,11 @@ class CMakeEnv:
     pass
 
 def cmake_generate_modules_enabled(target, module_list):
-    env = CMakeEnv()
-    env.module_list = module_list
-    generate_modules_enabled(target, None, env)
+    # This is copy of generate_modules_enabled, with main difference that module_list is not provided from environment
+    # and that target are not an array of scons objects, and instead simple string path
+    with open(target, "w") as f:
+        for module in module_list:
+            f.write("#define %s\n" % ("MODULE_" + module.upper() + "_ENABLED"))
 
 def generate_modules_enabled(target, source, env):
     with open(target[0].path, "w") as f:

@@ -18,6 +18,7 @@ execute_python_method(modules_builders cmake_generate_modules_enabled
 	PYTHON_ARGS
 		STR_VAR "target=__MODULES_ENABLED_HEADER"
 		ARR_VAR "module_list=MODULES_LIST"
+	APPEND_SYS_PATH "${GODOT_SOURCE_DIR}"
 )
 
 target_sources(modules-lib PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/register_module_types.gen.cpp")

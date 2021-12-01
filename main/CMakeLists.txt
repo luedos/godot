@@ -75,5 +75,6 @@ add_dependencies(main-lib main-gen)
 if(GODOT_BUILD_TOOLS)
 
 	add_subdirectory(tests)
+	define_lib_dependencies(main-lib tests-lib)
 
 endif()

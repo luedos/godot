@@ -1,10 +1,15 @@
 
+add_env(core-crypto-env
+	COMPONENTS
+		global-env
+)
+
 add_lib(core-crypto-lib
 	OBJECT
 	PARENT_LIB
 		core-lib
 	COMPONENTS
-		global-env
+		core-crypto-env
 		warnings-env
 )
 
@@ -12,7 +17,7 @@ if (GODOT_BUILTIN_MBEDTLS OR NOT mbedtls_IS_MODULE_ENABLED)
 	# Use our headers for builtin or if the module is not going to be compiled.
 	# We decided not to depend on system mbedtls just for these few files that can
 	# be easily extracted.
-	target_include_directories(core-crypto-lib PRIVATE
+	target_include_directories(core-crypto-env INTERFACE
 		"${GODOT_SOURCE_DIR}/thirdparty/mbedtls/include"
 	)
 endif()
@@ -29,7 +34,7 @@ if(NOT mbedtls_IS_MODULE_ENABLED)
 		PARENT_LIB
 			core-lib
 		COMPONENTS
-			global-env
+			core-crypto-env
 	)
 
 	target_compile_definitions(thirdparty-core-crypto-lib PRIVATE 

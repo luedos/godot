@@ -22,23 +22,6 @@ endif()
 
 register_global_lib(scene-lib)
 
-add_lib(thirdparty-scene-lib
-	OBJECT
-	PARENT_LIB
-		scene-lib
-	COMPONENTS
-		global-env
-)
-
-# Thirdparty code
-set(__THIRDPARTY_MISC_DIR "${GODOT_SOURCE_DIR}/thirdparty/misc")
-target_sources_from_path(thirdparty-scene-lib PRIVATE "${__THIRDPARTY_MISC_DIR}"
-    # C++ sources
-    "easing_equations.cpp"
-    # C sources
-    "mikktspace.c"
-)
-
 target_glob_sources(scene-lib PRIVATE "*.cpp")
 
 add_subdirectory(main)

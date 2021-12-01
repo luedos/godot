@@ -174,7 +174,7 @@ foreach(__DIR IN LISTS __PLATFORM_DIRS)
 
 endforeach()
 
-execute_python_method(methods save_active_platforms
+execute_python_method(cmake_methods save_active_platforms
 	PYTHON_ARGS 
 		ARR_VAR "ACTIVE_PLATFORMS"
 		ARR_VAR "ACTIVE_PLATFORM_PATHS"
@@ -186,8 +186,8 @@ execute_python_method(methods save_active_platforms
 # (for example, some platforms tend to override GODOT_BUILD_TOOLS option)
 
 # Target build options
-set_string_option	(GODOT_BIN_DIRECTORY			"bin/$<CONFIG>"		DESCRIPTION "Build directory. (can use generator expression)")
-set_bool_option		(GODOT_BUILD_TOOLS 				TRUE 	DESCRIPTION	"Build the tools (a.k.a. the Godot editor). By itself, this option does nothing. By enableing this option build will add two additional configurations: ToolsDebug and ToolsRelWithDebInfo. Tools will be build only by choosing those configurations.")
+set_string_option	(GODOT_BIN_DIRECTORY			"bin/$<CONFIG>"		DESCRIPTION "Build directory. (can use generator expression). If not absolute, will be relative to CMAKE_BINARY_DIR (aka directory where you configured your cmake).")
+set_bool_option		(GODOT_BUILD_TOOLS 				TRUE 	DESCRIPTION	"Build the tools (a.k.a. the Godot editor). This option will remove Release and MinSizeRel configurations, because tools can't be built in prodaction.")
 set_bool_option		(GODOT_USE_LTO					FALSE	DESCRIPTION "Use link-time optimization.")
 set_bool_option		(GODOT_USE_PRECISE_MATH_CHECKS 	FALSE 	DESCRIPTION "Math checks use very precise epsilon (debug option).")
 # Instead of profile, cmake can just use toolchain files
@@ -338,7 +338,7 @@ some/provided/path/module3/
 ...
 ]=]
 
-set(__MODULE_DIRS "") # just to be sure
+set(__MODULES_DIRS "") # just to be sure
 # Built in directories we are detecting without recursion
 get_modules_paths(__MODULES_DIRS "modules")
 
@@ -431,7 +431,7 @@ foreach(__DIR IN LISTS __MODULES_DIRS)
 endforeach()
 
 # generating some files
-execute_python_method(methods cmake_write_modules
+execute_python_method(cmake_methods cmake_write_modules
 	PYTHON_ARGS
 		ARR_VAR "MODULES_IDS"
 		ARR_VAR "MODULES_PATHS"
@@ -707,7 +707,7 @@ foreach(__MODULE_ID IN LISTS MODULES_IDS)
 endforeach()
 
 get_target_property(__MODULE_VERSION_STRING global-env MODULE_VERSION_STRING)
-execute_python_method(methods update_version
+execute_python_method(cmake_methods update_version
 	PYTHON_ARGS
 		STR_VAR "__MODULE_VERSION_STRING"
 )
@@ -794,8 +794,7 @@ foreach(__MODULE_ID "freetype")
 	if (NOT ${__MODULE_ID}_IS_MODULE_ENABLED)
 		
 		if(GODOT_BUILD_TOOLS)
-			set(GODOT_BUILD_TOOLS false)
-			message(WARNING "Because of build option '${__MODULE_ID}_IS_MODULE_ENABLED=false', and usage of multiconfigurational generator, the tools will be turened off.")
+			message(FATAL_ERROR "Build option '${__MODULE_ID}_IS_MODULE_ENABLED=${${__MODULE_ID}_IS_MODULE_ENABLED}', cannot be used with 'GODOT_BUILD_TOOLS=TRUE' (editor) only with 'GODOT_BUILD_TOOLS=FALSE' (export template)." )
 			break() # tools are already off, nothing to check
 		endif()
 
