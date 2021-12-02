@@ -65,9 +65,11 @@ function(${__PLATFORM_NAME}_configure_platform)
 
 	target_compile_options(global-env INTERFACE
 		# Optimised for size
-		$<$<CONFIG:MinSizeRel>:-Os>
+		$<${IS_RELEASE_SIZE_GEN_EXPR}:-Os>
 		# Full on release
-		$<$<CONFIG:Release>:-O3>
+		$<${IS_RELEASE_SPEED_GEN_EXPR}:-O3>
+		# Release with debug info
+		$<${IS_OPT_DEBUG_GEN_EXPR}:-O2>
 
 		# Debug symbols
 		$<${IS_OPT_DEBUG_GEN_EXPR}:-g2>

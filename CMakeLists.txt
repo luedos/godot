@@ -252,6 +252,8 @@ set_bool_option		(GODOT_BUILTIN_ZSTD			TRUE 	DESCRIPTION "Use the built-in Zstd 
 # Generator expressions for easier working with build types which can be used in the future.
 set(IS_OPTIMIZED_GEN_EXPR      $<CONFIG:Release,MinSizeRel,RelWithDebInfo>)
 set(IS_RELEASE_GEN_EXPR        $<CONFIG:Release,MinSizeRel>)
+set(IS_RELEASE_SPEED_GEN_EXPR  $<CONFIG:Release>)
+set(IS_RELEASE_SIZE_GEN_EXPR   $<CONFIG:MinSizeRel>)
 set(IS_DEBUG_INFO_GEN_EXPR     $<CONFIG:Debug,RelWithDebInfo>)
 set(IS_DEBUG_GEN_EXPR          $<CONFIG:Debug>)
 set(IS_OPT_DEBUG_GEN_EXPR      $<CONFIG:RelWithDebInfo>)

@@ -34,7 +34,6 @@ function(${__PLATFORM_NAME}_configure_platform)
 
 	if(MSVC)
 
-		#TODO: need to do exctensive testing for all these options, because I'm sure that half of them cmake sets by default
 		target_link_options(global-env INTERFACE 
 			$<${IS_RELEASE_GEN_EXPR}:/SUBSYSTEM:WINDOWS;/ENTRY:mainCRTStartup;/OPT:REF>
 			$<${IS_OPT_DEBUG_GEN_EXPR}:/SUBSYSTEM:CONSOLE;/OPT:REF>
@@ -44,10 +43,10 @@ function(${__PLATFORM_NAME}_configure_platform)
 		)
 
 		target_compile_options(global-env INTERFACE
-			$<$<CONFIG:Release>:/O2>
-			$<$<CONFIG:MinSizeRel>:/O1>
-			$<${IS_DEBUG_INFO_GEN_EXPR}:/Zi;/FS>
+			$<${IS_RELEASE_SPEED_GEN_EXPR}:/O2>
+			$<${IS_RELEASE_SIZE_GEN_EXPR}:/O1>
 			$<${IS_OPT_DEBUG_GEN_EXPR}:/O2>
+			$<${IS_DEBUG_INFO_GEN_EXPR}:/Zi;/FS>
 			$<${IS_DEBUG_GEN_EXPR}:/Od;/EHsc>
 			"/Gd"
 			"/GR"
@@ -148,8 +147,8 @@ function(${__PLATFORM_NAME}_configure_platform)
 		endif()
 
 		target_compile_options(global-env INTERFACE
-			$<$<CONFIG:Release>:-msse2;$<IF:$<EQUAL:${PROCESSOR_BITS},64>,-O3,-O2>>
-			$<$<CONFIG:MinSizeRel>:-Os>
+			$<${IS_RELEASE_SPEED_GEN_EXPR}:-msse2;$<IF:$<EQUAL:${PROCESSOR_BITS},64>,-O3,-O2>>
+			$<${IS_RELEASE_SIZE_GEN_EXPR}:-Os>
 			$<${IS_OPT_DEBUG_GEN_EXPR}:-O2;-g2>
 			$<${IS_DEBUG_GEN_EXPR}:-g3>
 			"-mwindows"			
