@@ -82,5 +82,6 @@ for more information.
 This project is started, and still intended, for an educational purposes, to learn CMake and cross compilation in general.
 If you want to support it in any way, just test it yourself and leave an issue on whatever you found, so I can reasearch more staff.
 
-For now windows is the only platform that is supported. Next will be linux, and after that android.. 
-And I probably not even be able to finish android, so I don't know that will be next.
+For now windows and linux are the only platforms that supported. And I, probably, will not add any more platforms.. 
+
+If you will have any questions, feel free to contact me via email: lue.services@protonmail.com
