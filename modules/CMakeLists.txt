@@ -152,6 +152,6 @@ endfunction()
 
 foreach(__MODULE_ID IN LISTS MODULES_LIST)
 
-	add_subdirectory("${${__MODULE_ID}_MODULE_PATH}")
+	add_subdirectory("${${__MODULE_ID}_MODULE_PATH}" "${CMAKE_CURRENT_BINARY_DIR}/modules/${__MODULE_ID}")
 
 endforeach()

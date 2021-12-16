@@ -409,7 +409,7 @@ if(__WEBM_CPU_X86)
 
 	add_module_lib(libvpx-avx2-lib OBJECT PARENT_LIB webm-lib COMPONENTS libvpx-env)
 	target_compile_options(libvpx-avx2-lib PRIVATE $<${__IS_CLANG_OR_GCC_GEN_EXPR}:-mavx2>)
-	target_sources(libvpx-ssse3-lib PRIVATE ${__LIBVPX_SOURCES_INTRIN_X86_AVX2})
+	target_sources(libvpx-avx2-lib PRIVATE ${__LIBVPX_SOURCES_INTRIN_X86_AVX2})
 
 	target_sources(libvpx-lib PRIVATE 
 		${__LIBVPX_SOURCES_INTRIN_X86} 
