@@ -29,9 +29,8 @@ function(__check_module_dependencies __LIST)
 	foreach(__DEP IN LISTS ${__LIST})
 		string(REGEX REPLACE "-lib$" "" __DEP_NAME "${__DEP}")
 
-		# If dependency does not match any of these, then it's module, and if this module is not enabled, we will not add it as a dependency..
-		if (NOT __DEP_NAME MATCHES "(core|drivers|scene|servers|platform|main|tests|editor)" 
-			AND NOT ${__DEP_NAME}_IS_MODULE_ENABLED)
+		if (DEFINED "${__DEP_NAME}_IS_MODULE_ENABLED" # If _IS_MODULE_ENABLED variable for this library is not defined, then this is not a module
+			AND NOT "${__DEP_NAME}_IS_MODULE_ENABLED") # But if this is a module, and it's disabled, then we should not include it in dependencies.
 
 			continue()	
 		endif()
@@ -68,7 +67,7 @@ function(define_module_dependencies __NAME)
 			set(__TARGET "${__PARENT}")
 		endif()
 	endif()
-
+	
 	define_lib_dependencies("${__TARGET}" ${__DEPENDENCIES})
 
 endfunction()
