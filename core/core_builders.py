@@ -6,6 +6,14 @@ All such functions are invoked in a subprocess on Windows to prevent build flaki
 from platform_methods import subprocess_main
 from compat import iteritems, itervalues, open_utf8, escape_string, byte_to_str
 
+def cmake_make_certs_header(target, source, system_certs_path="", is_builtin_certs=True):
+    # cheating our way through
+    env_map = { 
+        "system_certs_path":system_certs_path,
+        "builtin_certs":is_builtin_certs
+    }
+    make_certs_header(target, source, env_map)
+
 
 def make_certs_header(target, source, env):
 
@@ -40,6 +48,10 @@ def make_certs_header(target, source, env):
     g.close()
     f.close()
 
+
+
+def cmake_make_authors_header(target, source, *args, **kwargs):
+    make_authors_header(target, source, None, *args, **kwargs)
 
 def make_authors_header(target, source, env):
     sections = ["Project Founders", "Lead Developer", "Project Manager", "Developers"]
@@ -84,6 +96,10 @@ def make_authors_header(target, source, env):
     g.close()
     f.close()
 
+
+
+def cmake_make_donors_header(target, source, *args, **kwargs):
+    make_donors_header(target, source, None, *args, **kwargs)
 
 def make_donors_header(target, source, env):
     sections = [
@@ -147,6 +163,9 @@ def make_donors_header(target, source, env):
     f.close()
 
 
+def cmake_make_license_header(target, source, *args, **kwargs):
+    make_license_header(target, source, None, *args, **kwargs)
+    
 def make_license_header(target, source, env):
     src_copyright = source[0]
     src_license = source[1]

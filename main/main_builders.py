@@ -7,6 +7,8 @@ from platform_methods import subprocess_main
 from compat import byte_to_str
 from collections import OrderedDict
 
+def cmake_make_splash(target, source):
+    make_splash(target, source, None)
 
 def make_splash(target, source, env):
     src = source[0]
@@ -27,6 +29,9 @@ def make_splash(target, source, env):
         g.write("};\n")
         g.write("#endif")
 
+
+def cmake_make_splash_editor(target, source):
+    make_splash_editor(target, source, None)
 
 def make_splash_editor(target, source, env):
     src = source[0]
@@ -49,6 +54,9 @@ def make_splash_editor(target, source, env):
         g.write("#endif")
 
 
+def cmake_make_app_icon(target, source):
+    make_app_icon(target, source, None)
+
 def make_app_icon(target, source, env):
     src = source[0]
     dst = target[0]
@@ -66,6 +74,9 @@ def make_app_icon(target, source, env):
         g.write("};\n")
         g.write("#endif")
 
+
+def cmake_make_default_controller_mappings(target, source):
+    make_default_controller_mappings(target, source, None)
 
 def make_default_controller_mappings(target, source, env):
     dst = target[0]
