@@ -126,8 +126,16 @@ if(GODOT_BUILD_TOOLS)
 
 	file(GLOB __TEMP_FONTS_FILES LIST_DIRECTORIES false "${GODOT_SOURCE_DIR}/thirdparty/fonts/*.ttf")
 	set(__FONTS_FILES ${__TEMP_FONTS_FILES})
+
 	file(GLOB __TEMP_FONTS_FILES LIST_DIRECTORIES false "${GODOT_SOURCE_DIR}/thirdparty/fonts/*.otf")
 	list(APPEND __FONTS_FILES ${__TEMP_FONTS_FILES})
+
+	file(GLOB __TEMP_FONTS_FILES LIST_DIRECTORIES false "${GODOT_SOURCE_DIR}/thirdparty/fonts/*.woff")
+	list(APPEND __FONTS_FILES ${__TEMP_FONTS_FILES})
+
+	file(GLOB __TEMP_FONTS_FILES LIST_DIRECTORIES false "${GODOT_SOURCE_DIR}/thirdparty/fonts/*.woff2")
+	list(APPEND __FONTS_FILES ${__TEMP_FONTS_FILES})
+	
 	list(SORT __FONTS_FILES)
 	add_python_generator_command(editor_builders cmake_make_fonts_header
 		SOURCE_FILES ${__FONTS_FILES}

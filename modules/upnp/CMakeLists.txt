@@ -14,7 +14,7 @@ if(GODOT_BUILTIN_MINIUPNPC)
 
 	set(__THIRDPARTY_UPNP_PATH "${GODOT_SOURCE_DIR}/thirdparty/miniupnpc")
 
-	target_include_directories(upnp-env INTERFACE "${__THIRDPARTY_UPNP_PATH}")
+	target_include_directories(upnp-env INTERFACE "${__THIRDPARTY_UPNP_PATH}/include")
 	target_compile_definitions(upnp-env INTERFACE "MINIUPNP_STATICLIB" "MINIUPNPC_SET_SOCKET_TIMEOUT")
 
 	add_module_lib(thirdparty-upnp-lib
@@ -25,7 +25,7 @@ if(GODOT_BUILTIN_MINIUPNPC)
 			upnp-env
 	)
 
-	target_sources_from_path(thirdparty-upnp-lib PRIVATE "${__THIRDPARTY_UPNP_PATH}/miniupnpc"
+	target_sources_from_path(thirdparty-upnp-lib PRIVATE "${__THIRDPARTY_UPNP_PATH}/src"
 		"igd_desc_parse.c"
 		"miniupnpc.c"
 		"minixml.c"

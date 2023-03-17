@@ -1,7 +1,7 @@
 get_filename_component(__PLATFORM_NAME "${CMAKE_CURRENT_LIST_DIR}" NAME)
 
 function(${__PLATFORM_NAME}_create_custom_options)
-	set_bool_option(GODOT_USE_LLD					FALSE	DESCRIPTION "Use the LLD linker")
+	set_string_option(GODOT_LINKER 					"default" DESCRIPTION "Linker program" ENUM "default" "bfd" "gold" "lld" "mold")
 	set_bool_option(GODOT_USE_THINLTO               FALSE   DESCRIPTION "Use ThinLTO")
 	set_bool_option(GODOT_USE_STATIC_CPP            TRUE    DESCRIPTION "Link libgcc and libstdc++ statically for better portability")
 	set_bool_option(GODOT_USE_UBSAN                 FALSE   DESCRIPTION "Use LLVM/GCC compiler undefined behavior sanitizer (UBSAN)")
@@ -99,19 +99,36 @@ function(${__PLATFORM_NAME}_configure_platform)
 		target_compile_options(global-env INTERFACE "-march=rv64gc")
 	endif()
 
-	if(GODOT_USE_LLD)
-		if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-			target_link_options(global-env INTERFACE "-fuse-ld=lld")
-			if(GODOT_USE_THINLTO)
-                # A convenience so you don't need to write GODOT_USE_LTO too
-                # It is mostly a crutch, to rely that this function will be called from main cmake file,
-                # and this option actually will be setted in correct scope, but it is also not recomended to use
-                # force_set_option, because it will not be seted back, if we reconfigure project with
-                # GODOT_USE_THINLTO == FALSE
-                set_parent_var(GODOT_USE_LTO TRUE)
-			endif()
+	if(NOT GODOT_LINKER STREQUAL "default")
+		set(__LINKER_OPTION "-fuse-ld=${GODOT_LINKER}")
+
+		message(STATUS "Using linker program: ${GODOT_LINKER}")
+		if(GODOT_LINKER STREQUAL "mold" AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "12.1")
+			
+			set(__MOLD_FOUND FALSE)
+			foreach(__INSTALL_DIR IN ITEMS "/usr/libexec" "/usr/local/libexec" "/usr/lib" "/usr/local/lib")
+				if(EXISTS "${__INSTALL_DIR}/mold/ld")
+					set(__LINKER_OPTION "-B${__INSTALL_DIR}/mold")
+					set(__MOLD_FOUND TRUE)
+				endif()
+			endforeach()
+			assert("Couldn't locate mold installation path. Make sure it's installed in /usr or /usr/local." __MOLD_FOUND)
+			
+		endif()
+
+		target_link_options(global-env INTERFACE "${__LINKER_OPTION}")
+	endif()
+
+	if(GODOT_USE_THINLTO)
+		if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR NOT GODOT_LINKER STREQUAL "lld")
+			message(FATAL_ERROR "ThinLTO is only compatible with Clang and the LLD linker, use clang with -DGODOT_LINKER=lld option.")
 		else()
-			message(FATAL_ERROR "Using LLD with GCC is not supported yet. Try specify the Clang compiler.")
+			# A convenience so you don't need to write GODOT_USE_LTO too
+			# It is mostly a crutch, to rely that this function will be called from main cmake file,
+			# and this option actually will be set in correct scope, but it is also not recommended to use
+			# force_set_option, because it will not be set back, if we reconfigure project with
+			# GODOT_USE_THINLTO == FALSE
+            set_parent_var(GODOT_USE_LTO TRUE)
 		endif()
 	endif()
 
@@ -151,19 +168,17 @@ function(${__PLATFORM_NAME}_configure_platform)
 	endif()
 
 	if(GODOT_USE_LTO)
-		if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang" 
+		if(GODOT_USE_THINLTO)
+			target_compile_options(global-env INTERFACE "-flto=thin")
+			target_link_options(global-env INTERFACE "-flto=thin")
+		elseif(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang" 
 			AND GODOT_LTO_JOBS_COUNT MATCHES "^[0-9]+$" # check that GODOT_LTO_JOBS_COUNT is a valid number
 			AND GODOT_LTO_JOBS_COUNT GREATER "1")
 			target_compile_options(global-env INTERFACE "-flto")
 			target_link_options(global-env INTERFACE "-flto=${GODOT_LTO_JOBS_COUNT}")
 		else()
-			if(GODOT_USE_LLD AND GODOT_USE_THINLTO)
-				target_compile_options(global-env INTERFACE "-flto=thin")
-				target_link_options(global-env INTERFACE "-flto=thin")
-			else()
-				target_compile_options(global-env INTERFACE "-flto")
-				target_link_options(global-env INTERFACE "-flto")
-			endif()
+			target_compile_options(global-env INTERFACE "-flto")
+			target_link_options(global-env INTERFACE "-flto")
 		endif()
 	endif()
 
@@ -288,6 +303,8 @@ function(${__PLATFORM_NAME}_configure_platform)
 			"ALSA_ENABLED" 
 			"ALSAMIDI_ENABLED"
 		)
+		# Only cflags, we dlopen the library.
+		target_append_pkg_config(global-env INTERFACE ALL_CFLAGS alsa)      
 		set_target_properties(global-env PROPERTIES ALSA TRUE)
 	else()
 		message(WARNING "Warning: ALSA libraries not found. Disabling the ALSA audio driver.")
@@ -298,6 +315,7 @@ function(${__PLATFORM_NAME}_configure_platform)
 		check_pkg_exist(__PULSE_EXIST libpulse)
 		if (__PULSE_EXIST)
 			target_compile_definitions(global-env INTERFACE "PULSEAUDIO_ENABLED")
+			# Only cflags, we dlopen the library.
 			target_append_pkg_config(global-env INTERFACE ALL_CFLAGS libpulse)
 		else()
 			message(WARNING "Warning: PulseAudio development libraries not found. Disabling the PulseAudio audio driver.")
@@ -312,6 +330,7 @@ function(${__PLATFORM_NAME}_configure_platform)
 			check_pkg_exist(__UDEV_EXIST libudev)
 			if (__UDEV_EXIST)
 				target_compile_definitions(global-env INTERFACE "UDEV_ENABLED")
+				target_append_pkg_config(global-env INTERFACE ALL_CFLAGS libudev)
 			else()
 				message(WARNING "Warning: libudev development libraries not found. Disabling controller hotplugging support.")
 				set_parent_var(GODOT_UDEV FALSE)
@@ -332,8 +351,10 @@ function(${__PLATFORM_NAME}_configure_platform)
 		"OPENGL_ENABLED"
 		"GLES_ENABLED"
 	)
-	target_link_libraries(global-env INTERFACE 
-		"GL"
+
+	target_append_pkg_config(global-env INTERFACE ALL gl)
+
+	target_link_libraries(global-env INTERFACE
 		"pthread"
 	)
 
@@ -369,12 +390,12 @@ function(${__PLATFORM_NAME}_configure_platform)
 	endif()
 
 	#TODO: This is very strange.. In scons version if we are using Clang, and we are not in FreBSD system,
-	# we need to link library atomic. I'm definetly not experienced enough to know why, but ok.. 
+	# we need to link library atomic. I'm definitely not experienced enough to know why, but ok.. 
 	# But that is not the strangest thing. 
 	# If we are not linking statically, we will simply add atomic as a library to the main environment,
 	# but if we are linking statically, we will append "-l:libatomic.a" to the command line which links executable.
 	# Because we are not linking anything except executables (static libraries are not linked, they are archived together)
-	# this is basically the same... Should definetly ask godot developers at some point about this.
+	# this is basically the same... Should definitely ask godot developers at some point about this.
 	if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND NOT CMAKE_HOST_SYSTEM_NAME MATCHES "FreeBSD")
 		target_link_libraries(global-env INTERFACE "atomic")
 	endif()

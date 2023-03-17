@@ -119,10 +119,14 @@ def update_version(module_version_string=""):
     f.write('#define VERSION_MODULE_CONFIG "' + str(version.module_config) + module_version_string + '"\n')
     f.write("#define VERSION_YEAR " + str(version.year) + "\n")
     f.write('#define VERSION_WEBSITE "' + str(version.website) + '"\n')
+    f.write('#define VERSION_DOCS_BRANCH "' + str(version.docs) + '"\n')
+    f.write('#define VERSION_DOCS_URL "https://docs.godotengine.org/en/" VERSION_DOCS_BRANCH\n')
     f.close()
 
     # NOTE: It is safe to generate this file here, since this is still executed serially
-    fhash = open("core/version_hash.gen.h", "w")
+    fhash = open("core/version_hash.gen.cpp", "w")
+    fhash.write("/* THIS FILE IS GENERATED DO NOT EDIT */\n")
+    fhash.write('#include "core/version.h"\n')
     githash = ""
     gitfolder = ".git"
 
@@ -134,11 +138,27 @@ def update_version(module_version_string=""):
     if os.path.isfile(os.path.join(gitfolder, "HEAD")):
         head = open_utf8(os.path.join(gitfolder, "HEAD"), "r").readline().strip()
         if head.startswith("ref: "):
-            head = os.path.join(gitfolder, head[5:])
+            ref = head[5:]
+            # If this directory is a Git worktree instead of a root clone.
+            parts = gitfolder.split("/")
+            if len(parts) > 2 and parts[-2] == "worktrees":
+                gitfolder = "/".join(parts[0:-2])
+            head = os.path.join(gitfolder, ref)
+            packedrefs = os.path.join(gitfolder, "packed-refs")
             if os.path.isfile(head):
                 githash = open(head, "r").readline().strip()
+            elif os.path.isfile(packedrefs):
+                # Git may pack refs into a single file. This code searches .git/packed-refs file for the current ref's hash.
+                # https://mirrors.edge.kernel.org/pub/software/scm/git/docs/git-pack-refs.html
+                for line in open(packedrefs, "r").read().splitlines():
+                    if line.startswith("#"):
+                        continue
+                    (line_hash, line_ref) = line.split(" ")
+                    if ref == line_ref:
+                        githash = line_hash
+                        break
         else:
             githash = head
 
-    fhash.write('#define VERSION_HASH "' + githash + '"')
+    fhash.write('const char *const VERSION_HASH = "' + githash + '";\n')
     fhash.close()

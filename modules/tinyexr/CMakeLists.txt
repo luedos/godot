@@ -29,6 +29,9 @@ target_sources_from_path(thirdparty-tinyexr-lib PRIVATE "${__THIRDPARTY_TINYEXR_
 
 target_include_directories(tinyexr-env INTERFACE "${__THIRDPARTY_TINYEXR_PATH}")
 target_compile_definitions(tinyexr-env INTERFACE "TINYEXR_USE_THREAD")
+# miniz is an external dependency, we could add it but we can instead rely
+# on our existing bundled zlib.
+target_compile_definitions(tinyexr-env INTERFACE "TINYEXR_USE_MINIZ=0")
 
 target_glob_sources(tinyexr-lib PRIVATE "*.cpp")
 

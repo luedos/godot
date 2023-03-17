@@ -43,15 +43,19 @@ add_python_generator_command(main_builders cmake_make_splash
 		"${GODOT_SOURCE_DIR}"
 )
 
-set(__SPLASH_EDITOR_GEN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/splash_editor.gen.h")
-add_python_generator_command(main_builders cmake_make_splash_editor
-	SOURCE_FILES 
-		"${CMAKE_CURRENT_SOURCE_DIR}/splash_editor.png"
-	TARGET_FILES
-		"${__SPLASH_EDITOR_GEN_FILE}"
-	APPEND_SYS_PATH 
-		"${GODOT_SOURCE_DIR}"
-)
+set(__SPLASH_EDITOR_GEN_FILE "")
+
+if(NOT GODOT_NO_EDITOR_SPLASH)
+	set(__SPLASH_EDITOR_GEN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/splash_editor.gen.h")
+	add_python_generator_command(main_builders cmake_make_splash_editor
+		SOURCE_FILES 
+			"${CMAKE_CURRENT_SOURCE_DIR}/splash_editor.png"
+		TARGET_FILES
+			"${__SPLASH_EDITOR_GEN_FILE}"
+		APPEND_SYS_PATH 
+			"${GODOT_SOURCE_DIR}"
+	)
+endif()
 
 set(__APP_ICON_GEN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/app_icon.gen.h")
 add_python_generator_command(main_builders cmake_make_app_icon

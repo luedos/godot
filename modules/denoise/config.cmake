@@ -18,25 +18,29 @@ function(${__MODULE_NAME}_get_module_can_build __OUTPUT)
 		set(__SUPPORTED_PLATFORM TRUE)
 	endif()
 
-	set(__SUPPORTED_BITS FALSE)
-	if(PROCESSOR_BITS EQUAL 64)
-		set(__SUPPORTED_BITS TRUE)
-	endif()
-
-	string(TOLOWER "${CMAKE_HOST_SYSTEM_PROCESSOR}" __HOST_PROCESSOR_ARCHITECTURE)
-	set(__SUPPORTED_ARCH FALSE)
-	if(NOT PROCESSOR_IS_ARM AND NOT PROCESSOR_IS_RISCV)
+	set(__SUPPORTED_ARCH TRUE)
+	if(NOT PROCESSOR_BITS EQUAL 64)
 		set(__SUPPORTED_ARCH TRUE)
+	endif()
+	if(PROCESSOR_IS_ARM)
+		set(__SUPPORTED_ARCH FALSE)
+	endif()
+	if (PROCESSOR_IS_RISCV)
+		set(__SUPPORTED_ARCH FALSE)
+	endif()
+	if (PROCESSOR_IS_POWER)
+		set(__SUPPORTED_ARCH FALSE)
 	endif()
 
 	# Hack to disable on Linux arm64. This won't work well for cross-compilation (checks
     # host, not target) and would need a more thorough fix by refactoring our arch and
     # bits-handling code.
+	string(TOLOWER "${CMAKE_HOST_SYSTEM_PROCESSOR}" __HOST_PROCESSOR_ARCHITECTURE)
 	if(GODOT_PLATFORM STREQUAL "x11" AND NOT __HOST_PROCESSOR_ARCHITECTURE MATCHES "(amd64|x86_64)")
 		set(__SUPPORTED_ARCH FALSE)
 	endif()
 
-	if (GODOT_BUILD_TOOLS AND __SUPPORTED_PLATFORM AND __SUPPORTED_ARCH AND __SUPPORTED_BITS)
+	if (GODOT_BUILD_TOOLS AND __SUPPORTED_PLATFORM AND __SUPPORTED_ARCH)
 		set(${__OUTPUT} TRUE PARENT_SCOPE)
 	else()
 		set(${__OUTPUT} FALSE PARENT_SCOPE)

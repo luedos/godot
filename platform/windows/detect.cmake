@@ -2,6 +2,7 @@ get_filename_component(__PLATFORM_NAME "${CMAKE_CURRENT_LIST_DIR}" NAME)
 
 function(${__PLATFORM_NAME}_create_custom_options)
 	set_string_option(GODOT_TARGET_WIN_VERSION "0x0601" DESCRIPTION "Targeted Windows version, >= 0x0601 (Windows 7)")
+	set_string_option(GODOT_WINDOWS_SUBSYSTEM "gui" DESCRIPTION "Windows subsystem" ENUM "gui" "console")
 	set_bool_option(GODOT_USE_STATIC_CPP TRUE DESCRIPTION "Link MinGW/MSVC C++ runtime libraries statically.")
 	set_bool_option(GODOT_USE_ASAN FALSE DESCRIPTION "Use address sanitizer (ASAN).")
 endfunction()
@@ -35,12 +36,22 @@ function(${__PLATFORM_NAME}_configure_platform)
 	if(MSVC)
 
 		target_link_options(global-env INTERFACE 
-			$<${IS_RELEASE_GEN_EXPR}:/SUBSYSTEM:WINDOWS;/ENTRY:mainCRTStartup;/OPT:REF>
+			$<${IS_RELEASE_GEN_EXPR}:/OPT:REF>
 			$<${IS_OPT_DEBUG_GEN_EXPR}:/SUBSYSTEM:CONSOLE;/OPT:REF>
 			$<${IS_DEBUG_GEN_EXPR}:/SUBSYSTEM:CONSOLE>
+			# Allow big objects. Only needed for debug, see MinGW branch for rationale.
 			$<${IS_DEBUG_INFO_GEN_EXPR}:/DEBUG>
 			"/STACK:8388608"
 		)
+
+		if(GODOT_WINDOWS_SUBSYSTEM STREQUAL "gui")
+			target_link_options(global-env INTERFACE "/SUBSYSTEM:WINDOWS")
+		else()
+			target_link_options(global-env INTERFACE "/SUBSYSTEM:CONSOLE")
+			target_compile_definitions(global-env INTERFACE "WINDOWS_SUBSYSTEM_CONSOLE")
+		endif()
+
+		target_link_options(global-end INTERFACE "/ENTRY:mainCRTStartup")
 
 		target_compile_options(global-env INTERFACE
 			$<${IS_RELEASE_SPEED_GEN_EXPR}:/O2>
@@ -55,6 +66,10 @@ function(${__PLATFORM_NAME}_configure_platform)
 			"/utf-8"
 			# assume all sources are C++
 			$<$<COMPILE_LANGUAGE:CXX>:/TP>
+			# Once it was thought that only debug builds would be too large,
+			# but this has recently stopped being true. See the mingw function
+			# for notes on why this shouldn't be enabled for gcc
+			"/bigobj"
 		)
 
 		if(GODOT_USE_STATIC_CPP)
@@ -132,6 +147,14 @@ function(${__PLATFORM_NAME}_configure_platform)
 			"-Wl,--stack,8388608"
 			"-Wl,--nxcompat" # DEP protection. Not enabling ASLR for now, Mono crashes.
 		)
+		
+		if(GODOT_WINDOWS_SUBSYSTEM STREQUAL "gui")
+			target_link_options(global-env INTERFACE "-Wl,--subsystem,windows")
+		else()
+			target_link_options(global-env INTERFACE "-Wl,--subsystem,console")
+			target_compile_definitions(global-env INTERFACE "WINDOWS_SUBSYSTEM_CONSOLE")
+		endif()
+
 		if(GODOT_USE_STATIC_CPP)
 			if(PROCESSOR_BITS EQUAL 32)
 				target_link_options(global-env INTERFACE 
@@ -151,6 +174,10 @@ function(${__PLATFORM_NAME}_configure_platform)
 			$<${IS_RELEASE_SIZE_GEN_EXPR}:-Os>
 			$<${IS_OPT_DEBUG_GEN_EXPR}:-O2;-g2>
 			$<${IS_DEBUG_GEN_EXPR}:-g3>
+			# Allow big objects. It's supposed not to have drawbacks but seems to break
+			# GCC LTO, so enabling for debug builds only (which are not built with LTO
+			# and are the only ones with too big objects).
+			$<${IS_DEBUG_GEN_EXPR}:-Wa$<COMMA>-mbig-obj>
 			"-mwindows"			
 		)
 

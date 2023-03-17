@@ -44,6 +44,7 @@ if(NOT mbedtls_IS_MODULE_ENABLED)
 	target_sources_from_path(thirdparty-core-crypto-lib PRIVATE "${__THIRDPARTY_MBEDTLS_DIR}"
 		"aes.c"
 		"base64.c"
+		"constant_time.c"
 		"md5.c"
 		"sha1.c"
 		"sha256.c"

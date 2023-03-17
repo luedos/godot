@@ -20,7 +20,7 @@ if(GODOT_BUILTIN_WSLAY)
 
 	set(__THIRDPARTY_WSLAY_PATH "${GODOT_SOURCE_DIR}/thirdparty/wslay")
 
-	target_include_directories(ws-env INTERFACE "${__THIRDPARTY_WSLAY_PATH}/includes")
+	target_include_directories(ws-env INTERFACE "${__THIRDPARTY_WSLAY_PATH}")
 	target_compile_definitions(ws-env INTERFACE "HAVE_CONFIG_H")
 
 	if(GODOT_PLATFORM MATCHES "(windows|uwp)")
@@ -40,7 +40,6 @@ if(GODOT_BUILTIN_WSLAY)
 		"wslay_net.c"
 		"wslay_event.c"
 		"wslay_queue.c"
-		"wslay_stack.c"
 		"wslay_frame.c"
 	)
 

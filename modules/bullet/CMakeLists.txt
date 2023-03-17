@@ -168,15 +168,13 @@ if(GODOT_BUILTIN_BULLET)
 		"BulletDynamics/Featherstone/btMultiBodyMLCPConstraintSolver.cpp"
 		"BulletDynamics/Featherstone/btMultiBodyPoint2Point.cpp"
 		"BulletDynamics/Featherstone/btMultiBodySliderConstraint.cpp"
+		"BulletDynamics/Featherstone/btMultiBodySphericalJointLimit.cpp"
 		"BulletDynamics/Featherstone/btMultiBodySphericalJointMotor.cpp"
 		"BulletDynamics/MLCPSolvers/btDantzigLCP.cpp"
 		"BulletDynamics/MLCPSolvers/btMLCPSolver.cpp"
 		"BulletDynamics/MLCPSolvers/btLemkeAlgorithm.cpp"
 		# BulletInverseDynamics
-		"BulletInverseDynamics/IDMath.cpp"
-		"BulletInverseDynamics/MultiBodyTree.cpp"
-		"BulletInverseDynamics/details/MultiBodyTreeInitCache.cpp"
-		"BulletInverseDynamics/details/MultiBodyTreeImpl.cpp"
+		# -- Unused for now so not included.
 		# BulletSoftBody
 		"BulletSoftBody/btSoftBody.cpp"
 		"BulletSoftBody/btSoftBodyConcaveCollisionAlgorithm.cpp"
@@ -193,9 +191,11 @@ if(GODOT_BUILTIN_BULLET)
 		"BulletSoftBody/btDeformableContactProjection.cpp"
 		"BulletSoftBody/btDeformableMultiBodyDynamicsWorld.cpp"
 		"BulletSoftBody/btDeformableContactConstraint.cpp"
+		"BulletSoftBody/BulletReducedDeformableBody/btReducedDeformableBody.cpp"
+		"BulletSoftBody/BulletReducedDeformableBody/btReducedDeformableBodyHelpers.cpp"
+		"BulletSoftBody/BulletReducedDeformableBody/btReducedDeformableBodySolver.cpp"
+		"BulletSoftBody/BulletReducedDeformableBody/btReducedDeformableContactConstraint.cpp"
 		"BulletSoftBody/poly34.cpp"
-		# clew
-		"clew/clew.c"
 		# LinearMath
 		"LinearMath/btAlignedAllocator.cpp"
 		"LinearMath/btConvexHull.cpp"

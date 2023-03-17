@@ -12,6 +12,7 @@ add_module_lib(freetype-lib
 
 if(GODOT_BUILTIN_FREETYPE)
 	set(__THIRDPARTY_FREETYPE_PATH "${GODOT_SOURCE_DIR}/thirdparty/freetype")
+	set(__THIRDPARTY_BROTLI_PATH "${GODOT_SOURCE_DIR}/thirdparty/brotli")
 
 	if (GODOT_PLATFORM STREQUAL "uwp")
 		# Include header for UWP to fix build issues
@@ -29,6 +30,8 @@ if(GODOT_BUILTIN_FREETYPE)
 	target_compile_definitions(freetype-env INTERFACE 
 		"FT2_BUILD_LIBRARY"
 		"FT_CONFIG_OPTION_USE_PNG"
+		"FT_CONFIG_OPTION_SYSTEM_ZLIB"
+		"FT_CONFIG_OPTION_USE_BROTLI"
 		$<${IS_DEBUG_GEN_EXPR}:ZLIB_DEBUG>
 	)
 
@@ -97,12 +100,28 @@ if(GODOT_BUILTIN_FREETYPE)
 		"pshinter/pshinter.c"
 		"psnames/psnames.c"
 		"raster/raster.c"
+		"sdf/sdf.c"
+		"svg/svg.c"
 		"smooth/smooth.c"
 		"truetype/truetype.c"
 		"type1/type1.c"
 		"type42/type42.c"
 		"winfonts/winfnt.c"
 	)
+
+	target_sources_from_path(thirdparty-freetype-lib PRIVATE "${__THIRDPARTY_BROTLI_PATH}"
+		"common/constants.c"
+		"common/context.c"
+		"common/dictionary.c"
+		"common/platform.c"
+		"common/shared_dictionary.c"
+		"common/transform.c"
+		"dec/bit_reader.c"
+		"dec/decode.c"
+		"dec/huffman.c"
+		"dec/state.c"
+	)
+	target_include_directories(freetype-env INTERFACE "${__THIRDPARTY_BROTLI_PATH}/include")
 
 	#TODO: need to test this thing:
 	# Needs to be appended to arrive after libscene in the linker call,

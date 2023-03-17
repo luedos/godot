@@ -7,9 +7,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-# Just for all hardcoded folders outthere.
+# Just for all hardcoded folders out there.
 # This is not strictly needed, but, because there a lot of submodules which uses rood directory for thirdparty sources search, 
-# using CMAKE_SOURCE_DIR for it disterbs me a little bit. So even though this project is not intended to be a part of another cmake project, 
+# using CMAKE_SOURCE_DIR for it disturbs me a little bit. So even though this project is not intended to be a part of another cmake project, 
 # I still will create this variable just in case when CMAKE_SOURCE_DIR will shout incorrect result.  
 set(GODOT_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 
@@ -220,8 +220,9 @@ set_string_option	(GODOT_EXTRA_SUFFIX			"" 		DESCRIPTION "Custom extra suffix ad
 # TODO: not forget to actually implement forsing to True if mingw  
 set_bool_option		(GODOT_SPLIT_LIBMODULES		FALSE	DESCRIPTION "Split intermediate libmodules.a in smaller chunks to prevent exceeding linker command line size (forced to True when using MinGW).")
 set_bool_option		(GODOT_DISABLE_3D			FALSE	DESCRIPTION "Disable 3D nodes for a smaller executable.")
+set_string_option	(GODOT_RIDS				 	"pointers" DESCRIPTION "Server object management technique (debug option)." ENUM "pointers" "handles" "tracked_handles")
 set_bool_option		(GODOT_DISABLE_ADVANCE_GUI 	FALSE	DESCRIPTION "Disable advanced GUI nodes and behaviors.")
-set_bool_option		(GODOT_NO_EDITOR_SPLASH 	FALSE	DESCRIPTION "Don't use the custom splash screen for the editor.")
+set_bool_option		(GODOT_NO_EDITOR_SPLASH 	TRUE	DESCRIPTION "Don't use the custom splash screen for the editor.")
 set_string_option	(GODOT_SYSTEM_CERTS_PATH 	""		DESCRIPTION "Use this path as SSL certificates default for editor (for package maintainers).")
 set_string_option	(GODOT_LTO_JOBS_COUNT		"1"		DESCRIPTION "Number of jobs for lto (not sure what exactly this meen)")
 
@@ -244,6 +245,7 @@ set_bool_option		(GODOT_BUILTIN_OPUS			TRUE 	DESCRIPTION "Use the built-in Opus 
 set_bool_option		(GODOT_BUILTIN_PCRE2		TRUE 	DESCRIPTION "Use the built-in PCRE2 library.")
 set_bool_option		(GODOT_BUILTIN_PCRE2_WITH_JIT TRUE 	DESCRIPTION "Use JIT compiler for the built-in PCRE2 library.")
 set_bool_option		(GODOT_BUILTIN_RECAST		TRUE 	DESCRIPTION "Use the built-in Recast library.")
+set_bool_option		(GODOT_BUILTIN_RVO2			TRUE 	DESCRIPTION "Use the built-in RVO2 library.")
 set_bool_option		(GODOT_BUILTIN_SQUISH		TRUE 	DESCRIPTION "Use the built-in squish library.")
 set_bool_option		(GODOT_BUILTIN_XATLAS		TRUE 	DESCRIPTION "Use the built-in xatlas library.")
 set_bool_option		(GODOT_BUILTIN_ZLIB			TRUE 	DESCRIPTION "Use the built-in zlib library.")
@@ -509,12 +511,27 @@ if(GODOT_USE_PRECISE_MATH_CHECKS)
 	target_compile_definitions(global-env INTERFACE "PRECISE_MATH_CHECKS")
 endif()
 
+if (NOT EXISTS "${GODOT_SOURCE_DIR}/main/splash_editor.png")
+	# Force disabling editor splash if missing.
+	set(GODOT_NO_EDITOR_SPLASH TRUE)
+endif()
+
 if(GODOT_NO_EDITOR_SPLASH)
 	target_compile_definitions(global-env INTERFACE "NO_EDITOR_SPLASH")
 endif()
 
 if(NOT GODOT_DEPRECATED)
 	target_compile_definitions(global-env INTERFACE "DISABLE_DEPRECATED")
+endif()
+
+if (GODOT_RIDS STREQUAL "handles")
+	target_compile_definitions(global-env INTERFACE "RID_HANDLES_ENABLED")
+	message(WARNING "Building with RIDs as handles.")
+elseif(GODOT_RIDS STREQUAL "tracked_handles")
+	target_compile_definitions(global-env INTERFACE
+		"RID_HANDLES_ENABLED"
+		"RID_HANDLE_ALLOCATION_TRACKING_ENABLED")
+	message(WARNING "Building with RIDs as tracked handles.")
 endif()
 
 target_compile_definitions(global-env INTERFACE 
@@ -550,6 +567,15 @@ set(__OBJC_GCC_9VER_GEN_EXPR 		$<AND:$<OBJC_COMPILER_ID:GNU>,$<VERSION_GREATER_E
 
 set(__GCC_9VER_GEN_EXPR 
 	$<OR:${__CXX_GCC_9VER_GEN_EXPR},${__C_GCC_9VER_GEN_EXPR},${__OBJCXX_GCC_9VER_GEN_EXPR},${__OBJC_GCC_9VER_GEN_EXPR}>)
+
+# if compiler for c/cxx is gcc and its version is >= 12.0.0
+set(__CXX_GCC_12VER_GEN_EXPR 		$<AND:$<CXX_COMPILER_ID:GNU>,$<VERSION_GREATER_EQUAL:$<CXX_COMPILER_VERSION>,12.0.0>>)
+set(__C_GCC_12VER_GEN_EXPR 			$<AND:$<C_COMPILER_ID:GNU>,$<VERSION_GREATER_EQUAL:$<C_COMPILER_VERSION>,12.0.0>>)
+set(__OBJCXX_GCC_12VER_GEN_EXPR 	$<AND:$<OBJCXX_COMPILER_ID:GNU>,$<VERSION_GREATER_EQUAL:$<OBJCXX_COMPILER_VERSION>,12.0.0>>)
+set(__OBJC_GCC_12VER_GEN_EXPR 		$<AND:$<OBJC_COMPILER_ID:GNU>,$<VERSION_GREATER_EQUAL:$<OBJC_COMPILER_VERSION>,12.0.0>>)
+
+set(__GCC_12VER_GEN_EXPR 
+	$<OR:${__CXX_GCC_12VER_GEN_EXPR},${__C_GCC_12VER_GEN_EXPR},${__OBJCXX_GCC_12VER_GEN_EXPR},${__OBJC_GCC_12VER_GEN_EXPR}>)
 
 target_compile_options(global-env INTERFACE $<${__IS_MSVC_GEN_EXPR}:/EHsc;/utf-8>)
 
@@ -626,13 +652,9 @@ endif()
 if(GODOT_WERROR)
 
 	target_compile_options(warnings-env INTERFACE
-		$<IF:${__IS_MSVC_GEN_EXPR},/WX,-Werror>)
-
-else()
-
-	target_compile_options(warnings-env INTERFACE 
-		# only for non MSVC 			
-		$<$<NOT:${__IS_MSVC_GEN_EXPR}>:-Werror=return-type>)
+		$<IF:${__IS_MSVC_GEN_EXPR},/WX,-Werror>
+		# False positives in our error macros, see GH-58747.
+		$<${__GCC_12VER_GEN_EXPR}:-Wno-error=return-type>)
 
 endif()
 
@@ -814,7 +836,9 @@ endfunction()
 add_subdirectory(core)
 add_subdirectory(servers)
 add_subdirectory(scene)
-add_subdirectory(editor)
+if (GODOT_BUILD_TOOLS)
+	add_subdirectory(editor)
+endif()
 add_subdirectory(drivers)
 add_subdirectory(platform)
 add_subdirectory(modules)

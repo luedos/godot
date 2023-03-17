@@ -11,6 +11,11 @@ function(${__MODULE_NAME}_get_module_can_build __OUTPUT)
 		return()
 	endif()
 
+	if (PROCESSOR_IS_RISCV OR PROCESSOR_IS_POWER)
+		set(${__OUTPUT} FALSE PARENT_SCOPE)
+		return()
+	endif()
+
 	if(GODOT_PLATFORM STREQUAL "android")
 		if(CMAKE_ANDROID_ARCH MATCHES "(arm64-v8a|x86_64)")
 			set(${__OUTPUT} TRUE PARENT_SCOPE)
