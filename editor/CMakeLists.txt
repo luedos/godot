@@ -150,6 +150,9 @@ if(GODOT_BUILD_TOOLS)
 	)
 	add_dependencies(editor-lib editor-gen)
 
+	# This is required because editor is dependent on gles generated headers
+	add_dependencies(editor-lib drivers-lib)
+
 	target_glob_sources(editor-lib PRIVATE "*.cpp")
 
 	add_subdirectory(collada)
