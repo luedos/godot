@@ -51,7 +51,7 @@ function(${__PLATFORM_NAME}_configure_platform)
 			target_compile_definitions(global-env INTERFACE "WINDOWS_SUBSYSTEM_CONSOLE")
 		endif()
 
-		target_link_options(global-end INTERFACE "/ENTRY:mainCRTStartup")
+		target_link_options(global-env INTERFACE "/ENTRY:mainCRTStartup")
 
 		target_compile_options(global-env INTERFACE
 			$<${IS_RELEASE_SPEED_GEN_EXPR}:/O2>
@@ -76,11 +76,6 @@ function(${__PLATFORM_NAME}_configure_platform)
 			target_compile_options(global-env INTERFACE "/MT")
 		else()
 			target_compile_options(global-env INTERFACE "/MD")
-		endif()
-
-		if(MSVC_VERSION GREATER_EQUAL "1910") # vs2015 and later
-			target_compile_options(global-env INTERFACE
-			)
 		endif()
 
 		target_compile_definitions(global-env INTERFACE		

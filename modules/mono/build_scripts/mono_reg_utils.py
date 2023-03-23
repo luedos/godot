@@ -75,7 +75,7 @@ def cmake_find_mono_root_dir(bits):
     result = find_mono_root_dir(bits)
     sys.stdout = old_stdout
 
-    print(str(result)) # real output
+    print(str(result), end='') # real output
 
 
 def find_msbuild_tools_path_reg():

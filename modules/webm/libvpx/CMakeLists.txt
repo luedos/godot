@@ -390,8 +390,7 @@ if(__WEBM_CPU_X86)
 	endforeach()
 
 	#TODO: Dont forget to use "osxcross" then it will be implemented with osx platforms 
-	set(__IS_CLANG_OR_GCC_GEN_EXPR 
-        $<OR:$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang>,$<COMPILE_LANG_AND_ID:C,GNU,Clang,AppleClang>,$<COMPILE_LANG_AND_ID:OBJCXX,GNU,Clang,AppleClang>,$<COMPILE_LANG_AND_ID:OBJC,GNU,Clang,AppleClang>>)
+	set(__IS_CLANG_OR_GCC_GEN_EXPR $<OR:$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang>,$<COMPILE_LANG_AND_ID:C,GNU,Clang,AppleClang>,$<COMPILE_LANG_AND_ID:OBJCXX,GNU,Clang,AppleClang>,$<COMPILE_LANG_AND_ID:OBJC,GNU,Clang,AppleClang>>)
 
 	inline_if(__IS_CPU_32_BITS __CPU_BITS EQUAL 32)
 

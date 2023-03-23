@@ -26,6 +26,12 @@ macro(set_parent_var __NAME)
 
 endmacro()
 
+macro(escape_back_slash __OUTPUT __STRING_VAR)
+
+	string(REGEX REPLACE "(\\\\)" "\\\\\\1" "${__OUTPUT}" "${${__STRING_VAR}}")
+
+endmacro()
+
 # Basically just adds empty quotes between semicolums, 
 # so then the expression will be expanded into the method call (or if statement),
 # empty elements will not disappear.
@@ -1301,6 +1307,9 @@ function(execute_python_method __MODULE __FUNCTION)
 		WORKING_DIRECTORY "${__ARGS_WORKING_DIR}"
 		${__ADDITIONAL_ARGS}
 	)
+
+	escape_back_slash(__TEMP_OUTPUT_VAR __TEMP_OUTPUT_VAR)
+	escape_back_slash(__TEMP_ERROR_VAR __TEMP_ERROR_VAR)
 
 	optionally_return("${__ARGS_OUTPUT_VARIABLE}" "${__TEMP_OUTPUT_VAR}")
 	optionally_return("${__ARGS_ERROR_VARIABLE}" "${__TEMP_ERROR_VAR}")

@@ -316,7 +316,7 @@ endif()
 
 if(__IS_WINDOWS)
 
-	set(__MONO_ROOT "${GODOT_MONO_PREFIX}")
+	normilize_path(__MONO_ROOT "${GODOT_MONO_PREFIX}")
 
 	if("${__MONO_ROOT}" STREQUAL "" AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
 		execute_python_method(mono_reg_utils cmake_find_mono_root_dir
@@ -332,7 +332,7 @@ if(__IS_WINDOWS)
 		message(FATAL_ERROR "Mono installation directory not found; specify one manually with the 'GODOT_MONO_PREFIX' parameter.")
 	endif()
 
-	message(STATUS "Found Mono root directory: ${__MONO_ROOT}")
+	message(STATUS "Found Mono root directory: '${__MONO_ROOT}'")
 
 	join_paths(__MONO_LIB_PATH "${__MONO_ROOT}" "lib")
 	target_link_directories(global-env INTERFACE "${__MONO_LIB_PATH}")
@@ -442,7 +442,7 @@ else()
 		__IS_APPLE
 	)
 
-	set(__MONO_ROOT "${GODOT_MONO_PREFIX}")
+	normilize_path(__MONO_ROOT "${GODOT_MONO_PREFIX}")
 
 	if("${__MONO_ROOT}" STREQUAL "" AND (__IS_ANDROID OR __IS_JAVASCRIPT OR __IS_IOS))
 		message(FATAL_ERROR "Mono installation directory not found; specify one manually with the 'GODOT_MONO_PREFIX' parameter.")
@@ -745,8 +745,9 @@ if(NOT GODOT_BUILD_TOOLS)
 			endif()
 		endif()
 		
+		escape_back_slash(__ESCAPED_MONO_ROOT __MONO_ROOT)
 		add_custom_target(mono-create-template-dir-gen
-			COMMAND "python" "-c" "${__BUILD_SCRIPTS_COMMAND_PREFIX}.make_template_dir(env=${__FAKE_ENV_MAP}, mono_root='${__MONO_ROOT}', output_dir='${GODOT_BIN_DIRECTORY}')"
+			COMMAND "python" "-c" "${__BUILD_SCRIPTS_COMMAND_PREFIX}.make_template_dir(env=${__FAKE_ENV_MAP}, mono_root='${__ESCAPED_MONO_ROOT}', output_dir='${GODOT_BIN_DIRECTORY}')"
 			WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
 			COMMENT "[mono-create-template-dir-gen] Creating template dir.."
 			VERBATIM
@@ -766,8 +767,9 @@ if(NOT GODOT_BUILD_TOOLS)
 				STR_VAR "__CONFIG_OUTPUT_PATH"
 		)
 
+		escape_back_slash(__ESCAPED_MONO_ROOT __MONO_ROOT)
 		add_custom_target(mono-copy-shared-libs-gen
-			COMMAND "python" "-c" "${__BUILD_SCRIPTS_COMMAND_PREFIX}.copy_mono_shared_libs(env=${__FAKE_ENV_MAP}, mono_root='${__MONO_ROOT}', target_mono_root_dir=None)"
+			COMMAND "python" "-c" "${__BUILD_SCRIPTS_COMMAND_PREFIX}.copy_mono_shared_libs(env=${__FAKE_ENV_MAP}, mono_root='${__ESCAPED_MONO_ROOT}', target_mono_root_dir=None)"
 			WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
 			COMMENT "[mono-copy-shared-libs-gen] Copying mono shared libraries.."
 			VERBATIM
@@ -795,8 +797,9 @@ if(GODOT_COPY_MONO_ROOT)
 			endif()
 		endif()
 
+		escape_back_slash(__ESCAPED_MONO_ROOT __MONO_ROOT)
 		set(__COMMAND "android_dir='${__ANDROID_OUTPUT_DIR}'; import build_scripts.cmake_mono_configure_utils as cmake_mono_configure_utils; ") # initial setup
-		set(__COMMAND "${__COMMAND} cmake_mono_configure_utils.copy_mono_root_files(env=${__FAKE_ENV_MAP}, mono_root='${__MONO_ROOT}', output_dir='${GODOT_BIN_DIRECTORY}', mono_blc='${GODOT_MONO_BCL}') ") # calling copy_mono_root_files if tools are enabled
+		set(__COMMAND "${__COMMAND} cmake_mono_configure_utils.copy_mono_root_files(env=${__FAKE_ENV_MAP}, mono_root='${__ESCAPED_MONO_ROOT}', output_dir='${GODOT_BIN_DIRECTORY}', mono_blc='${GODOT_MONO_BCL}') ") # calling copy_mono_root_files if tools are enabled
 
 		add_custom_target(mono-copy-root-gen
 			COMMAND "python" "-c" "${__COMMAND}"
@@ -941,7 +944,10 @@ endif()
 
 target_glob_sources(mono-lib PRIVATE "utils/*.cpp")
 target_glob_sources(mono-lib PRIVATE "mono_gd/support/*.cpp")
-target_sources(mono-lib PRIVATE "glue/mono_glue.gen.cpp")
+
+if (GODOT_MONO_GLUE)
+	target_sources(mono-lib PRIVATE "glue/mono_glue.gen.cpp")
+endif()
 
 if(GODOT_PLATFORM MATCHES "(osx|iphone)")
 	target_glob_sources(mono-lib PRIVATE "mono_gd/support/*.mm")
