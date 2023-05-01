@@ -7,6 +7,8 @@ import os
 import os.path
 from platform_methods import subprocess_main
 
+def cmake_make_fonts_header(target, source):
+    make_fonts_header(target, source, None)
 
 def make_fonts_header(target, source, env):
     dst = target[0]

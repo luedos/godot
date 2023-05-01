@@ -1,3 +1,6 @@
+def cmake_run(target, source):
+    run(target, source, None)
+
 def run(target, source, env):
     src = source[0]
     dst = target[0]

@@ -8,6 +8,8 @@ import os
 from io import StringIO
 from platform_methods import subprocess_main
 
+def cmake_make_default_theme_icons_action(target, source):
+    make_default_theme_icons_action(target, source, None)
 
 # See also `editor/icons/editor_icons_builders.py`.
 def make_default_theme_icons_action(target, source, env):

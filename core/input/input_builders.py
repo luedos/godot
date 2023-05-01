@@ -7,6 +7,9 @@ from platform_methods import subprocess_main
 from collections import OrderedDict
 
 
+def cmake_make_default_controller_mappings(target, source):
+    make_default_controller_mappings(target, source, None)
+
 def make_default_controller_mappings(target, source, env):
     dst = target[0]
     g = open(dst, "w")
