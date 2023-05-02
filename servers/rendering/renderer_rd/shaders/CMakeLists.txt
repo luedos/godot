@@ -1,12 +1,12 @@
 
 add_custom_target(servers-shaders-gen)
 
-function(collect_rd_shaders)
-	file(GLOB __SHADER_INCLUDE_FILES LIST_DIRECTORIES FALSE "*_inc.glsl")
-	file(GLOB __SHADER_FILES LIST_DIRECTORIES FALSE "*.glsl")
+function(collect_rd_shaders __FOLDER)
+	file(GLOB __SHADER_INCLUDE_FILES LIST_DIRECTORIES FALSE "${__FOLDER}/*_inc.glsl")
+	file(GLOB __SHADER_FILES LIST_DIRECTORIES FALSE "${__FOLDER}/*.glsl")
 	list(REMOVE_ITEM __SHADER_FILES ${__SHADER_INCLUDE_FILES})
 
-	foreach (__GLSL IN LISTS ARGN)
+	foreach (__GLSL IN LISTS __SHADER_FILES)
 
 		normilize_path(__SOURCE_FILE "${__GLSL}" ABSOLUTE)
 		set(__TARGET_FILE "${__SOURCE_FILE}.gen.h")
@@ -16,18 +16,18 @@ function(collect_rd_shaders)
 			SOURCE_FILES "${__SOURCE_FILE}"
 			BUILD_DEPENDENCIES ${__SHADER_INCLUDE_FILES}
 			WORKING_DIR "${ENGINE_SOURCE_DIR}"
+			SOURCES_DEPENDENT_TARGET servers-shaders-gen
 		)
 
-		add_dependencies(servers-shaders-gen "${__TARGET_FILE}")
 	endforeach()
 
 endfunction()
 
-collect_rd_shaders()
+collect_rd_shaders("${CMAKE_CURRENT_SOURCE_DIR}")
 
-add_subdirectory("effects")
-add_subdirectory("environment")
-add_subdirectory("forward_clustered")
-add_subdirectory("forward_mobile")
+collect_rd_shaders("${CMAKE_CURRENT_SOURCE_DIR}/effects")
+collect_rd_shaders("${CMAKE_CURRENT_SOURCE_DIR}/environment")
+collect_rd_shaders("${CMAKE_CURRENT_SOURCE_DIR}/forward_clustered")
+collect_rd_shaders("${CMAKE_CURRENT_SOURCE_DIR}/forward_mobile")
 
 add_dependencies(servers-lib servers-shaders-gen)

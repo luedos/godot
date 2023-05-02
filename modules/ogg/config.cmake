@@ -11,8 +11,8 @@ endfunction()
 
 function(${__MODULE_NAME}_get_doc_classes __OUTPUT)
 	set(${__OUTPUT}
-		"OggPacketSequence",
-		"OggPacketSequencePlayback",
+		"OggPacketSequence"
+		"OggPacketSequencePlayback"
 		PARENT_SCOPE
 	)
 endfunction()

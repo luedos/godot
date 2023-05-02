@@ -4,11 +4,7 @@
 # which we will invoke from cmake.
 
 import os
-import re
-import glob
-import subprocess
 from collections import OrderedDict
-from compat import iteritems, isbasestring, open_utf8, decode_utf8, qualname
 
 def save_active_platforms(apnames, ap):
 
@@ -108,7 +104,7 @@ def sort_module_list(module_list, module_dependencies):
     out = OrderedDict()
     deps = {k: v[0] + list(filter(lambda x: x in module_list, v[1])) for k, v in module_dependencies.items()}
 
-    frontier = list(module_list.keys())
+    frontier = list(module_list)
     explored = []
     while len(frontier):
         cur = frontier.pop()
@@ -127,7 +123,75 @@ def sort_module_list(module_list, module_dependencies):
             print(";", end='')
 
         print(str(k), end='')
-        
+
+def get_version_info(module_version_string="", silent=False):
+    build_name = "custom_build"
+    if os.getenv("BUILD_NAME") != None:
+        build_name = str(os.getenv("BUILD_NAME"))
+        if not silent:
+            print(f"Using custom build name: '{build_name}'.")
+
+    import version
+
+    version_info = {
+        "short_name": str(version.short_name),
+        "name": str(version.name),
+        "major": int(version.major),
+        "minor": int(version.minor),
+        "patch": int(version.patch),
+        "status": str(version.status),
+        "build": str(build_name),
+        "module_config": str(version.module_config) + module_version_string,
+        "year": int(version.year),
+        "website": str(version.website),
+        "docs_branch": str(version.docs),
+    }
+
+    # For dev snapshots (alpha, beta, RC, etc.) we do not commit status change to Git,
+    # so this define provides a way to override it without having to modify the source.
+    if os.getenv("GODOT_VERSION_STATUS") != None:
+        version_info["status"] = str(os.getenv("GODOT_VERSION_STATUS"))
+        if not silent:
+            print(f"Using version status '{version_info['status']}', overriding the original '{version.status}'.")
+
+    # Parse Git hash if we're in a Git repo.
+    githash = ""
+    gitfolder = ".git"
+
+    if os.path.isfile(".git"):
+        module_folder = open(".git", "r").readline().strip()
+        if module_folder.startswith("gitdir: "):
+            gitfolder = module_folder[8:]
+
+    if os.path.isfile(os.path.join(gitfolder, "HEAD")):
+        head = open(os.path.join(gitfolder, "HEAD"), "r", encoding="utf8").readline().strip()
+        if head.startswith("ref: "):
+            ref = head[5:]
+            # If this directory is a Git worktree instead of a root clone.
+            parts = gitfolder.split("/")
+            if len(parts) > 2 and parts[-2] == "worktrees":
+                gitfolder = "/".join(parts[0:-2])
+            head = os.path.join(gitfolder, ref)
+            packedrefs = os.path.join(gitfolder, "packed-refs")
+            if os.path.isfile(head):
+                githash = open(head, "r").readline().strip()
+            elif os.path.isfile(packedrefs):
+                # Git may pack refs into a single file. This code searches .git/packed-refs file for the current ref's hash.
+                # https://mirrors.edge.kernel.org/pub/software/scm/git/docs/git-pack-refs.html
+                for line in open(packedrefs, "r").read().splitlines():
+                    if line.startswith("#"):
+                        continue
+                    (line_hash, line_ref) = line.split(" ")
+                    if ref == line_ref:
+                        githash = line_hash
+                        break
+        else:
+            githash = head
+
+    version_info["git_hash"] = githash
+
+    return version_info
+
 def generate_version_header(module_version_string=""):
     version_info = get_version_info(module_version_string)
 

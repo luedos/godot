@@ -2,7 +2,7 @@
 import os
 
 def cmake_make_icu_data(target, source):
-    dst = target[0].srcnode().abspath
+    dst = target[0]
 
     g = open(dst, "w", encoding="utf-8")
 
@@ -15,7 +15,7 @@ def cmake_make_icu_data(target, source):
     g.write('#include "unicode/udata.h"\n')
     g.write('#include "unicode/uversion.h"\n')
 
-    f = open(source[0].srcnode().abspath, "rb")
+    f = open(source[0], "rb")
     buf = f.read()
 
     g.write('extern "C" U_EXPORT const size_t U_ICUDATA_SIZE = ' + str(len(buf)) + ";\n")

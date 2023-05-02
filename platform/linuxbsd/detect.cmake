@@ -175,8 +175,8 @@ function(${__PLATFORM_NAME}_configure_platform)
 		target_compile_definitions(global-env INTERFACE "TOUCH_ENABLED")
 	endif()
 
-	if ((builtin_freetype OR godot_builtin_libpng OR godot_builtin_zlib OR godot_builtin_graphite OR godot_builtin_harfbuzz)
-		AND NOT (builtin_freetype AND godot_builtin_libpng AND godot_builtin_zlib AND godot_builtin_graphite AND godot_builtin_harfbuzz))
+	if ((godot_builtin_freetype OR godot_builtin_libpng OR godot_builtin_zlib OR godot_builtin_graphite OR godot_builtin_harfbuzz)
+		AND NOT (godot_builtin_freetype AND godot_builtin_libpng AND godot_builtin_zlib AND godot_builtin_graphite AND godot_builtin_harfbuzz))
 	
 		message(FATAL_ERROR 
 			"These libraries should be either all builtin, or all system provided:\n"

@@ -95,11 +95,11 @@ if (godot_builtin_libtheora)
 	target_include_directories(theora-env INTERFACE "${__THIRDPARTY_THEORA_PATH}")
 
 	if(godot_builtin_libogg)
-		target_include_directories(theora-env INTERFACE "${GODOT_SOURCE_DIR}/thirdparty/libogg")
+		target_include_directories(theora-env INTERFACE "${ENGINE_SOURCE_DIR}/thirdparty/libogg")
 	endif()
 	
 	if(godot_builtin_libvorbis)
-		target_include_directories(theora-env INTERFACE "${GODOT_SOURCE_DIR}/thirdparty/libvorbis")
+		target_include_directories(theora-env INTERFACE "${ENGINE_SOURCE_DIR}/thirdparty/libvorbis")
 	endif()
 
 endif()

@@ -11,10 +11,10 @@ endfunction()
 
 function(${__MODULE_NAME}_get_doc_classes __OUTPUT)
 	set(${__OUTPUT}
-		"SceneReplicationConfig",
-		"SceneMultiplayer",
-		"MultiplayerSpawner",
-		"MultiplayerSynchronizer",
+		"SceneReplicationConfig"
+		"SceneMultiplayer"
+		"MultiplayerSpawner"
+		"MultiplayerSynchronizer"
 		PARENT_SCOPE
 	)
 endfunction()

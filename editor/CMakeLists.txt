@@ -69,9 +69,10 @@ if(godot_editor_build)
 	list(SORT __CLASSES_DOCS)
 	# generating map for the python, from all godot docs.
 	__generate_python_class_map(__PYTHON_CLASS_MAP MODULES_CLASSES _CLASS_PATH)
+	set(__DOC_DATA_CLASS_PATH "${CMAKE_CURRENT_SOURCE_DIR}")
 	execute_python_method(editor_builders cmake_make_doc_data_class_path
 		PYTHON_ARGS
-			STR_VAL "to_path=${ENGINE_SOURCE_DIR}/editor/doc"
+			STR_VAR "to_path=__DOC_DATA_CLASS_PATH"
 			RAW_VAR "class_map=__PYTHON_CLASS_MAP"
 		APPEND_SYS_PATH "${ENGINE_SOURCE_DIR}"
 	)

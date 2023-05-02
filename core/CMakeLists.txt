@@ -170,6 +170,7 @@ add_custom_target(core-gen
 		${__LICENSE_FILE_HEADER}
 )
 add_dependencies(core-lib core-gen)
+add_dependencies(core-lib modules-enabled-header-gen)
 
 add_subdirectory("os")
 add_subdirectory("math")

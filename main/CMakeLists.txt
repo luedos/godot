@@ -36,7 +36,7 @@ list(APPEND __GEN_DEPENDENCIES "${__SPLASH_GEN_FILE}")
 add_python_generator_command(main_builders cmake_make_splash
 	SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/splash.png"
 	TARGET_FILES "${__SPLASH_GEN_FILE}"
-	APPEND_SYS_PATH "${GODOT_SOURCE_DIR}"
+	APPEND_SYS_PATH "${ENGINE_SOURCE_DIR}"
 	COMMENT "Building splash screen header."
 )
 
@@ -46,7 +46,7 @@ if(NOT godot_no_editor_splash)
 	add_python_generator_command(main_builders cmake_make_splash_editor
 		SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/splash_editor.png"
 		TARGET_FILES "${__SPLASH_EDITOR_GEN_FILE}"
-		APPEND_SYS_PATH "${GODOT_SOURCE_DIR}"
+		APPEND_SYS_PATH "${ENGINE_SOURCE_DIR}"
 		COMMENT "Building editor splash screen header."
 	)
 endif()
@@ -56,7 +56,7 @@ list(APPEND __GEN_DEPENDENCIES "${__APP_ICON_GEN_FILE}")
 add_python_generator_command(main_builders cmake_make_app_icon
 	SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/app_icon.png"
 	TARGET_FILES "${__APP_ICON_GEN_FILE}"
-	APPEND_SYS_PATH "${GODOT_SOURCE_DIR}"
+	APPEND_SYS_PATH "${ENGINE_SOURCE_DIR}"
 	COMMENT "Building application icon."
 )
 

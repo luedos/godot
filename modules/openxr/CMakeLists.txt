@@ -10,6 +10,8 @@ add_lib(openxr-lib
 	COMPONENTS
 		openxr-env
 		global-warnings-env
+	DEPENDENCIES
+		servers-shaders-gen
 )
 target_glob_sources(openxr-lib PRIVATE "*.cpp")
 target_glob_sources(openxr-lib PRIVATE "action_map/*.cpp")
@@ -105,7 +107,7 @@ if (NOT godot_platform STREQUAL "android")
 		"loader/api_layer_interface.cpp"
 		"loader/loader_core.cpp"
 		"loader/loader_instance.cpp"
-		"loader/loader_logger_recorders.cp"
+		"loader/loader_logger_recorders.cpp"
 		"loader/loader_logger.cpp"
 		"loader/manifest_file.cpp"
 		"loader/runtime_interface.cpp"

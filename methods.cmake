@@ -1132,21 +1132,10 @@ function(add_python_generator_command __MODULE __FUNCTION)
 		set_property(SOURCE "${__SYMBOLIC_SRC}"	PROPERTY SYMBOLIC TRUE)
 	endforeach()
 
-	# just simple debug info
-	if(VERBOSE)
-		message(STATUS "========== Adding python generator command =========")
-		message(STATUS "Target files: ${__ARGS_TARGET_FILES}")
-		message(STATUS "Source files: ${__ARGS_SOURCE_FILES}")
-		message(STATUS "Working dir: ${__ARGS_WORKING_DIR}")
-		message(STATUS "Depends on: ${__DEPENDS}")
-		message(STATUS "Command: ${__COMMAND}")
-		message(STATUS "====================================================")
-	endif()
-
 	if ("${__ARGS_COMMENT}" STREQUAL "")
-		set(__COMMENT "Executing python method '${__FUNCTION}'.")
+		set(__COMMENT "Executing python method '${__MODULE}.${__FUNCTION}'.")
 	else()
-		set(__COMMENT "Executing python method '${__FUNCTION}': ${__ARGS_COMMENT}")
+		set(__COMMENT "Executing python method '${__MODULE}.${__FUNCTION}': ${__ARGS_COMMENT}")
 	endif()
 
 	if("${__ARGS_CREATE_CUSTOM_TARGET}" STREQUAL "")
@@ -1203,6 +1192,17 @@ function(add_python_generator_command __MODULE __FUNCTION)
 			PROPERTIES GENERATED TRUE
 		)
 
+	endif()
+
+	# just simple debug info
+	if(VERBOSE)
+		message(STATUS "========== Adding python generator command =========")
+		message(STATUS "Target files: ${${__TARGET_FILES_LIST_NAME}}")
+		message(STATUS "Source files: ${__ARGS_SOURCE_FILES}")
+		message(STATUS "Working dir: ${__ARGS_WORKING_DIR}")
+		message(STATUS "Depends on: ${__DEPENDS}")
+		message(STATUS "Command: ${__COMMAND}")
+		message(STATUS "====================================================")
 	endif()
 
 endfunction()
@@ -1611,7 +1611,7 @@ endfunction()
 function(target_property __MOD __TARGET __PROPERTY __VALUE)
 	assert_if_empty(__MOD __TARGET __PROPERTY)
 
-	asssert(
+	assert(
 		"'target_property' function should be provided with valid modification value. Valid values are (SET|APPEND_STR|PREPEND_STR|APPEND_LIST|PREPEND_LIST), but provided '${__MOD}'."
 		__MOD MATCHES "^(SET|APPEND_STR|PREPEND_STR|APPEND_LIST|PREPEND_LIST)$"
 	)
@@ -1619,7 +1619,7 @@ function(target_property __MOD __TARGET __PROPERTY __VALUE)
 	if (__MOD STREQUAL "SET")
 		set_target_properties("${__TARGET}" PROPERTIES "${__PROPERTY}" "${__VALUE}")
 	elseif (__MOD STREQUAL "APPEND_STR")
-		get_target_property(__OLD_PROPERTY_VALUE "${__PROPERTY}" "${__TARGET}")
+		get_target_property(__OLD_PROPERTY_VALUE "${__TARGET}" "${__PROPERTY}")
 
 		if (NOT "${__OLD_PROPERTY_VALUE}" STREQUAL "__OLD_PROPERTY_VALUE-NOTFOUND")
 			set_target_properties("${__TARGET}" PROPERTIES "${__PROPERTY}" "${__OLD_PROPERTY_VALUE}${__VALUE}")
@@ -1627,7 +1627,7 @@ function(target_property __MOD __TARGET __PROPERTY __VALUE)
 			set_target_properties("${__TARGET}" PROPERTIES "${__PROPERTY}" "${__VALUE}")
 		endif()
 	elseif (__MOD STREQUAL "PREPEND_STR")
-		get_target_property(__OLD_PROPERTY_VALUE "${__PROPERTY}" "${__TARGET}")
+		get_target_property(__OLD_PROPERTY_VALUE "${__TARGET}" "${__PROPERTY}")
 
 		if (NOT "${__OLD_PROPERTY_VALUE}" STREQUAL "__OLD_PROPERTY_VALUE-NOTFOUND")
 			set_target_properties("${__TARGET}" PROPERTIES "${__PROPERTY}" "${__VALUE}${__OLD_PROPERTY_VALUE}")
@@ -1635,7 +1635,7 @@ function(target_property __MOD __TARGET __PROPERTY __VALUE)
 			set_target_properties("${__TARGET}" PROPERTIES "${__PROPERTY}" "${__VALUE}")
 		endif()
 	elseif (__MOD STREQUAL "APPEND_LIST")
-		get_target_property(__OLD_PROPERTY_VALUE "${__PROPERTY}" "${__TARGET}")
+		get_target_property(__OLD_PROPERTY_VALUE "${__TARGET}" "${__PROPERTY}")
 
 		if (NOT "${__OLD_PROPERTY_VALUE}" STREQUAL "__OLD_PROPERTY_VALUE-NOTFOUND")
 			list(APPEND __OLD_PROPERTY_VALUE "${__VALUE}")
@@ -1644,7 +1644,7 @@ function(target_property __MOD __TARGET __PROPERTY __VALUE)
 			set_target_properties("${__TARGET}" PROPERTIES "${__PROPERTY}" "${__VALUE}")
 		endif()
 	elseif (__MOD STREQUAL "PREPEND_LIST")
-		get_target_property(__OLD_PROPERTY_VALUE "${__PROPERTY}" "${__TARGET}")
+		get_target_property(__OLD_PROPERTY_VALUE "${__TARGET}" "${__PROPERTY}")
 
 		if (NOT "${__OLD_PROPERTY_VALUE}" STREQUAL "__OLD_PROPERTY_VALUE-NOTFOUND")
 			list(PREPEND __OLD_PROPERTY_VALUE "${__VALUE}")

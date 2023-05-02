@@ -11,4 +11,4 @@ add_lib(webrtc-lib
 		modules-env
 		global-warnings-env
 )
-target_glob_sources(noise-lib PRIVATE "*.cpp")
+target_glob_sources(webrtc-lib PRIVATE "*.cpp")

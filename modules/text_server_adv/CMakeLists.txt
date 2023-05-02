@@ -109,7 +109,7 @@ if (godot_builtin_harfbuzz)
 		${__THIRDPARTY_HARFBUZZ_SOURCES}
 	)
 
-	target_include_directories(text-server-adv-env PRIVATE "${__THIRDPARTY_HARFBUZZ_PATH}/src")
+	target_include_directories(text-server-adv-env INTERFACE "${__THIRDPARTY_HARFBUZZ_PATH}/src")
 	target_compile_definitions(thirdparty-harfbuzz-lib PRIVATE "HAVE_ICU")
 	
 	if (godot_builtin_icu4c)
@@ -436,7 +436,7 @@ if (godot_builtin_icu4c)
 	if (godot_editor_build)
 		add_python_generator_command(cmake_icu_data_gen cmake_make_icu_data
 			TARGET_FILES "${__THIRDPARTY_ICU_PATH}/icudata.gen.h"
-			SOURCE_FILES "{__THIRDPARTY_ICU_PATH}/${__ICU_DATA_NAME}"
+			SOURCE_FILES "${__THIRDPARTY_ICU_PATH}/${__ICU_DATA_NAME}"
 			CREATE_CUSTOM_TARGET icu-data-header-gen
 		)
 		add_dependencies(text-server-adv-lib icu-data-header-gen)

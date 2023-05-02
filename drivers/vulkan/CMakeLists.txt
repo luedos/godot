@@ -1,7 +1,7 @@
 
 
-set(__THIRDPARTY_VULKAN_PATH "${ENGINE_SOURCE_DIR}/vulkan")
-set(__THIRDPARTY_VOLK_PATH "${ENGINE_SOURCE_DIR}/volk")
+set(__THIRDPARTY_VULKAN_PATH "${ENGINE_SOURCE_DIR}/thirdparty/vulkan")
+set(__THIRDPARTY_VOLK_PATH "${ENGINE_SOURCE_DIR}/thirdparty/volk")
 
 target_include_directories(global-env INTERFACE 
 	"${__THIRDPARTY_VULKAN_PATH}"

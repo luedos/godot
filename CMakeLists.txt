@@ -44,7 +44,7 @@ endif()
 if(godot_platform MATCHES "(linux|dragonfly|freebsd|netbsd|openbsd)")
 	set(godot_platform "linuxbsd")
 elseif(godot_platform STREQUAL "x11")
-	message(WARNING "Platform "x11" has been renamed to \"linuxbsd\" in Godot 4.0. Building for platform \"linuxbsd\".")
+	message(WARNING "Platform \"x11\" has been renamed to \"linuxbsd\" in Godot 4.0. Building for platform \"linuxbsd\".")
 	set(godot_platform "linuxbsd")
 endif()
 
@@ -116,8 +116,8 @@ set_string_option   (godot_bin_directory            "bin/$<CONFIG>"     DESCRIPT
 # In godot 4 this option was deprecated in favor of 'target' (which could be editor/release/debug),
 # but, because in some cases in cmake we can choose target post configuration,
 # and it would be really hard to configure project without knowing whatever we should or should not build editor,
-# I decided to leave 'build_tools' (just renamed it to godot_editor_build) option (mb it will change in the future).
-set_bool_option     (godot_editor_build             TRUE                DESCRIPTION "Build the tools (a.k.a. the Godot editor). This option will remove Release and MinSizeRel configurations, because tools can't be built in prodaction.")
+# I decided to create an additional option 'godot_editor_build' to more precisely specify in configuration time whenever or not we are building editor.
+set_string_option   (godot_editor_build             "auto"              DESCRIPTION "Build the tools (a.k.a. the Godot editor). This option is complimentary to CMAKE_BUILD_TYPE. In single configuration generators this option has next behavior: auto - fully rely on CMAKE_BUILD_TYPE, true - transfer whatever build type was decided to 'editor' analogue, false - if CMAKE_BUILD_TYPE is editor choose the 'debug' analogue. In case of multi-configuration generator, this option decide whenever 'editor' configs should be added." ENUM "auto" "true" "false")
 set_bool_option     (godot_dev_build                FALSE               DESCRIPTION "Developer build with dev-only debugging code (DEV_ENABLED).")
 set_bool_option     (godot_debug_symbols            FALSE               DESCRIPTION "Build with debugging symbols.")
 set_bool_option     (godot_separate_debug_symbols   FALSE               DESCRIPTION "Build with debugging symbols.")
@@ -282,14 +282,14 @@ endif()
 ############### Utility setup ###############
 
 # Generator expressions for easier working with build types which can be used in the future.
-set(IS_OPTIMIZED_GEN_EXPR        $<CONFIG:Release,MinSizeRel,RelWithDebInfo>)
-set(IS_OPTIMIZED_MAX_SPEED_GEN_EXPR  $<CONFIG:Release,RelWithDebInfo>)
-set(IS_OPTIMIZED_SPEED_GEN_EXPR  $<CONFIG:Release,RelWithDebInfo>)
-set(IS_OPTIMIZED_SIZE_GEN_EXPR   $<CONFIG:MinSizeRel>)
-set(IS_OPTIMIZED_DEBUG_GEN_EXPR  $<CONFIG:RelWithDebInfo>)
-set(IS_RELEASE_GEN_EXPR          $<CONFIG:Release,MinSizeRel>)
-set(IS_DEBUG_INFO_GEN_EXPR       $<CONFIG:Debug,RelWithDebInfo>)
-set(IS_DEBUG_GEN_EXPR            $<CONFIG:Debug>)
+set(IS_DEBUG_GEN_EXPR            $<CONFIG:Debug_OptNone,Debug_OptDebug,Debug_OptSpeed,Debug_OptSpeedTrace,Debug_OptSize>)
+set(IS_RELEASE_GEN_EXPR          $<CONFIG:Release_OptNone,Release_OptDebug,Release_OptSpeed,Release_OptSpeedTrace,Release_OptSize>)
+set(IS_OPT_NONE_GEN_EXPR         $<CONFIG:Editor_OptNone,Debug_OptNone,Release_OptNone>)
+set(IS_OPT_DEBUG_GEN_EXPR        $<CONFIG:Editor_OptDebug,Debug_OptDebug,Release_OptDebug>)
+set(IS_OPT_SPEED_GEN_EXPR        $<CONFIG:Editor_OptSpeed,Debug_OptSpeed,Release_OptSpeed>)
+set(IS_OPT_SPEEDTRACE_GEN_EXPR   $<CONFIG:Editor_OptSpeedTrace,Debug_OptSpeedTrace,Release_OptSpeedTrace>)
+set(IS_OPT_SIZE_GEN_EXPR         $<CONFIG:Editor_OptSize,Debug_OptSize,Release_OptSize>)
+
 
 # Normilizing godot bin directory and making it absolute.
 if(NOT IS_ABSOLUTE "${godot_bin_directory}")
@@ -300,44 +300,91 @@ endif()
 
 ############### Processing configurations ###############
 
-if(GODOT_BUILD_TOOLS)
-	# If we are using tools, we will not use Release and MinSizeRel
-	set(__POSSIBLE_BUILD_TYPES 
-		"Debug" 
-		"RelWithDebInfo"
-	)
-else()
-	set(__POSSIBLE_BUILD_TYPES 
-		"Debug" 
-		"RelWithDebInfo" 
-		"Release" 
-		"MinSizeRel"
-	)
-endif()
+set(__POSSIBLE_EDITOR_BUILD_TYPES
+	"Editor_OptNone"
+	"Editor_OptDebug"
+	"Editor_OptSpeed"
+	"Editor_OptSpeedTrace"
+	"Editor_OptSize"
+)
 
-if(CMAKE_CONFIGURATION_TYPES)
+set(__POSSIBLE_RELEASE_BUILD_TYPES
+	"Release_OptNone"
+	"Release_OptDebug"
+	"Release_OptSpeed"
+	"Release_OptSpeedTrace"
+	"Release_OptSize"
+)
 
-	set(CMAKE_CONFIGURATION_TYPES "${__POSSIBLE_BUILD_TYPES}")
-	message(STATUS "Possible configurations is: ${CMAKE_CONFIGURATION_TYPES}.")
+set(__POSSIBLE_DEBUG_BUILD_TYPES
+	"Debug_OptNone"
+	"Debug_OptDebug"
+	"Debug_OptSpeed"
+	"Debug_OptSpeedTrace"
+	"Debug_OptSize"
+)
 
-else()
+set(__POSSIBLE_ALL_BUILD_TYPES ${__POSSIBLE_EDITOR_BUILD_TYPES} ${__POSSIBLE_RELEASE_BUILD_TYPES} ${__POSSIBLE_DEBUG_BUILD_TYPES})
 
-	# if no build type defined, make default Debug.
-	if("${CMAKE_BUILD_TYPE}" STREQUAL "")
-		
-		set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "" FORCE)
-		
-	elseif(NOT CMAKE_BUILD_TYPE IN_LIST __POSSIBLE_BUILD_TYPES)
-		
-		message(FATAL_ERROR "Invalid build type ${CMAKE_BUILD_TYPE}. Possible build types are: ${__POSSIBLE_BUILD_TYPES}")
-	
+if (CMAKE_CONFIGURATION_TYPES)
+	# If we are using multi-configuration generator.
+	if (godot_editor_build STREQUAL "auto" OR "${godot_editor_build}" STREQUAL "")
+		message(FATAL_ERROR "Configuring cmake for multi-configuration generator. In this case strong specification of 'godot_editor_build' is required (choose 'true' of 'false').")
 	endif()
 
-	# also add property to the CMAKE_BUILD_TYPE, so it will be more easier to choose build type in cmake gui.
-	set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${__POSSIBLE_BUILD_TYPES})
+	if (godot_editor_build)
+		set(CMAKE_CONFIGURATION_TYPES ${__POSSIBLE_EDITOR_BUILD_TYPES})
+	else()
+		set(CMAKE_CONFIGURATION_TYPES ${__POSSIBLE_RELEASE_BUILD_TYPES} ${__POSSIBLE_DEBUG_BUILD_TYPES})
+	endif()
 
-	message(STATUS "Current build type is \"$CACHE{CMAKE_BUILD_TYPE}\".")
+	message(STATUS "Possible configurations are: ${CMAKE_CONFIGURATION_TYPES}")
+else()
 
+	# if no build type defined, make default Editor_OptDebug.
+	if("${CMAKE_BUILD_TYPE}" STREQUAL "")
+		if (godot_editor_build STREQUAL "auto" OR godot_editor_build)
+			set(__DEFAULT_TARGET "Editor")
+		elseif (godot_dev_build)
+			set(__DEFAULT_TARGET "Debug")
+		else()
+			set(__DEFAULT_TARGET "Release")
+		endif()
+
+		if (godot_dev_build)
+			set(__DEFAULT_OPT "None")
+		elseif(__DEFAULT_TARGET MATCHES "(Debug|Editor)")
+			set(__DEFAULT_OPT "SpeedTrace")
+		else()
+			set(__DEFAULT_OPT "Speed")
+		endif()
+
+		set(CMAKE_BUILD_TYPE "${__DEFAULT_TARGET}_Opt${__DEFAULT_OPT}" CACHE STRING "" FORCE)
+	endif()
+
+	set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "${__POSSIBLE_ALL_BUILD_TYPES}")
+
+	if (NOT CMAKE_BUILD_TYPE IN_LIST __POSSIBLE_ALL_BUILD_TYPES)
+		message(FATAL_ERROR "Invalid build type ${CMAKE_BUILD_TYPE}. Possible build types are: ${__POSSIBLE_ALL_BUILD_TYPES}")
+	endif()
+
+	if (godot_editor_build STREQUAL "auto")
+		if (CMAKE_BUILD_TYPE MATCHES "^Editor")
+			set(godot_editor_build TRUE)
+		else()
+			set(godot_editor_build FALSE)
+		endif()
+	elseif (godot_editor_build AND NOT CMAKE_BUILD_TYPE MATCHES "^Editor")
+		string(REGEX REPLACE "^.+(_.+)" "Editor\\1" __NEW_BUILD_TYPE "${CMAKE_BUILD_TYPE}")
+		message(WARNING "Switching build type from '${CMAKE_BUILD_TYPE}' to '${__NEW_BUILD_TYPE}' because 'godot_editor_build' specified as true.")
+		set(CMAKE_BUILD_TYPE "${__NEW_BUILD_TYPE}" CACHE STRING "" FORCE)
+	elseif (NOT godot_editor_build AND CMAKE_BUILD_TYPE MATCHES "^Editor")
+		string(REGEX REPLACE "^Editor(.+)" "Debug\\1" __NEW_BUILD_TYPE "${CMAKE_BUILD_TYPE}")
+		message(WARNING "Switching build type from '${CMAKE_BUILD_TYPE}' to '${__NEW_BUILD_TYPE}' because 'godot_editor_build' specified as false.")
+		set(CMAKE_BUILD_TYPE "${__NEW_BUILD_TYPE}" CACHE STRING "" FORCE)
+	endif()
+
+	message(STATUS "Current build type is '$CACHE{CMAKE_BUILD_TYPE}'.")
 endif()
 
 # We will clean up all flags which were added by the cmake itself, 
@@ -482,13 +529,11 @@ foreach (__MODULE_ID IN LISTS MODULES_IDS)
 	set(${__MODULE_ID}_REQUIRED_DEPENDENCIES "")
 	set(${__MODULE_ID}_OPTIONAL_DEPENDENCIES "")
 
-	set(__MODULE_DIR "${__MODULE_ID}_MODULE_PATH")
+	set(__MODULE_DIR "${${__MODULE_ID}_MODULE_PATH}")
 
 	list(APPEND MODULES_PATHS "${__MODULE_DIR}")
 
-	if(EXISTS "${__MODULE_DIR}/config.cmake")
-		include("${__MODULE_DIR}/config.cmake")
-	endif()
+	include("${__MODULE_DIR}/config.cmake")
 
 	set(__MODULE_ENABLED FALSE)
 	# if we are not already provided that property..
@@ -610,7 +655,11 @@ endif()
 
 # DEBUG_ENABLED enables debugging *features* and debug-only code, which is intended
 # to give *users* extra debugging information for their game development.
-target_compile_definitions(global-env INTERFACE $<${IS_DEBUG_INFO_GEN_EXPR}:DEBUG_ENABLED>)
+if (godot_editor_build)
+	target_compile_definitions(global-env INTERFACE "DEBUG_ENABLED")
+else()
+	target_compile_definitions(global-env INTERFACE $<${IS_DEBUG_GEN_EXPR}:DEBUG_ENABLED>)
+endif()
 
 if (godot_dev_build)
 	# DEV_ENABLED enables *engine developer* code which should only be compiled for those
@@ -666,12 +715,12 @@ if (MSVC)
 	endif()
 
 	target_compile_options(global-env INTERFACE
-		$<${IS_OPTIMIZED_SPEED_GEN_EXPR}:/O2>
-		$<${IS_OPTIMIZED_SIZE_GEN_EXPR}:/O1>
-		$<${IS_DEBUG_GEN_EXPR}:/Od>
+		$<$<OR:${IS_OPT_SPEED_GEN_EXPR},${IS_OPT_SPEEDTRACE_GEN_EXPR}>:/O2>
+		$<${IS_OPT_SIZE_GEN_EXPR}:/O1>
+		$<$<OR:${IS_OPT_DEBUG_GEN_EXPR},${IS_OPT_NONE_GEN_EXPR}>:/Od>
 	)
 	target_link_options(global-env INTERFACE
-		$<${IS_OPTIMIZED_GEN_EXPR}:/OPT:REF>
+		$<$<OR:${IS_OPT_SPEED_GEN_EXPR},${IS_OPT_SPEEDTRACE_GEN_EXPR},${IS_OPT_SIZE_GEN_EXPR}>:/OPT:REF>
 	)
 else()
 	if (godot_debug_symbols)
@@ -692,10 +741,11 @@ else()
 	endif()
 
 	target_compile_options(global-env INTERFACE
-		$<${IS_OPTIMIZED_MAX_SPEED_GEN_EXPR}:-O3>
-		$<${IS_OPTIMIZED_DEBUG_GEN_EXPR}:-O2>
-		$<${IS_OPTIMIZED_SIZE_GEN_EXPR}:-Os>
-		$<${IS_DEBUG_GEN_EXPR}:-Og>
+		$<${IS_OPT_SPEED_GEN_EXPR}:-O3>
+		$<${IS_OPT_SPEEDTRACE_GEN_EXPR}:-O2>
+		$<${IS_OPT_SIZE_GEN_EXPR}:-Os>
+		$<${IS_OPT_DEBUG_GEN_EXPR}:-Og>
+		$<${IS_OPT_NONE_GEN_EXPR}:-O0>
 	)
 endif()
 
@@ -891,7 +941,7 @@ foreach (__MODULE_ID IN LISTS MODULES_IDS)
 	check_module_dependencies(__DEPENDENCIES_MET "${__MODULE_ID}")
 
 	if (NOT __DEPENDENCIES_MET)
-		continue();
+		continue()
 	endif()
 
 	cmake_language(CALL ${__MODULE_ID}_configure_module)
@@ -917,7 +967,7 @@ foreach (__MODULE_ID IN LISTS MODULES_IDS)
 		foreach(__MODULE_CLASS IN LISTS ${__MODULE_ID}_MODULE_DOC_CLASSES)
 			if (DEFINED ${__MODULE_CLASS}_CLASS_PATH)
 				# if class allready was defined.
-				message(WARNING "Class with the name \"__MODULE_CLASS\" already was defined by another module. Old class path is \"${${__MODULE_CLASS}_CLASS_PATH}\". New class path is \"${__DOC_ABS_PATH}\". New class documentation will be discarded.")
+				message(WARNING "Class with the name \"${__MODULE_CLASS}\" already was defined by another module. Old class path is \"${${__MODULE_CLASS}_CLASS_PATH}\". New class path is \"${__DOC_ABS_PATH}\". New class documentation will be discarded.")
 				continue()
 			endif()
 
@@ -957,11 +1007,12 @@ foreach (__MODULE_ID IN LISTS MODULES_LIST)
 
 	set(__PYTHON_DEPENDENCIES_MAP "${__PYTHON_DEPENDENCIES_MAP}'${__MODULE_ID}':[${__PYTHON_REQURIED_DEPENDENCIES},${__PYTHON_OPTIONAL_DEPENDENCIES}]")
 endforeach()
+set(__PYTHON_DEPENDENCIES_MAP "${__PYTHON_DEPENDENCIES_MAP}}")
 
 execute_python_method(cmake_methods sort_module_list
 	PYTHON_ARGS
 		"RAW_VAR" "module_list=__PYTHON_MODULES_LIST"
-		"RAW_VAR" "module_dependencies=__PYTHON_REQURIED_DEPENDENCIES"
+		"RAW_VAR" "module_dependencies=__PYTHON_DEPENDENCIES_MAP"
 	OUTPUT_VARIABLE MODULES_LIST
 )
 
@@ -999,7 +1050,7 @@ set(__SUFFIX "${__SUFFIX}.${__${godot_platform}_PROGRAM_SUFFIX}")
 if (godot_editor_build)
 	set(__SUFFIX "${__SUFFIX}.editor")
 else()
-	set(__SUFFIX "${__SUFFIX}$<IF:${IS_RELEASE_GEN_EXPR},.release,.debug>")
+	set(__SUFFIX "${__SUFFIX}$<IF:${IS_RELEASE_GEN_EXPR},.template_release,.template_debug>")
 endif()
 
 if (godot_dev_build)
@@ -1017,7 +1068,7 @@ if(NOT godot_extra_suffix STREQUAL "")
 endif()
 
 # Prepend extra suffix
-target_property(PREPEND_STR global-end EXTRA_SUFFIX "${__SUFFIX}")
+target_property(PREPEND_STR global-env EXTRA_SUFFIX "${__SUFFIX}")
 
 if (godot_disable_3d)
 	if (godot_editor_build)

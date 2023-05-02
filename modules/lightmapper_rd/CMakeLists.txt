@@ -9,7 +9,7 @@ add_lib(lightmapper-rd-lib
 )
 target_glob_sources(lightmapper-rd-lib PRIVATE "*.cpp")
 
-set(__GLSL_HEADERS "")
+add_custom_target(lightmapper-rd-gen)
 
 foreach (__GLSL "lm_raster.glsl" "lm_compute.glsl" "lm_blendseams.glsl")
 	set(__GLSL "${CMAKE_CURRENT_SOURCE_DIR}/${__GLSL}")
@@ -18,13 +18,9 @@ foreach (__GLSL "lm_raster.glsl" "lm_compute.glsl" "lm_blendseams.glsl")
 		SOURCE_FILES "${__GLSL}"
 		TARGET_FILES "${__GLSL_TARGET_HEADER}"
 		BUILD_DEPENDENCIES "${CMAKE_CURRENT_SOURCE_DIR}/lm_common_inc.glsl"
-		APPEND_SYS_PATH "${ENGINE_SOURCE_DIR}"
+		WORKING_DIR "${ENGINE_SOURCE_DIR}"
+		SOURCES_DEPENDENT_TARGET lightmapper-rd-gen
 	)
 endforeach()
-
-add_custom_target(lightmapper-rd-gen
-	DEPENDS
-		${__GLSL_HEADERS}
-)
 
 add_dependencies(lightmapper-rd-lib lightmapper-rd-gen)

@@ -16,16 +16,7 @@ target_compile_definitions(regex-lib PRIVATE "PCRE2_CODE_UNIT_WIDTH=0")
 
 if (godot_builtin_pcre2)
 
-	add_lib(thirdparty-noise-lib
-		OBJECT
-		PARENT_LIB
-			modules-lib
-		COMPONENTS
-			noise-env
-			thirdparty-warnings-env
-	)
-
-	set(__THIRDPARTY_PCRE2_PATH "${GODOT_SOURCE_DIR}/thirdparty/pcre2/src")
+	set(__THIRDPARTY_PCRE2_PATH "${ENGINE_SOURCE_DIR}/thirdparty/pcre2/src")
 
 	target_include_directories(regex-env INTERFACE "${__THIRDPARTY_PCRE2_PATH}")
 	target_compile_definitions(regex-env INTERFACE 

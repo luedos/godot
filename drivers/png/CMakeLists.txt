@@ -47,9 +47,9 @@ if (godot_builtin_libpng)
 
 	inline_if(__USE_NEON godot_platform STREQUAL "android" AND PROCESSOR_IS_ARM32 AND NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
 	if (__USE_NEON)
-		target_compile_definitions(drivers-png-env "PNG_ARM_NEON_OPT=2")
+		target_compile_definitions(drivers-png-env INTERFACE "PNG_ARM_NEON_OPT=2")
 	else()
-		target_compile_definitions(drivers-png-env "PNG_ARM_NEON_OPT=0")
+		target_compile_definitions(drivers-png-env INTERFACE "PNG_ARM_NEON_OPT=0")
 	endif()
 
 	if (__USE_NEON)
