@@ -14,6 +14,8 @@ add_lib(modules-lib
 		"register_module_types.gen.cpp"
 )
 
+add_link_dependencies(modules-lib core-lib)
+
 set(__MODULES_TEST_HEADERS "")
 foreach(__MODULE_ID IN LISTS MODULES_LIST)
 

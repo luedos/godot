@@ -1085,7 +1085,7 @@ function(add_python_generator_command __MODULE __FUNCTION)
 		set(__GENERATOR_FILE "${__ARGS_WORKING_DIR}/${__ARGS_BY_FILE}_generator.py")
 		file(WRITE "${__GENERATOR_FILE}" "${__PYTHON_FILE_CODE}")
 
-		# also, just in case, appending this file as dependecy for the command
+		# also, just in case, appending this file as dependency for the command
 		list(APPEND __DEPENDS "${__GENERATOR_FILE}")
 
 		# and finally creating actual command, which is just importing our generated file and call run function with all custom variables..
@@ -1138,47 +1138,38 @@ function(add_python_generator_command __MODULE __FUNCTION)
 		set(__COMMENT "Executing python method '${__MODULE}.${__FUNCTION}': ${__ARGS_COMMENT}")
 	endif()
 
-	if("${__ARGS_CREATE_CUSTOM_TARGET}" STREQUAL "")
+	if(NOT __ARGS_SILENCE_GEN_EXPR_BYPRODUCTS_WARNINGS 
+		AND CMAKE_VERSION VERSION_LESS "3.20.0" 
+		AND NOT "${__GEN_EXPR_TARGETS}" STREQUAL "")
 
-		if(NOT __ARGS_SILENCE_GEN_EXPR_BYPRODUCTS_WARNINGS 
-			AND CMAKE_VERSION VERSION_LESS "3.20.0" 
-			AND NOT "${__GEN_EXPR_TARGETS}" STREQUAL "")
+		list(JOIN __GEN_EXPR_TARGETS "\n\t" __GEN_EXPR_TARGETS_FORMATED)
+		message(WARNING "Custom command OUTPUT files supports generator expression only since 3.20.0 version. Next files were cut off from OUTPUTs of the custom command:\n\t${__GEN_EXPR_TARGETS_FORMATED}")
+	endif()
 
-			list(JOIN __GEN_EXPR_TARGETS "\n\t" __GEN_EXPR_TARGETS_FORMATED)
-			message(WARNING "Custom command OUTPUT files supports generator expression only since 3.20.0 version. Next files were cut off from OUTPUTs of the custom command:\n\t${__GEN_EXPR_TARGETS_FORMATED}")
-		endif()
+	if("${${__TARGET_FILES_LIST_NAME}}" STREQUAL "" AND "${__ARGS_SYMBOLIC_TARGETS}" STREQUAL "")
+		message(FATAL_ERROR "No output files were provided to the custom target.")
+	endif()
 
-		if("${${__TARGET_FILES_LIST_NAME}}" STREQUAL "" AND "${__ARGS_SYMBOLIC_TARGETS}" STREQUAL "")
-			message(FATAL_ERROR "No output files were provided to the custom target.")
-		endif()
+	add_custom_command(
+		OUTPUT ${${__TARGET_FILES_LIST_NAME}} ${__ARGS_SYMBOLIC_TARGETS}
+		COMMAND "${PYTHON_EXECUTABLE}" "-c" "${__COMMAND}"
+		DEPENDS ${__DEPENDS} ${__ARGS_SYMBOLIC_SOURCES}
+		WORKING_DIRECTORY "${__ARGS_WORKING_DIR}"
+		COMMENT "${__COMMENT}"
+		VERBATIM
+	)
 
-		add_custom_command(
-			OUTPUT ${${__TARGET_FILES_LIST_NAME}} ${__ARGS_SYMBOLIC_TARGETS}
-			COMMAND "${PYTHON_EXECUTABLE}" "-c" "${__COMMAND}"
-			DEPENDS ${__DEPENDS} ${__ARGS_SYMBOLIC_SOURCES}
-			WORKING_DIRECTORY "${__ARGS_WORKING_DIR}"
-			COMMENT "${__COMMENT}"
-			VERBATIM
+	if (NOT "${__ARGS_CREATE_CUSTOM_TARGET}" STREQUAL "")
+		add_custom_target("${__ARGS_CREATE_CUSTOM_TARGET}")
+
+		target_sources("${__ARGS_CREATE_CUSTOM_TARGET}" PRIVATE
+			${__ARGS_TARGET_FILES}
 		)
 
-	else()
-		if(NOT __ARGS_SILENCE_GEN_EXPR_BYPRODUCTS_WARNINGS 
-			AND CMAKE_VERSION VERSION_LESS "3.20.0" 
-			AND NOT "${__GEN_EXPR_TARGETS}" STREQUAL "")
-
-			list(JOIN __GEN_EXPR_TARGETS "\n\t" __GEN_EXPR_TARGETS_FORMATED)
-			message(WARNING "Custom target BYPRODUCTS files supports generator expression only since 3.20.0 version. Next files were cut off from BYPRODUCTs of the custom target:\n\t${__GEN_EXPR_TARGETS_FORMATED}")
-		endif()
-
-		add_custom_target("${__ARGS_CREATE_CUSTOM_TARGET}"
-			COMMAND "${PYTHON_EXECUTABLE}" "-c" "${__COMMAND}"
-			DEPENDS ${__DEPENDS} ${__ARGS_SYMBOLIC_SOURCES}
-			BYPRODUCTS ${${__TARGET_FILES_LIST_NAME}} ${__ARGS_SYMBOLIC_TARGETS}
-			WORKING_DIRECTORY "${__ARGS_WORKING_DIR}"
-			COMMENT "${__COMMENT}"
-			VERBATIM
+		set_source_files_properties(${__ARGS_TARGET_FILES}
+			TARGET_DIRECTORY "${__ARGS_CREATE_CUSTOM_TARGET}"
+			PROPERTIES GENERATED TRUE
 		)
-
 	endif()
 
 	if(NOT "${__ARGS_SOURCES_DEPENDENT_TARGET}" STREQUAL "" AND NOT "${__ARGS_TARGET_FILES}" STREQUAL "")
