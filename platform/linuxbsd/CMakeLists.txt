@@ -41,10 +41,6 @@ if (godot_udev AND godot_use_sowrap)
 endif()
 
 if (godot_dbus AND godot_use_sowrap)
-	target_sources(godot-exe PRIVATE "libudev-so_wrap.c")
-endif()
-
-if(GODOT_UDEV)
 	target_sources(godot-exe PRIVATE "dbus-so_wrap.c")
 endif()
 

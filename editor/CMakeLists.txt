@@ -41,6 +41,7 @@ if(godot_editor_build)
 	add_link_dependencies(editor-lib PRIVATE
 		core-lib
 		scene-lib
+		servers-lib
 		# This is required because editor is dependent on gles generated headers
 		drivers-lib
 	)
@@ -52,6 +53,8 @@ if(godot_editor_build)
 			STR_VAR "output_file=__REGISTER_EXPORTERS_FILE"
 			ARR_VAR "platform_exporters=PLATFORMS_EXPORTERS"
 		APPEND_SYS_PATH "${ENGINE_SOURCE_DIR}"
+		ACTION_CACHE_NAME "make_register_exporters"
+		DEPENDENT_FILES "${__REGISTER_EXPORTERS_FILE}"
 	)
 	
 	foreach(__PLATFORM IN LISTS PLATFORMS_EXPORTERS)
@@ -75,6 +78,8 @@ if(godot_editor_build)
 			STR_VAR "to_path=__DOC_DATA_CLASS_PATH"
 			RAW_VAR "class_map=__PYTHON_CLASS_MAP"
 		APPEND_SYS_PATH "${ENGINE_SOURCE_DIR}"
+		ACTION_CACHE_NAME "make_doc_data_class_path"
+		DEPENDENT_FILES "${__DOC_DATA_CLASS_PATH}/doc_data_class_path.gen.h"
 	)
 
 	set(__GEN_HEADERS)
@@ -123,7 +128,7 @@ if(godot_editor_build)
 	set(__TRANSLATION_HEADER_FILE "${CMAKE_CURRENT_SOURCE_DIR}/doc_translations.gen.h")
 	list(APPEND __GEN_HEADERS "${__TRANSLATION_HEADER_FILE}")
 	file(GLOB __TRANSLATIONS_LIST LIST_DIRECTORIES FALSE "${ENGINE_SOURCE_DIR}/doc/translations/*.po")
-	add_python_generator_command(editor_builders cmake_make_property_translations_header
+	add_python_generator_command(editor_builders cmake_make_doc_translations_header
 		SOURCE_FILES ${__TRANSLATIONS_LIST}
 		TARGET_FILES "${__TRANSLATION_HEADER_FILE}"
 		APPEND_SYS_PATH "${ENGINE_SOURCE_DIR}"

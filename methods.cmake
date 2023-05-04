@@ -398,6 +398,27 @@ function(target_sources_from_path __TARGET __SCOPE __PATH)
 
 endfunction()
 
+# Writes file but only if it content actually changed
+function(soft_write_file __FILE_PATH __FILE_CONTENT)
+	assert_if_empty(__FILE_PATH)
+
+	normilize_path(__FILE_PATH "${__FILE_PATH}" ABSOLUTE)
+	if (EXISTS "${__FILE_PATH}")
+		file(MD5 "${__FILE_PATH}" __FILE_HASH)
+		string(MD5 __CONTENT_HASH "${__FILE_CONTENT}")
+
+		if (__FILE_HASH STREQUAL __CONTENT_HASH)
+			if (VERBOSE)
+				message(STATUS "Ignoring writing file '${__FILE_PATH}' because it's hash unchanged.")
+			endif()
+			return()
+		endif()
+	endif()
+
+	file(WRITE "${__FILE_PATH}" "${__FILE_CONTENT}")
+
+endfunction()
+
 # Returns name of the top directory. 
 # Basically the get_filename_component, but will be able to resolve path which ends with slash.
 function(get_top_directory __PATH __OUTPUT)
@@ -569,6 +590,74 @@ function(clone_target_properties __SOURCE __TARGET)
 		endif()
 
 	endforeach()
+endfunction()
+
+
+# Generates cache sum for the action based on input parameters
+function(generate_action_hash __OUTPUT)
+	assert_if_empty(__OUTPUT)
+
+	set(__OPTIONS_ARGS 
+		""
+	)
+	set(__ONE_VALUE_ARGS 
+		""
+	)
+	set(__MULTI_VALUE_ARGS
+		DEPENDENT_VARIABLES  # The list of variables, which will be de-referenced under the hood to append for hash calculation
+		DEPENDENT_FILES      # The list of files on which cache will be dependent on (file names/order/existence/timestamps)
+	)
+	cmake_parse_arguments(PARSE_ARGV 1 __ARGS "${__OPTIONS_ARGS}" "${__ONE_VALUE_ARGS}" "${__MULTI_VALUE_ARGS}")
+
+	set(__TOTAL_HASH_STRING "")
+
+	if (NOT "${__ARGS_DEPENDENT_VARIABLES}" STREQUAL "")
+		foreach (__VARIABLE IN LISTS __ARGS_DEPENDENT_VARIABLES)
+			list(APPEND __TOTAL_HASH_STRING "${${__VARIABLE}}")
+		endforeach()
+	endif()
+
+	if (NOT "${__ARGS_DEPENDENT_FILES}" STREQUAL "")
+		foreach (__FILE IN LISTS __ARGS_DEPENDENT_FILES)
+			normilize_path(__NORMILIZED_FILE_PATH "${__FILE}" ABSOLUTE)
+			file(TIMESTAMP "${__NORMILIZED_FILE_PATH}" __FILE_TIMESTAMP)
+
+			list(APPEND __TOTAL_HASH_STRING "${__NORMILIZED_FILE_PATH}${__FILE_TIMESTAMP}")
+		endforeach()
+	endif()
+
+	string(MD5 __HASH_OUTPUT "${__TOTAL_HASH_STRING}")
+	set("${__OUTPUT}" "${__HASH_OUTPUT}" PARENT_SCOPE)
+endfunction()
+
+# Checks action cache if it's outdated, and if it's return false.
+# Accepts all the arguments as generate_action_hash function.
+function(check_action_cache __OUTPUT __ACTION_NAME)
+	assert_if_empty(__OUTPUT __ACTION_NAME)
+
+	generate_action_hash(__NEW_HASH ${ARGN})
+
+	set(__ACTION_CACHE_NAME "${__ACTION_NAME}_ACTION_CACHE")
+	set(__OLD_HASH "")
+
+	if (DEFINED CACHE{${__ACTION_CACHE_NAME}})
+		set(__OLD_HASH "$CACHE{${__ACTION_CACHE_NAME}}")
+	endif()
+
+	if (__NEW_HASH STREQUAL __OLD_HASH)
+		set("${__OUTPUT}" TRUE PARENT_SCOPE)
+	else()
+		set("${__OUTPUT}" FALSE PARENT_SCOPE)
+	endif()
+endfunction()
+
+# Rewrites cache for the specific action.
+# Accepts all the arguments as generate_action_hash function.
+function(update_action_cache __ACTION_NAME)
+	assert_if_empty(__ACTION_NAME)
+
+	generate_action_hash(__NEW_HASH ${ARGN})
+	set("${__ACTION_NAME}_ACTION_CACHE" "${__NEW_HASH}" CACHE INTERNAL "Cache for action '${__ACTION_NAME}' which is used to not do this action in cmake if not necessary." FORCE)
 endfunction()
 
 # Simple parsing of the python value definition.
@@ -920,13 +1009,6 @@ function(add_python_generator_command __MODULE __FUNCTION)
 	)
 	cmake_parse_arguments(PARSE_ARGV 2 __ARGS "${__OPTIONS_ARGS}" "${__ONE_VALUE_ARGS}" "${__MULTI_VALUE_ARGS}")
 
-	# just parsing module in python form for the future compose_method call.
-	if(NOT "${__ARGS_MODULE_DIR}" STREQUAL "")
-		string(REGEX REPLACE "[/\\]$" "" __SUB_MODULES "${__ARGS_MODULE_DIR}")
-		string(REGEX REPLACE "[/\\]" "." __SUB_MODULES "${__SUB_MODULES}")
-		set(__MODULE "${__SUB_MODULES}.${__MODULE}")
-	endif()
-
 	# seting default working dir..
 	if ("${__ARGS_WORKING_DIR}" STREQUAL "")
 		set(__ARGS_WORKING_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
@@ -936,6 +1018,13 @@ function(add_python_generator_command __MODULE __FUNCTION)
 	if(NOT __ARGS_BUILTIN_MODULE)
 		join_paths(__MODULE_ABS_DIR "${__ARGS_WORKING_DIR}" "${__ARGS_MODULE_DIR}" "${__MODULE}.py")
 		list(APPEND __DEPENDS "${__MODULE_ABS_DIR}")
+	endif()
+
+	# just parsing module in python form for the future compose_method call.
+	if(NOT "${__ARGS_MODULE_DIR}" STREQUAL "")
+		string(REGEX REPLACE "[/\\]$" "" __SUB_MODULES "${__ARGS_MODULE_DIR}")
+		string(REGEX REPLACE "[/\\]" "." __SUB_MODULES "${__SUB_MODULES}")
+		set(__MODULE "${__SUB_MODULES}.${__MODULE}")
 	endif()
 
 	check_for_gen_expr(__SOURCE_FILES_HAS_GEN_EXPR "${__ARGS_SOURCE_FILES}")
@@ -1083,7 +1172,7 @@ function(add_python_generator_command __MODULE __FUNCTION)
 
 		# creating actual file..
 		set(__GENERATOR_FILE "${__ARGS_WORKING_DIR}/${__ARGS_BY_FILE}_generator.py")
-		file(WRITE "${__GENERATOR_FILE}" "${__PYTHON_FILE_CODE}")
+		soft_write_file("${__GENERATOR_FILE}" "${__PYTHON_FILE_CODE}")
 
 		# also, just in case, appending this file as dependency for the command
 		list(APPEND __DEPENDS "${__GENERATOR_FILE}")
@@ -1215,6 +1304,7 @@ function(execute_python_method __MODULE __FUNCTION)
 	set(__OPTIONS_ARGS 
 		ECHO_OUTPUT_VARIABLE
 		ECHO_ERROR_VARIABLE
+		IGNORE_MODULE_AS_DEPENDENCY
 		OPTIONAL # do we need to throw an error, if this command fails? If no, specify this option. 
 	)
 	set(__ONE_VALUE_ARGS 
@@ -1222,23 +1312,38 @@ function(execute_python_method __MODULE __FUNCTION)
 		WORKING_DIR # working directory of the command. If none, then used CMAKE_CURRENT_SOURCE_DIR
 		OUTPUT_VARIABLE
 		ERROR_VARIABLE
+		# The specific name for he python method to generate cache in cmake.
+		# Cache will be automatically checked for change on each execution, 
+		# and if nothing changed, the method will not be executed.
+		# If ACTION_CACHE_NAME empty or not provided, the method executed each time
+		ACTION_CACHE_NAME
 	)
 	set(__MULTI_VALUE_ARGS 
 		PYTHON_ARGS # works by the rules of the parse_to_python_args
 		APPEND_SYS_PATH # it is possible to append some sys paths before calling the method
+		DEPENDENT_VARIABLES # List of variables on which this call is dependent (used to generate action cache).
+		DEPENDENT_FILES # Files on which python call is dependent (used to generate action cache).
 	)
 	cmake_parse_arguments(PARSE_ARGV 2 __ARGS "${__OPTIONS_ARGS}" "${__ONE_VALUE_ARGS}" "${__MULTI_VALUE_ARGS}")
+
+	if (NOT "${__ARGS_DEPENDENT_VARIABLES}" STREQUAL "" OR NOT "${__ARGS_DEPENDENT_FILES}" STREQUAL "")
+		if ("${__ARGS_ACTION_CACHE_NAME}" STREQUAL "")
+			message(FATAL_ERROR "The usage of DEPENDENT_VARIABLES or DEPENDENT_FILES require existence of ACTION_CACHE_NAME, but this argument wasn't provided or empty.")
+		endif()
+	endif()
+
+	set(__FULL_MODULE "${__MODULE}")
 
 	# parsing module dir into pythom import form (with dots)
 	if(NOT "${__ARGS_MODULE_DIR}" STREQUAL "")
 		string(REGEX REPLACE "[/\\]$" "" __SUB_MODULES "${__ARGS_MODULE_DIR}")
 		string(REGEX REPLACE "[/\\]" "." __SUB_MODULES "${__SUB_MODULES}")
-		set(__MODULE "${__SUB_MODULES}.${__MODULE}")
+		set(__FULL_MODULE "${__SUB_MODULES}.${__MODULE}")
 	endif()
 
 	# creating actual method call..
 	compose_python_method_call(__METHOD_CALL "${__FUNCTION}" 
-		FROM_MODULE "${__MODULE}"
+		FROM_MODULE "${__FULL_MODULE}"
 		PYTHON_ARGS ${__ARGS_PYTHON_ARGS}
 	)
 
@@ -1249,10 +1354,48 @@ function(execute_python_method __MODULE __FUNCTION)
 		set(__METHOD_CALL "import sys; sys.path = sys.path + ${__SYS_PATHS_ARRAY}; ${__METHOD_CALL}")
 
 	endif()
+	
+	# Automatically dependent on a command itself.
+	list(APPEND __ARGS_DEPENDENT_VARIABLES __METHOD_CALL)
 
 	# default working dir
 	if ("${__ARGS_WORKING_DIR}" STREQUAL "")
 		set(__ARGS_WORKING_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+	endif()
+	normilize_path(__ARGS_WORKING_DIR "${__ARGS_WORKING_DIR}" ABSOLUTE)
+
+	# Automatically dependent on working dir.
+	list(APPEND __ARGS_DEPENDENT_VARIABLES __ARGS_WORKING_DIR)
+
+	if(NOT __ARGS_IGNORE_MODULE_AS_DEPENDENCY)
+		join_paths(__MODULE_ABS_PATH "${__ARGS_WORKING_DIR}" "${__ARGS_MODULE_DIR}" "${__MODULE}.py")
+		# If possible, dependent on a module file.
+		list(APPEND __ARGS_DEPENDENT_FILES "${__MODULE_ABS_PATH}")
+	endif()
+
+	set(__USE_ACTION_CACHE FALSE)
+	if (NOT "${__ARGS_ACTION_CACHE_NAME}" STREQUAL "")
+		set(__USE_ACTION_CACHE TRUE)
+		check_action_cache(__CACHE_UP_TO_DATE "${__ARGS_ACTION_CACHE_NAME}_python_call"
+			DEPENDENT_VARIABLES
+				${__ARGS_DEPENDENT_VARIABLES}
+			DEPENDENT_FILES
+				${__ARGS_DEPENDENT_FILES}
+		)
+
+		if (__CACHE_UP_TO_DATE)
+			if (VERBOSE)
+				message(STATUS "The python call '${__FUNCTION}' from module '${__MODULE}' was omitted due to up to date cache.")
+			endif()
+			
+			set(__TEMP_OUTPUT_VAR "$CACHE{${__ARGS_ACTION_CACHE_NAME}_python_call_stdout}")
+			set(__TEMP_ERROR_VAR "$CACHE{${__ARGS_ACTION_CACHE_NAME}_python_call_stderr}")
+
+			optionally_return("${__ARGS_OUTPUT_VARIABLE}" "${__TEMP_OUTPUT_VAR}")
+			optionally_return("${__ARGS_ERROR_VARIABLE}" "${__TEMP_ERROR_VAR}")
+
+			return()
+		endif()
 	endif()
 
 	# most of the staff in our command is handled by the execute_process itself, so all we need is just add some additional arguments to it..
@@ -1299,6 +1442,22 @@ function(execute_python_method __MODULE __FUNCTION)
 	optionally_return("${__ARGS_OUTPUT_VARIABLE}" "${__TEMP_OUTPUT_VAR}")
 	optionally_return("${__ARGS_ERROR_VARIABLE}" "${__TEMP_ERROR_VAR}")
 
+	if (__USE_ACTION_CACHE)
+		update_action_cache("${__ARGS_ACTION_CACHE_NAME}_python_call"
+			DEPENDENT_VARIABLES
+				${__ARGS_DEPENDENT_VARIABLES}
+			DEPENDENT_FILES
+				${__ARGS_DEPENDENT_FILES}
+		)
+
+		if (NOT "${__ARGS_OUTPUT_VARIABLE}" STREQUAL "")
+			set("${__ARGS_ACTION_CACHE_NAME}_python_call_stdout" "${__TEMP_OUTPUT_VAR}" CACHE INTERNAL "Cached captured standard output from python call '${__FUNCTION}' from module '${__MODULE}'." FORCE)
+		endif()
+
+		if (NOT "${__ARGS_ERROR_VARIABLE}" STREQUAL "")
+			set("${__ARGS_ACTION_CACHE_NAME}_python_call_stderr" "${__TEMP_ERROR_VAR}" CACHE INTERNAL "Cached captured standard output from python call '${__FUNCTION}' from module '${__MODULE}'." FORCE)
+		endif()
+	endif()
 endfunction()
 
 # Basically the simple analog of 'module_check_dependencies' method from methods.py

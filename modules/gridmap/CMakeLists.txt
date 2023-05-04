@@ -5,7 +5,7 @@ add_lib(gridmap-lib
 		modules-lib
 	COMPONENTS
 		modules-env
-		warnings-env
+		global-warnings-env
 )
 target_glob_sources(gridmap-lib PRIVATE "*.cpp")
 if (godot_editor_build)

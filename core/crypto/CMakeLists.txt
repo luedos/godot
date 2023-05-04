@@ -55,7 +55,7 @@ if(NOT godot_module_mbedtls_enabled)
 else()
 	# If MbedTLS is actually enabled, we are defining dependency on it, 
 	# MbedTLS's sources will be part of it)
-	add_link_dependencies(core-lib mbed-lib)
+	add_link_dependencies(core-lib mbedtls-lib)
 endif()
 
 target_glob_sources(core-crypto-lib PRIVATE "*.cpp")

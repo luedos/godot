@@ -34,6 +34,6 @@ if (godot_builtin_enet)
 		"protocol.c"
 	)
 
-	target_include_directories(enet-env INTERFACE "${__THIRDPARTY_ASTCENC_PATH}")
+	target_include_directories(enet-env INTERFACE "${__THIRDPARTY_ENET_PATH}")
 	target_compile_definitions(enet-env INTERFACE "GODOT_ENET")
 endif()

@@ -264,10 +264,30 @@ foreach(__DIR IN LISTS __PLATFORM_DIRS)
 
 endforeach()
 
+
+set(__ACTIVE_PLATFORMS_SVG_FILES "")
+foreach(__PLATFORM_DIR IN LISTS ACTIVE_PLATFORM_PATHS)
+	if (EXISTS "${__PLATFORM_DIR}/logo.svg")
+		list(APPEND __ACTIVE_PLATFORMS_SVG_FILES
+			"${__PLATFORM_DIR}/logo.svg"
+			"${__PLATFORM_DIR}/logo_svg.gen.h"
+		)
+	endif()
+
+	if (EXISTS "${__PLATFORM_DIR}/run_icon.svg")
+		list(APPEND __ACTIVE_PLATFORMS_SVG_FILES
+			"${__PLATFORM_DIR}/run_icon.svg"
+			"${__PLATFORM_DIR}/run_icon_svg.gen.h"
+		)
+	endif()
+endforeach()
+
 execute_python_method(cmake_methods save_active_platforms
 	PYTHON_ARGS 
 		ARR_VAR "ACTIVE_PLATFORMS"
 		ARR_VAR "ACTIVE_PLATFORM_PATHS"
+	ACTION_CACHE_NAME "save_active_platforms"
+	DEPENDENT_FILES ${__ACTIVE_PLATFORMS_SVG_FILES}
 )
 
 set_string_option(godot_platform "${godot_platform}" DESCRIPTION "Target platform." ENUM ${PLATFORMS_LIST})
@@ -579,6 +599,8 @@ execute_python_method(cmake_methods cmake_write_modules
 	PYTHON_ARGS
 		ARR_VAR "MODULES_IDS"
 		ARR_VAR "MODULES_PATHS"
+	ACTION_CACHE_NAME "register_module_types"
+	DEPENDENT_FILES "${CMAKE_CURRENT_SOURCE_DIR}/modules/register_module_types.gen.cpp"
 )
 
 ############### Processing build profile ###############
@@ -643,6 +665,8 @@ endif()
 execute_python_method(cmake_methods write_disabled_classes
 	PYTHON_ARGS
 		RAW_VAR "__DISABLED_CLASSES_RAW_ARRAY"
+	ACTION_CACHE_NAME "write_disabled_classes"
+	DEPENDENT_FILES "${CMAKE_CURRENT_SOURCE_DIR}/core/disabled_classes.gen.h"
 )
 
 ############### Global defines setup ###############
@@ -1019,6 +1043,8 @@ execute_python_method(cmake_methods sort_module_list
 execute_python_method(cmake_methods generate_version_header
 	PYTHON_ARGS
 		STR_VAR "MODULES_VERSION_STRING"
+	ACTION_CACHE_NAME "generate_version_header"
+	DEPENDENT_FILES "${CMAKE_CURRENT_SOURCE_DIR}/core/version_generated.gen.h"
 )
 
 ############### Processing program suffix ###############

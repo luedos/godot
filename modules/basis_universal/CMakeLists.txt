@@ -2,6 +2,8 @@ add_env(basisu-env
 	COMPONENTS
 		modules-env
 )
+
+set(__THIRDPARTY_BASISU_PATH "${ENGINE_SOURCE_DIR}/thirdparty/basis_universal")
 target_include_directories(basisu-env SYSTEM INTERFACE "${__THIRDPARTY_BASISU_PATH}")
 
 if (godot_builtin_zstd)
@@ -27,7 +29,6 @@ add_env(thirdparty-basisu-env
 		basisu-env
 )
 
-set(__THIRDPARTY_BASISU_PATH "${ENGINE_SOURCE_DIR}/thirdparty/basis_universal")
 add_lib(thirdparty-basisu-transcoder-lib
 	OBJECT
 	PARENT_LIB

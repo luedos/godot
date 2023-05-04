@@ -5,6 +5,8 @@ execute_python_method(platform_api_builders cmake_create_reg_api_source
 	PYTHON_ARGS
 		STR_VAR "output_file=__REG_API_SOURCE"
 		ARR_VAR "platform_apis_vector=PLATFORMS_APIS"
+	ACTION_CACHE_NAME "create_reg_api_source"
+	DEPENDENT_FILES "${__REG_API_SOURCE}"
 )
 
 set(__PLATFORM_SOURCES "${__REG_API_SOURCE}")
@@ -17,7 +19,7 @@ add_lib(platform-lib
 		global-libs-list
 	COMPONENTS
 		global-env
-		warnings-env
+		global-warnings-env
 	SOURCES
 		"${__PLATFORM_SOURCES}"
 )

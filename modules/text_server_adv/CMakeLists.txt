@@ -147,6 +147,7 @@ if (godot_builtin_harfbuzz)
 
 	# Needs to be appended to arrive after libscene in the linker call.
 	add_link_dependencies(scene-lib thirdparty-harfbuzz-lib)
+	add_link_dependencies(modules-lib thirdparty-harfbuzz-lib)
 endif()
 
 if (godot_builtin_graphite AND __FREETYPE_ENABLED AND godot_graphite)
@@ -214,6 +215,7 @@ if (godot_builtin_graphite AND __FREETYPE_ENABLED AND godot_graphite)
 	)
 
 	add_link_dependencies(scene-lib thirdparty-graphite-lib)
+	add_link_dependencies(modules-lib thirdparty-graphite-lib)
 endif()
 
 if (godot_builtin_icu4c)
@@ -476,6 +478,7 @@ if (godot_builtin_icu4c)
 	endif()
 
 	add_link_dependencies(scene-lib thirdparty-icu-lib)
+	add_link_dependencies(modules-lib thirdparty-icu-lib)
 endif()
 
 if (godot_builtin_msdfgen AND "msdfgen" IN_LIST MODULES_LIST)

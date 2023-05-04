@@ -2,6 +2,8 @@
 execute_python_method(gen_methods generate_encryption_key_header
 	PYTHON_ARGS 
 		STR_ENV_VAR "SCRIPT_AES256_ENCRYPTION_KEY"
+	ACTION_CACHE_NAME "generate_encryption_key_header"
+	DEPENDENT_FILES "${CMAKE_CURRENT_SOURCE_DIR}/script_encryption_key.gen.cpp"
 )
 
 add_lib(core-lib
@@ -102,9 +104,9 @@ if (godot_builtin_zstd)
 	)
 
 	if (godot_platform MATCHES "(android|ios|linuxbsd|macos)")
-		target_sources_from_path(thirdparty-core-lib PRIVATE "${__THIRDPARTY_ZSTD_DIR}"
-			"decompress/huf_decompress_amd64.S"
-		)
+		set(__DECOMPRESS_SOURCE "${__THIRDPARTY_ZSTD_DIR}/decompress/huf_decompress_amd64.S")	
+		set_property(SOURCE "${__DECOMPRESS_SOURCE}" PROPERTY LANGUAGE C)
+		target_sources(thirdparty-core-lib PRIVATE "${__DECOMPRESS_SOURCE}")
 	endif()
 
 	target_include_directories(thirdparty-core-lib PRIVATE "${__THIRDPARTY_ZSTD_DIR}/common")

@@ -7,6 +7,8 @@ add_lib(scene-lib
 		global-warnings-env
 )
 
+add_link_dependencies(scene-lib servers-lib)
+
 target_glob_sources(scene-lib PRIVATE "*.cpp")
 
 add_subdirectory("main")

@@ -52,4 +52,5 @@ if (godot_builtin_msdfgen)
 	
 	# Needs to be appended to arrive after libscene in the linker call,
 	add_link_dependencies(scene-lib thirdparty-msdfgen-lib)
+	add_link_dependencies(modules-lib thirdparty-msdfgen-lib)
 endif()
