@@ -137,14 +137,12 @@ function(${__PLATFORM_NAME}_configure_platform)
 		endif()
 	endif()
 
-	set(__LTO "${godot_lto}")
-
 	if (godot_lto STREQUAL "auto")
-		set(__LTO "${full}")
+		set_parent_var(godot_lto "full")
 	endif()
 
-	if (NOT __LTO STREQUAL "none")
-		if (__LTO STREQUAL "thin")
+	if (NOT godot_lto STREQUAL "none")
+		if (godot_lto STREQUAL "thin")
 			assert(
 				"ThinLTO is only compatible with LLVM, use clang compiler or `lto=full'."
 				CMAKE_CXX_COMPILER_ID MATCHES "Clang"
@@ -163,7 +161,6 @@ function(${__PLATFORM_NAME}_configure_platform)
 			target_link_options(global-env INTERFACE "-flto")
 		endif()
 	endif()
-
 
 	target_compile_options(global-env INTERFACE "-pipe")
 
