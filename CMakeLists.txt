@@ -565,7 +565,10 @@ foreach (__MODULE_ID IN LISTS MODULES_IDS)
 		# if module can give us answer
 		if(COMMAND ${__MODULE_ID}_get_is_module_enabled) 
 			cmake_language(CALL ${__MODULE_ID}_get_is_module_enabled __MODULE_ENABLED)
-		endif() # otherwise default is true
+		elseif (__MODULE_ENABLED)
+			# Just so we will not get annoying warnings later, we will disable module by default if we can't built it
+			cmake_language(CALL ${__MODULE_ID}_get_module_can_build __MODULE_ENABLED)
+		endif()
 
 	endif()
 
@@ -956,6 +959,7 @@ foreach (__MODULE_ID IN LISTS MODULES_IDS)
 
 	if(NOT ${__MODULE_ID}_MODULE_CAN_BUILD)
 		message(WARNING "Module '${__MODULE_ID}' was enabled, but can't be built. Skipping this module.")
+		continue()
 	endif()
 
 	if (COMMAND ${__MODULE_ID}_get_module_dependencies)

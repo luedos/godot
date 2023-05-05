@@ -1255,10 +1255,12 @@ function(add_python_generator_command __MODULE __FUNCTION)
 			${__ARGS_TARGET_FILES}
 		)
 
-		set_source_files_properties(${__ARGS_TARGET_FILES}
-			TARGET_DIRECTORY "${__ARGS_CREATE_CUSTOM_TARGET}"
-			PROPERTIES GENERATED TRUE
-		)
+		if (NOT "${__ARGS_TARGET_FILES}" STREQUAL "")
+			set_source_files_properties(${__ARGS_TARGET_FILES}
+				TARGET_DIRECTORY "${__ARGS_CREATE_CUSTOM_TARGET}"
+				PROPERTIES GENERATED TRUE
+			)
+		endif()
 	endif()
 
 	if(NOT "${__ARGS_SOURCES_DEPENDENT_TARGET}" STREQUAL "" AND NOT "${__ARGS_TARGET_FILES}" STREQUAL "")
@@ -1813,7 +1815,7 @@ endfunction()
 # Comparison is happens on the normilized paths.
 function(extract_file_from_list __LIST_VAR __FILE)
 
-	assert_if_empty(__LIST_VAR __FILE)
+	assert_if_empty(__FILE)
 
 	set(__OPTIONS_ARGS "")
 	set(__ONE_VALUE_ARGS 
@@ -1846,6 +1848,14 @@ function(extract_file_from_list __LIST_VAR __FILE)
 	set("${__LIST_VAR}" "${__OUT_LIST}" PARENT_SCOPE)
 	optionally_return("${__ARGS_RETURN}" "${__EXTRACTED_FILES}")
 
+endfunction()
+
+# Appends file to the list, but makes sure it's unique within the list.
+function(append_file_to_list_unique __LIST_VAR __FILE)
+	set(__TEMP_LIST_VAR "${${__LIST_VAR}}")
+	extract_file_from_list(__TEMP_LIST_VAR "${__FILE}")
+	list(APPEND __TEMP_LIST_VAR "${__FILE}")
+	set("${__LIST_VAR}" "${__TEMP_LIST_VAR}" PARENT_SCOPE)
 endfunction()
 
 # This function mostly was taken from emscripten cmake module,
