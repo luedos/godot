@@ -38,7 +38,7 @@ if(godot_editor_build)
 			global-warnings-env
 	)
 
-	add_link_dependencies(editor-lib PRIVATE
+	add_link_dependencies(editor-lib
 		core-lib
 		scene-lib
 		servers-lib

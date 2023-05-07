@@ -33,7 +33,7 @@ endfunction()
 
 function(${__PLATFORM_NAME}_configure_platform)
 
-	target_include_directories(global-env INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
+	target_include_directories(global-env INTERFACE "${ENGINE_SOURCE_DIR}/platform/windows")
 
 	# To match other platforms
 	set(__STACK_SIZE "8388608")

@@ -414,10 +414,15 @@ foreach(__LANG "CXX" "C" "OBJCXX" "OBJC")
 
 	set(CMAKE_${__LANG}_FLAGS "")
 
-	foreach(__BUILD_TYPE IN LISTS __POSSIBLE_BUILD_TYPES)
+	foreach(__BUILD_TYPE IN LISTS __POSSIBLE_ALL_BUILD_TYPES)
 		string(TOUPPER "${__BUILD_TYPE}" __BUILD_TYPE)
 		set(CMAKE_${__LANG}_FLAGS_${__BUILD_TYPE} "")
 	endforeach()
+endforeach()
+
+foreach (__BUILD_TYPE IN LISTS __POSSIBLE_ALL_BUILD_TYPES)
+	string(TOUPPER "${__BUILD_TYPE}" __BUILD_TYPE)
+	set(CMAKE_EXE_LINKER_FLAGS_${__BUILD_TYPE} "")
 endforeach()
 
 ############### Creating the environment ###############

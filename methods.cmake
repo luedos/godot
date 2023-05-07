@@ -1501,8 +1501,12 @@ function(add_link_dependencies __NAME)
 			endif()
 		endforeach()
 	endif()
-	target_link_libraries("${__NAME}" PRIVATE ${ARGN})
 
+	if (NOT MSVC)
+		target_link_libraries("${__NAME}" PRIVATE ${ARGN})
+	else()
+		add_dependencies("${__NAME}" ${ARGN})
+	endif()
 endfunction()
 
 # This function is for more simple adding of the libraries.
