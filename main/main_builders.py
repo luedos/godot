@@ -6,6 +6,9 @@ All such functions are invoked in a subprocess on Windows to prevent build flaki
 from platform_methods import subprocess_main
 
 
+def cmake_make_splash(target, source):
+    make_splash(target, source, None)
+
 def make_splash(target, source, env):
     src = source[0]
     dst = target[0]
@@ -25,6 +28,8 @@ def make_splash(target, source, env):
         g.write("};\n")
         g.write("#endif")
 
+def cmake_make_splash_editor(target, source):
+    make_splash_editor(target, source, None)
 
 def make_splash_editor(target, source, env):
     src = source[0]
@@ -46,6 +51,8 @@ def make_splash_editor(target, source, env):
         g.write("};\n")
         g.write("#endif")
 
+def cmake_make_app_icon(target, source):
+    make_app_icon(target, source, None)
 
 def make_app_icon(target, source, env):
     src = source[0]

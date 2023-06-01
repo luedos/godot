@@ -12,6 +12,35 @@ import uuid
 import zlib
 from platform_methods import subprocess_main
 
+def cmake_make_register_exporters(output_file, platform_exporters):
+    reg_exporters_inc = '#include "register_exporters.h"\n'
+    reg_exporters = "void register_exporters() {\n"
+    for e in platform_exporters:
+        reg_exporters += "\tregister_" + e + "_exporter();\n"
+        reg_exporters_inc += '#include "platform/' + e + '/export/export.h"\n'
+    reg_exporters += "}\n"
+
+    # NOTE: It is safe to generate this file here, since this is still executed serially
+    with open(output_file, "w", encoding="utf-8") as f:
+        f.write(reg_exporters_inc)
+        f.write(reg_exporters)
+
+def cmake_make_doc_data_class_path(to_path, class_map):
+    # NOTE: It is safe to generate this file here, since this is still executed serially
+    g = open(os.path.join(to_path, "doc_data_class_path.gen.h"), "w", encoding="utf-8")
+    g.write("static const int _doc_data_class_path_count = " + str(len(class_map)) + ";\n")
+    g.write("struct _DocDataClassPath { const char* name; const char* path; };\n")
+
+    g.write("static const _DocDataClassPath _doc_data_class_paths[" + str(len(class_map) + 1) + "] = {\n")
+    for c in sorted(class_map):
+        g.write('\t{"' + c + '", "' + class_map[c] + '"},\n')
+    g.write("\t{nullptr, nullptr}\n")
+    g.write("};\n")
+
+    g.close()
+
+def cmake_make_doc_header(target, source):
+    make_doc_header(target, source, None)
 
 def make_doc_header(target, source, env):
 
@@ -48,6 +77,8 @@ def make_doc_header(target, source, env):
 
     g.close()
 
+def cmake_make_fonts_header(target, source):
+    make_fonts_header(target, source, None)
 
 def make_fonts_header(target, source, env):
 
@@ -157,13 +188,20 @@ def make_translations_header(target, source, env, category):
     g.close()
 
 
+def cmake_make_editor_translations_header(target, source):
+    make_editor_translations_header(target, source, None)
+
 def make_editor_translations_header(target, source, env):
     make_translations_header(target, source, env, "editor")
 
+def cmake_make_property_translations_header(target, source):
+    make_property_translations_header(target, source, None)
 
 def make_property_translations_header(target, source, env):
     make_translations_header(target, source, env, "property")
 
+def cmake_make_doc_translations_header(target, source):
+    make_doc_translations_header(target, source, None)
 
 def make_doc_translations_header(target, source, env):
     make_translations_header(target, source, env, "doc")

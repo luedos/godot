@@ -8,6 +8,9 @@ from detect import get_mingw_bin_prefix
 from platform_methods import subprocess_main
 
 
+def cmake_make_debug_mingw(target, source):
+    make_debug_mingw(target, source, None)
+
 def make_debug_mingw(target, source, env):
     mingw_bin_prefix = get_mingw_bin_prefix(env["mingw_prefix"], env["arch"])
     os.system(mingw_bin_prefix + "objcopy --only-keep-debug {0} {0}.debugsymbols".format(target[0]))
