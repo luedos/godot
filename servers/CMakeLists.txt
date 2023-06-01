@@ -1,9 +1,14 @@
 
+add_env(servers-env
+	COMPONENTS
+		global-env
+)
+
 add_lib(servers-lib
 	PARENT_ENV
 		global-libs-list
 	COMPONENTS
-		global-env
+		servers-env
 		global-warnings-env
 )
 

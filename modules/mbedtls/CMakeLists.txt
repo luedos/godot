@@ -11,6 +11,9 @@ add_lib(mbedtls-lib
 		mbedtls-env
 		global-warnings-env
 )
+
+add_dependencies(mbedtls-lib core-crypto-lib)
+
 target_glob_sources(mbedtls-lib PRIVATE "*.cpp")
 
 if (godot_builtin_mbedtls)

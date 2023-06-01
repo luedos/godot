@@ -16,6 +16,6 @@ add_custom_target(core-extention-gen
 		${__EXT_WRAPPERS_HEADER}
 		${__GDEXTENSION_INTERFACE_DUMP_HEADER}
 )
-add_dependencies(core-lib core-extention-gen)
+add_dependencies(core-env core-extention-gen)
 
 target_glob_sources(core-lib PRIVATE "*.cpp")

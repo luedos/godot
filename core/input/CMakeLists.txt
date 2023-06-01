@@ -15,7 +15,7 @@ add_python_generator_command(input_builders cmake_make_default_controller_mappin
 	COMMENT "Generating default controller mappings."
 )
 
-add_dependencies(core-lib core-input-gen)
+add_dependencies(core-env core-input-gen)
 
 set_source_files_properties("${__DEFAULT_CONTROLLER_MAPPING_SOURCE}"
 	TARGET_DIRECTORY core-lib

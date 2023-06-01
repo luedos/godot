@@ -19,7 +19,7 @@ add_python_generator_command(default_theme_icons_builders cmake_make_default_the
 	COMMENT "Generating default project theme icons header."
 )
 
-add_dependencies(scene-lib
+add_dependencies(scene-env
 	default-theme-icons-gen
 	default-theme-font-gen
 )

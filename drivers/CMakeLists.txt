@@ -1,9 +1,14 @@
 
+add_env(drivers-env
+	COMPONENTS
+		global-env
+)
+
 add_lib(drivers-lib
 	PARENT_ENV
 		global-libs-list
 	COMPONENTS
-		global-env
+		drivers-env
 		global-warnings-env
 )
 

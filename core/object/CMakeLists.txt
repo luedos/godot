@@ -5,7 +5,6 @@ add_python_generator_command(make_virtuals cmake_run
 	CREATE_CUSTOM_TARGET core-object-gen 
 )
 
-add_dependencies(core-lib core-object-gen)
-add_dependencies(core-crypto-lib core-object-gen)
+add_dependencies(core-env core-object-gen)
 
 target_glob_sources(core-lib PRIVATE "*.cpp")

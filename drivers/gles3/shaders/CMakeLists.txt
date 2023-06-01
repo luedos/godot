@@ -34,4 +34,4 @@ add_custom_target(drivers-gles3-shaders-gen
 		${__GLES3_HEADERS}
 )
 
-add_dependencies(drivers-lib drivers-gles3-shaders-gen)
+add_dependencies(drivers-env drivers-gles3-shaders-gen)

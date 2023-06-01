@@ -48,7 +48,7 @@ if (godot_debug_symbols AND godot_separate_debug_symbols)
 	set(__STRIP_TARGET_ARR $<TARGET_FILE:godot-exe>.debugsymbols)
 	set(__STRIP_SOURCE_ARR $<TARGET_FILE:godot-exe>)
 
-	compose_python_method_call(__STRIP_COMMAND cmake_make_debug_linuxbsd FROM_MODULE platform_linuxbsd_builders
+	compose_python_method_call(__STRIP_COMMAND cmake_make_debug_linuxbsd FROM_MODULE cmake_platform_linuxbsd_builders
 		PYTHON_ARGS
 			ARR_VAR "target=__STRIP_TARGET_ARR"
 			ARR_VAR "source=__STRIP_SOURCE_ARR"

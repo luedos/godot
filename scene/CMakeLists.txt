@@ -1,9 +1,14 @@
 
+add_env(scene-env
+	COMPONENTS
+		global-env
+)
+
 add_lib(scene-lib
 	PARENT_ENV
 		global-libs-list
 	COMPONENTS
-		global-env
+		scene-env
 		global-warnings-env
 )
 

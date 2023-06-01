@@ -33,12 +33,17 @@ if(godot_editor_build)
 	inline_if(__SVG_ENABLED "svg" IN_LIST MODULES_LIST)
 	assert("Not all modules required by editor builds are enabled." __FREETYPE_ENABLED AND __SVG_ENABLED)
 
+	add_env(editor-env
+		COMPONENTS
+			global-env
+	)
+
 	add_lib(editor-lib 
 		EXCLUDE_FROM_ALL
 		PARENT_ENV
 			global-libs-list
 		COMPONENTS
-			global-env
+			editor-env
 			global-warnings-env
 	)
 
@@ -169,7 +174,7 @@ if(godot_editor_build)
 		DEPENDS
 			${__GEN_HEADERS}
 	)
-	add_dependencies(editor-lib editor-gen)
+	add_dependencies(editor-env editor-gen)
 
 	target_glob_sources(editor-lib PRIVATE "*.cpp")
 

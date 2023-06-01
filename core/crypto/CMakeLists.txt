@@ -1,7 +1,7 @@
 
 add_env(core-crypto-env
 	COMPONENTS
-		global-env
+		core-env
 )
 
 add_lib(core-crypto-lib

@@ -6,11 +6,16 @@ execute_python_method(gen_methods generate_encryption_key_header
 	DEPENDENT_FILES "${CMAKE_CURRENT_SOURCE_DIR}/script_encryption_key.gen.cpp"
 )
 
+add_env(core-env
+	COMPONENTS
+		global-env
+)
+
 add_lib(core-lib
 	PARENT_ENV
 		global-libs-list
 	COMPONENTS
-		global-env
+		core-env
 		global-warnings-env
 )
 
@@ -19,7 +24,7 @@ add_lib(thirdparty-core-lib
 	PARENT_LIB 
 		core-lib
 	COMPONENTS
-		global-env
+		core-env
 		thirdparty-warnings-env
 )
 
@@ -171,8 +176,8 @@ add_custom_target(core-gen
 		${__DONORS_FILE_HEADER}
 		${__LICENSE_FILE_HEADER}
 )
-add_dependencies(core-lib core-gen)
-add_dependencies(core-lib modules-enabled-header-gen)
+add_dependencies(core-env core-gen)
+add_dependencies(core-env modules-enabled-header-gen)
 
 add_subdirectory("os")
 add_subdirectory("math")

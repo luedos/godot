@@ -1,7 +1,7 @@
 
 add_env(drivers-png-env
 	COMPONENTS
-		global-env
+		drivers-env
 )
 
 add_lib(drivers-png-lib 

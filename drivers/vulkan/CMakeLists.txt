@@ -27,7 +27,7 @@ endif()
 
 add_env(thirdparty-vma-env
 	COMPONENTS
-		global-env
+		drivers-env
 )
 
 add_lib(thirdparty-vma-lib

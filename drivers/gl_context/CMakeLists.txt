@@ -5,7 +5,7 @@ if (godot_platform MATCHES "(haiku|macos|windows|linuxbsd)")
 		PARENT_LIB
 			drivers-lib
 		COMPONENTS
-			global-env
+			drivers-env
 			thirdparty-warnings-env
 	)
 

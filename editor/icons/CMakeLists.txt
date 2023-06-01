@@ -19,4 +19,4 @@ add_python_generator_command(editor_icons_builders cmake_make_editor_icons_actio
 )
 
 # I'm not sure if we need to, because I'm not sure if scons intended to build this custom target, but why the hell he will do it otherwise, right?
-add_dependencies(editor-lib editor-icons-gen)
+add_dependencies(editor-env editor-icons-gen)

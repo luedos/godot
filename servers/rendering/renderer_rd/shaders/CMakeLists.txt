@@ -30,4 +30,4 @@ collect_rd_shaders("${CMAKE_CURRENT_SOURCE_DIR}/environment")
 collect_rd_shaders("${CMAKE_CURRENT_SOURCE_DIR}/forward_clustered")
 collect_rd_shaders("${CMAKE_CURRENT_SOURCE_DIR}/forward_mobile")
 
-add_dependencies(servers-lib servers-shaders-gen)
+add_dependencies(servers-env servers-shaders-gen)
