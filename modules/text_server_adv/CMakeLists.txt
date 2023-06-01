@@ -482,7 +482,8 @@ if (godot_builtin_icu4c)
 endif()
 
 if (godot_builtin_msdfgen AND "msdfgen" IN_LIST MODULES_LIST)
-	target_include_directories(text-server-adv-lib PRIVATE "${ENGINE_SOURCE_DIR}/thirdparty/msdfgen")
+	# Treat msdfgen headers as system headers to avoid raising warnings.
+	target_include_directories(text-server-adv-lib SYSTEM PRIVATE "${ENGINE_SOURCE_DIR}/thirdparty/msdfgen")
 endif()
 
 if (godot_builtin_freetype AND __FREETYPE_ENABLED)

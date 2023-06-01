@@ -29,6 +29,10 @@ function(__generate_python_class_map __OUTPUT __CLASSES_LIST __VALUES_SUFFIX)
 endfunction()
 
 if(godot_editor_build)
+	inline_if(__FREETYPE_ENABLED "freetype" IN_LIST MODULES_LIST)
+	inline_if(__SVG_ENABLED "svg" IN_LIST MODULES_LIST)
+	assert("Not all modules required by editor builds are enabled." __FREETYPE_ENABLED AND __SVG_ENABLED)
+
 	add_lib(editor-lib 
 		EXCLUDE_FROM_ALL
 		PARENT_ENV

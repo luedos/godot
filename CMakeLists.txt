@@ -843,7 +843,8 @@ if (MSVC)
 		if (godot_warnings STREQUAL "extra")
 			target_compile_options(global-warnings-env INTERFACE "/W4")
 		elseif (godot_warnings STREQUAL "all")
-			target_compile_options(global-warnings-env INTERFACE "/W3")
+			# C4458 is like -Wshadow. Part of /W4 but let's apply it for the default /W3 too.
+			target_compile_options(global-warnings-env INTERFACE "/W3" "/w34458")
 		elseif (godot_warnings STREQUAL "moderate")
 			target_compile_options(global-warnings-env INTERFACE "/W2")
 		endif()
@@ -874,7 +875,7 @@ else() # GCC, Clang
 
 	set(__COMMON_WARNINGS "")
 	if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-		list(APPEND __COMMON_WARNINGS "-Wshadow-local" "-Wno-misleading-indentation")
+		list(APPEND __COMMON_WARNINGS "-Wshadow" "-Wno-misleading-indentation")
 		if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "7" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "8")
 			list(APPEND __COMMON_WARNINGS "-Wno-strict-overflow")
 		endif()
@@ -892,7 +893,11 @@ else() # GCC, Clang
 	elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 		# We often implement `operator<` for structs of pointers as a requirement
 		# for putting them in `Set` or `Map`. We don't mind about unreliable ordering.
-		list(APPEND __COMMON_WARNINGS "-Wno-ordered-compare-function-pointers")
+		list(APPEND __COMMON_WARNINGS
+			"-Wno-ordered-compare-function-pointers"
+			"-Wshadow-field-in-constructor"
+			"-Wshadow-uncaptured-local"
+		)
 	endif()
 
 	if (godot_warnings STREQUAL "extra")

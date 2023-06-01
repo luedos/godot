@@ -16,7 +16,8 @@ if ("svg" IN_LIST MODULES_LIST)
 endif()
 
 if (godot_builtin_msdfgen AND "msdfgen" IN_LIST MODULES_LIST)
-	target_include_directories(text-server-fb-lib PRIVATE
+	# Treat msdfgen headers as system headers to avoid raising warnings.
+	target_include_directories(text-server-fb-lib SYSTEM PRIVATE
 		"${ENGINE_SOURCE_DIR}/thirdparty/msdfgen"
 	)
 endif()

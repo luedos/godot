@@ -14,7 +14,8 @@ if (godot_platform MATCHES "(haiku|macos|windows|linuxbsd)")
 		"gl.c"
 	)
 
-	target_include_directories(global-env INTERFACE "${__THIRDPARTY_GLAD_PATH}")
+	# Treat glad headers as system headers to avoid raising warnings.
+	target_include_directories(global-env SYSTEM INTERFACE "${__THIRDPARTY_GLAD_PATH}")
 	target_compile_definitions(global-env INTERFACE "GLAD_ENABLED" "GLES_OVER_GL")
 endif()
 
