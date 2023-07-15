@@ -17,7 +17,11 @@ def generate_modules_enabled(target, source, env):
 
 
 def cmake_generate_modules_tests(target, source):
-    generate_modules_tests(target, source, None)
+    import os
+
+    with open(target[0], "w") as f:
+        for header in source:
+            f.write('#include "%s"\n' % (os.path.normpath(header)))
 
 def generate_modules_tests(target, source, env):
     import os
