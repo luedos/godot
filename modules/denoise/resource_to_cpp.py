@@ -63,6 +63,9 @@ def generate(in_path, out_path):
             out_file.write("} // namespace %s\n" % scope)
 
 
+def cmake_tza_to_cpp(target, source):
+    tza_to_cpp(target, source, None)
+
 def tza_to_cpp(target, source, env):
     for x in zip(source, target):
         generate(str(x[0]), str(x[1]))

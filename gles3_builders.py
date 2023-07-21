@@ -592,6 +592,9 @@ def build_gles3_header(
     fd.close()
 
 
+def cmake_build_gles3_headers(target, source):
+    build_gles3_headers(target, source, None)
+
 def build_gles3_headers(target, source, env):
     for x in source:
         build_gles3_header(str(x), include="drivers/gles3/shader_gles3.h", class_suffix="GLES3")

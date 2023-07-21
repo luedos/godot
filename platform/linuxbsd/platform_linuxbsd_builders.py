@@ -6,6 +6,8 @@ All such functions are invoked in a subprocess on Windows to prevent build flaki
 import os
 from platform_methods import subprocess_main
 
+def cmake_make_debug_linuxbsd(target, source):
+    make_debug_linuxbsd(target, source, None)
 
 def make_debug_linuxbsd(target, source, env):
     os.system("objcopy --only-keep-debug {0} {0}.debugsymbols".format(target[0]))

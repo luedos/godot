@@ -118,6 +118,9 @@ def generate_ex_version(argcount, const=False, returns=False):
     return s
 
 
+def cmake_run(target, source):
+    run(target, source, None)
+
 def run(target, source, env):
     max_versions = 12
 

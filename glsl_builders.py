@@ -168,6 +168,9 @@ public:
         fd.write(shader_template)
 
 
+def cmake_build_rd_headers(target, source):
+    build_rd_headers(target, source, None)
+
 def build_rd_headers(target, source, env):
     for x in source:
         build_rd_header(filename=str(x))
@@ -227,6 +230,9 @@ static const char {out_file_base}[] = {{
         f.write(shader_template)
 
 
+def cmake_build_raw_headers(target, source):
+    build_raw_headers(target, source, None)
+    
 def build_raw_headers(target, source, env):
     for x in source:
         build_raw_header(filename=str(x))
