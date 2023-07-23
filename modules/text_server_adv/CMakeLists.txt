@@ -38,16 +38,19 @@ if (godot_builtin_harfbuzz)
 		"src/hb-buffer-serialize.cc"
 		"src/hb-buffer-verify.cc"
 		"src/hb-buffer.cc"
+		# "src/hb-cairo-utils.cc"
+		# "src/hb-cairo.cc"
 		"src/hb-common.cc"
-		#"src/hb-coretext.cc"
-		#"src/hb-directwrite.cc"
+		# "src/hb-coretext.cc"
+		# "src/hb-directwrite.cc"
 		"src/hb-draw.cc"
+		"src/hb-face-builder.cc"
 		"src/hb-face.cc"
 		"src/hb-fallback-shape.cc"
 		"src/hb-font.cc"
-		#"src/hb-gdi.cc"
-		#"src/hb-glib.cc"
-		#"src/hb-gobject-structs.cc"
+		# "src/hb-gdi.cc"
+		# "src/hb-glib.cc"
+		# "src/hb-gobject-structs.cc"
 		"src/hb-icu.cc"
 		"src/hb-map.cc"
 		"src/hb-number.cc"
@@ -79,6 +82,9 @@ if (godot_builtin_harfbuzz)
 		"src/hb-ot-shape.cc"
 		"src/hb-ot-tag.cc"
 		"src/hb-ot-var.cc"
+		"src/hb-outline.cc"
+		"src/hb-paint-extents.cc"
+		"src/hb-paint.cc"
 		"src/hb-set.cc"
 		"src/hb-shape-plan.cc"
 		"src/hb-shape.cc"
@@ -89,12 +95,13 @@ if (godot_builtin_harfbuzz)
 		"src/hb-subset-cff1.cc"
 		"src/hb-subset-cff2.cc"
 		"src/hb-subset-input.cc"
+		"src/hb-subset-instancer-solver.cc"
 		"src/hb-subset-plan.cc"
 		"src/hb-subset-repacker.cc"
 		"src/hb-subset.cc"
 		"src/hb-ucd.cc"
 		"src/hb-unicode.cc"
-		#"src/hb-uniscribe.cc"
+		# "src/hb-uniscribe.cc"
 	)
 
 	if (__FREETYPE_ENABLED)
@@ -172,7 +179,7 @@ if (godot_builtin_graphite AND __FREETYPE_ENABLED AND godot_graphite)
 		"src/Collider.cpp"
 		"src/Decompressor.cpp"
 		"src/Face.cpp"
-		#"src/FileFace.cpp"
+		# "src/FileFace.cpp"
 		"src/FeatureMap.cpp"
 		"src/Font.cpp"
 		"src/GlyphCache.cpp"
@@ -274,6 +281,7 @@ if (godot_builtin_icu4c)
 		"common/lsr.cpp"
 		"common/lstmbe.cpp"
 		"common/messagepattern.cpp"
+		"common/mlbe.cpp"
 		"common/normalizer2.cpp"
 		"common/normalizer2impl.cpp"
 		"common/normlzr.cpp"
@@ -433,7 +441,7 @@ if (godot_builtin_icu4c)
 		"i18n/uspoof_impl.cpp"
 	)
 
-	set(__ICU_DATA_NAME "icudt72l.dat")
+	set(__ICU_DATA_NAME "icudt73l.dat")
 
 	if (godot_editor_build)
 		add_python_generator_command(cmake_icu_data_gen cmake_make_icu_data

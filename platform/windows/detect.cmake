@@ -12,8 +12,15 @@ function(${__PLATFORM_NAME}_get_platform_name __OUTPUT)
 	set("${__OUTPUT}" "Windows" PARENT_SCOPE)
 endfunction()
 
-function(${__PLATFORM_NAME}_get_is_platform_active __OUTPUT)
-	set("${__OUTPUT}" TRUE PARENT_SCOPE)
+function(${__PLATFORM_NAME}_get_platform_doc_classes __OUTPUT)
+	set(${__OUTPUT}
+		"EditorExportPlatformWindows"
+		PARENT_SCOPE
+	)
+endfunction()
+
+function(${__PLATFORM_NAME}_get_platform_doc_relative_path __OUTPUT)
+	set(${__OUTPUT} "doc_classes" PARENT_SCOPE)
 endfunction()
 
 function(${__PLATFORM_NAME}_get_can_platform_build __OUTPUT)
@@ -110,10 +117,13 @@ function(${__PLATFORM_NAME}_configure_platform)
 			"dxguid"
 			"imm32"
 			"bcrypt"
+			"Crypt32"
 			"Avrt"
 			"dwmapi"
 			"dwrite"
 			"wbemuuid"
+			$<${IS_DEBUG_FEATURE_GEN_EXPR}:psapi>
+			$<${IS_DEBUG_FEATURE_GEN_EXPR}:dbghelp>
 		)
 
 		if (godot_vulkan)
@@ -148,7 +158,10 @@ function(${__PLATFORM_NAME}_configure_platform)
 			target_compile_options(global-env INTERFACE "/fsanitize=address")
 		endif()
 
-		target_link_options(global-env INTERFACE "/STACK:${__STACK_SIZE}")
+		target_link_options(global-env INTERFACE
+			"/STACK:${__STACK_SIZE}"
+			"/NATVIS:platform\\windows\\godot.natvis"
+		)
 
 	else()
 		target_compile_options(global-env INTERFACE $<${IS_RELEASE_GEN_EXPR}:-msse2>)
@@ -237,11 +250,14 @@ function(${__PLATFORM_NAME}_configure_platform)
 			"ksuser"
 			"imm32"
 			"bcrypt"
+			"crypt32"
 			"avrt"
 			"uuid"
 			"dwmapi"
 			"dwrite"
 			"wbemuuid"
+			$<${IS_DEBUG_FEATURE_GEN_EXPR}:psapi>
+			$<${IS_DEBUG_FEATURE_GEN_EXPR}:dbghelp>
 		)
 
 		if (godot_vulkan)

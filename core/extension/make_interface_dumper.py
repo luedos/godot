@@ -58,6 +58,8 @@ class GDExtensionInterfaceDump {
     g.close()
     f.close()
 
+def cmake_run(target, source):
+    run(target, source, None)
 
 if __name__ == "__main__":
     from platform_methods import subprocess_main

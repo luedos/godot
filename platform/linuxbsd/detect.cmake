@@ -25,8 +25,15 @@ function(${__PLATFORM_NAME}_get_platform_name __OUTPUT)
 	set("${__OUTPUT}" "LinuxBSD" PARENT_SCOPE)
 endfunction()
 
-function(${__PLATFORM_NAME}_get_is_platform_active __OUTPUT)
-	set("${__OUTPUT}" TRUE PARENT_SCOPE)
+function(${__PLATFORM_NAME}_get_platform_doc_classes __OUTPUT)
+	set(${__OUTPUT}
+		"EditorExportPlatformLinuxBSD"
+		PARENT_SCOPE
+	)
+endfunction()
+
+function(${__PLATFORM_NAME}_get_platform_doc_relative_path __OUTPUT)
+	set(${__OUTPUT} "doc_classes" PARENT_SCOPE)
 endfunction()
 
 function(${__PLATFORM_NAME}_get_can_platform_build __OUTPUT)
@@ -207,11 +214,16 @@ function(${__PLATFORM_NAME}_configure_platform)
 	endif()
 
 	if (NOT godot_builtin_squish)
-		target_append_pkg_config(global-env INTERFACE ALL REQUIRED "libsquish")
+		# libsquish doesn't reliably install its .pc file, so some distros lack it.
+		target_link_libraries(global-env INTERFACE "libsquish")
 	endif()
 
 	if (NOT godot_builtin_zstd)
 		target_append_pkg_config(global-env INTERFACE ALL REQUIRED "libzstd")
+	endif()
+
+	if (godot_brotli AND NOT godot_builtin_brotli)
+		target_append_pkg_config(global-env INTERFACE ALL REQUIRED "libbrotlicommon" "libbrotlidec")
 	endif()
 
 	# Sound and video libraries
@@ -452,6 +464,9 @@ function(${__PLATFORM_NAME}_configure_platform)
 		# TODO: add support for export templates
 	endif()
 
+	if (CMAKE_HOST_SYSTEM_NAME MATCHES "FreeBSD")
+		target_link_options(global-env INTERFACE "-lkvm")
+	endif()
 
 	cmake_host_system_information(RESULT __IS_HOST_64BITS QUERY IS_64BIT)
 	# Just because I'm random perfectionist, we will transform 1/0 into TRUE/FALSE

@@ -8,7 +8,3 @@ endfunction()
 function(${__MODULE_NAME}_get_module_can_build __OUTPUT)
 	set(${__OUTPUT} TRUE PARENT_SCOPE)
 endfunction()
-
-function(${__MODULE_NAME}_create_custom_options)
-	set_bool_option(godot_brotli TRUE DESCRIPTION "Enable Brotli decompressor for WOFF2 fonts support")
-endfunction()

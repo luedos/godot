@@ -42,6 +42,29 @@ target_sources_from_path(thirdparty-core-lib PRIVATE "${ENGINE_SOURCE_DIR}/third
 	"smolv.cpp"
 )
 
+if (godot_brotli AND godot_builtin_brotli)
+	set(__THIRDPARTY_BROTLI_DIR "${ENGINE_SOURCE_DIR}/thirdparty/brotli")
+
+	target_sources_from_path(thirdparty-core-lib PRIVATE "${__THIRDPARTY_BROTLI_DIR}"
+		"common/constants.c"
+		"common/context.c"
+		"common/dictionary.c"
+		"common/platform.c"
+		"common/shared_dictionary.c"
+		"common/transform.c"
+		"dec/bit_reader.c"
+		"dec/decode.c"
+		"dec/huffman.c"
+		"dec/state.c"
+	)
+
+	target_include_directories(global-env INTERFACE "${__THIRDPARTY_BROTLI_DIR}/include")
+
+	if (godot_use_ubsan OR godot_use_asan OR godot_use_tsan OR godot_use_lsan OR godot_use_msan)
+		target_compile_definitions(thirdparty-core-lib PRIVATE "BROTLI_BUILD_PORTABLE")
+	endif()
+endif()
+
 if (godot_builtin_zlib)
 	set(__THIRDPARTY_ZLIB_DIR "${ENGINE_SOURCE_DIR}/thirdparty/zlib")
 

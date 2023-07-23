@@ -6,11 +6,7 @@ function(${__MODULE_NAME}_configure_module)
 endfunction()
 
 function(${__MODULE_NAME}_get_module_can_build __OUTPUT)
-	if (NOT PROCESSOR_ARCH_ALIAS MATCHES "^rv")
-		set(${__OUTPUT} TRUE PARENT_SCOPE)
-	else()
-		set(${__OUTPUT} FALSE PARENT_SCOPE)
-	endif()
+	set(${__OUTPUT} TRUE PARENT_SCOPE)
 endfunction()
 
 function(${__MODULE_NAME}_get_doc_classes __OUTPUT)

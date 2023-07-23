@@ -70,25 +70,7 @@ if (godot_builtin_freetype)
 	)
 
 	if (godot_brotli)
-		set(__THIRDPARTY_BROTLI_PATH "${ENGINE_SOURCE_DIR}/thirdparty/brotli")
-		target_sources_from_path(thirdparty-freetype-lib PRIVATE "${__THIRDPARTY_BROTLI_PATH}"
-			"common/constants.c"
-			"common/context.c"
-			"common/dictionary.c"
-			"common/platform.c"
-			"common/shared_dictionary.c"
-			"common/transform.c"
-			"dec/bit_reader.c"
-			"dec/decode.c"
-			"dec/huffman.c"
-			"dec/state.c"
-		)
 		target_compile_definitions(freetype-env INTERFACE "FT_CONFIG_OPTION_USE_BROTLI")
-		target_include_directories(freetype-env INTERFACE "${__THIRDPARTY_BROTLI_PATH}/include")
-	endif()
-
-	if (godot_use_ubsan OR godot_use_asan OR godot_use_tsan OR godot_use_lsan OR godot_use_msan)
-		target_compile_definitions(freetype-env INTERFACE "BROTLI_BUILD_PORTABLE")
 	endif()
 
 	if (godot_platform STREQUAL "uwp")

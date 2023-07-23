@@ -114,6 +114,9 @@ if (godot_builtin_mbedtls)
 	)
 
 	target_include_directories(mbedtls-env INTERFACE "${__THIRDPARTY_MBEDTLS_PATH}/include")
+	target_compile_definitions(mbedtls-env INTERFACE
+		MBEDTLS_CONFIG_FILE="thirdparty/mbedtls/include/godot_module_mbedtls_config.h"
+	)
 endif()
 
 if (godot_tests)

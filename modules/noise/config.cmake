@@ -14,6 +14,7 @@ function(${__MODULE_NAME}_get_doc_classes __OUTPUT)
 		"FastNoiseLite"
 		"Noise"
 		"NoiseTexture2D"
+		"NoiseTexture3D"
 		PARENT_SCOPE
 	)
 endfunction()

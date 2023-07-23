@@ -73,14 +73,14 @@ if(godot_editor_build)
 	file(GLOB __CLASSES_DOCS LIST_DIRECTORIES FALSE "${ENGINE_SOURCE_DIR}/doc/classes/*.xml")
 
 	# each path in this variable is absolute, and unique, so no need for additional checks 
-	foreach(__DOC_PATH IN LISTS CLASSES_DOC_PATHS)
+	foreach(__DOC_PATH IN LISTS MODULES_DOC_CLASS_PATHS PLATFORMS_DOC_CLASS_PATHS)
 		file(GLOB __TEMP_CLASSES_DOCS LIST_DIRECTORIES FALSE "${__DOC_PATH}/*.xml")
 		list(APPEND __CLASSES_DOCS ${__TEMP_CLASSES_DOCS})
 	endforeach()
 
 	list(SORT __CLASSES_DOCS)
 	# generating map for the python, from all godot docs.
-	__generate_python_class_map(__PYTHON_CLASS_MAP MODULES_CLASSES _CLASS_PATH)
+	__generate_python_class_map(__PYTHON_CLASS_MAP "MODULES_DOC_CLASSES;PLATFORMS_DOC_CLASSES" _CLASS_PATH)
 	set(__DOC_DATA_CLASS_PATH "${CMAKE_CURRENT_SOURCE_DIR}")
 	execute_python_method(editor_builders cmake_make_doc_data_class_path
 		PYTHON_ARGS
@@ -180,7 +180,7 @@ if(godot_editor_build)
 
 	add_subdirectory("debugger")
 	add_subdirectory("export")
-	add_subdirectory("fileserver")
+	add_subdirectory("gui")
 	add_subdirectory("icons")
 	add_subdirectory("import")
 	add_subdirectory("plugins")

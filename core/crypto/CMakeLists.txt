@@ -38,7 +38,7 @@ if(NOT godot_module_mbedtls_enabled)
 			thirdparty-warnings-env
 	)
 
-	target_compile_definitions(thirdparty-core-crypto-lib PRIVATE 
+	target_compile_definitions(core-crypto-env PRIVATE 
 		MBEDTLS_CONFIG_FILE="thirdparty/mbedtls/include/godot_core_mbedtls_config.h"
 	)
 	target_sources_from_path(thirdparty-core-crypto-lib PRIVATE "${ENGINE_SOURCE_DIR}/thirdparty/mbedtls/library"
@@ -52,7 +52,13 @@ if(NOT godot_module_mbedtls_enabled)
 		"sha256.c"
 		"godot_core_mbedtls_platform.c"
 	)
-else()
+elseif(godot_builtin_mbedtls)
+	target_compile_definitions(core-crypto-env INTERFACE 
+		MBEDTLS_CONFIG_FILE="thirdparty/mbedtls/include/godot_module_mbedtls_config.h"
+	)
+endif()
+
+if (godot_module_mbedtls_enabled)
 	# If MbedTLS is actually enabled, we are defining dependency on it, 
 	# MbedTLS's sources will be part of it)
 	add_link_dependencies(core-lib mbedtls-lib)

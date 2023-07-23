@@ -28,6 +28,8 @@ function(${__MODULE_NAME}_get_doc_classes __OUTPUT)
 		"GLTFLight"
 		"GLTFMesh"
 		"GLTFNode"
+		"GLTFPhysicsBody"
+		"GLTFPhysicsShape"
 		"GLTFSkeleton"
 		"GLTFSkin"
 		"GLTFSpecGloss"

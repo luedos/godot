@@ -13,11 +13,16 @@ import zlib
 from platform_methods import subprocess_main
 
 def cmake_make_register_exporters(output_file, platform_exporters):
-    reg_exporters_inc = '#include "register_exporters.h"\n'
+    # Register exporters
+    reg_exporters_inc = '#include "register_exporters.h"\n\n'
     reg_exporters = "void register_exporters() {\n"
     for e in platform_exporters:
         reg_exporters += "\tregister_" + e + "_exporter();\n"
         reg_exporters_inc += '#include "platform/' + e + '/export/export.h"\n'
+    reg_exporters += "}\n\n"
+    reg_exporters += "void register_exporter_types() {\n"
+    for e in platform_exporters:
+        reg_exporters += "\tregister_" + e + "_exporter_types();\n"
     reg_exporters += "}\n"
 
     # NOTE: It is safe to generate this file here, since this is still executed serially

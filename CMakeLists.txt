@@ -129,6 +129,7 @@ set_bool_option     (godot_production               FALSE               DESCRIPT
 set_bool_option     (godot_deprecated               TRUE                DESCRIPTION "Enable deprecated features.")
 set_string_option   (godot_precision                "single"            DESCRIPTION "Set the floating-point precision level." ENUM "single" "double")
 set_bool_option     (godot_minizip                  TRUE                DESCRIPTION "Enable ZIP archive support using minizip.")
+set_bool_option     (godot_brotli                   TRUE                DESCRIPTION "Enable Brotli for decompresson and WOFF2 fonts support.")
 set_bool_option     (godot_xaudio2                  FALSE               DESCRIPTION "Enable the XAudio2 audio driver.")
 set_bool_option     (godot_vulkan                   TRUE                DESCRIPTION "Enable the vulkan rendering driver.")
 set_bool_option     (godot_opengl3                  TRUE                DESCRIPTION "Enable the OpenGL/GLES3 rendering driver.")
@@ -154,6 +155,7 @@ set_string_option   (godot_system_certs_path        ""                  DESCRIPT
 set_bool_option     (godot_use_precise_math_checks  FALSE               DESCRIPTION "Math checks use very precise epsilon (debug option).")
 
 # Thirdparty libraries
+set_bool_option     (godot_builtin_brotli           TRUE    DESCRIPTION "Use the built-in Brotli library.")
 set_bool_option     (godot_builtin_certs            TRUE    DESCRIPTION "Use the built-in SSL certificates bundles.")
 set_bool_option     (godot_builtin_embree           TRUE    DESCRIPTION "Use the built-in Embree library.")
 set_bool_option     (godot_builtin_enet             TRUE    DESCRIPTION "Use the built-in ENet library.")
@@ -174,7 +176,8 @@ set_bool_option     (godot_builtin_miniupnpc        TRUE    DESCRIPTION "Use the
 set_bool_option     (godot_builtin_pcre2            TRUE    DESCRIPTION "Use the built-in PCRE2 library.")
 set_bool_option     (godot_builtin_pcre2_with_jit   TRUE    DESCRIPTION "Use JIT compiler for the built-in PCRE2 library.")
 set_bool_option     (godot_builtin_recastnavigation TRUE    DESCRIPTION "Use the built-in Recast navigation library.")
-set_bool_option     (godot_builtin_rvo2             TRUE    DESCRIPTION "Use the built-in RVO2 library.")
+set_bool_option     (godot_builtin_rvo2_2d          TRUE    DESCRIPTION "Use the built-in RVO2 2D library.")
+set_bool_option     (godot_builtin_rvo2_3d          TRUE    DESCRIPTION "Use the built-in RVO2 3D library.")
 set_bool_option     (godot_builtin_squish           TRUE    DESCRIPTION "Use the built-in squish library.")
 set_bool_option     (godot_builtin_xatlas           TRUE    DESCRIPTION "Use the built-in xatlas library.")
 set_bool_option     (godot_builtin_zlib             TRUE    DESCRIPTION "Use the built-in zlib library.")
@@ -194,20 +197,16 @@ All functions platform detect.cmake file should implement
 - (optional) function(<platform_id>_get_program_suffix <output_variable>) -> returns some platform dependent suffix for program file
 
 Variables which will be defined for platforms
-- ACTIVE_PLATFORM_PATHS -> active platform paths
-- ACTIVE_PLATFORMS -> active platform actual names
 - PLATFORMS_LIST -> buildable platforms raw names (folder names)
 - PLATFORMS_EXPORTERS -> list of platform ids (raw names) which has export.cpp file
 - PLATFORMS_APIS -> list of platform ids (raw names) which has api.cpp file
-- <platform_name>_IS_PLATFORM_ACTIVE -> is platform active (usually just defined from <platform_name>_get_is_platform_active)
-- <platform_name>_PLATFROM_NAME -> actual platform name. This variable is output from <platform_name>_get_platform_name method
 ]=]
 
-set(ACTIVE_PLATFORM_PATHS "")
-set(ACTIVE_PLATFORMS "")
 set(PLATFORMS_EXPORTERS "")
 set(PLATFORMS_APIS "")
 set(PLATFORMS_LIST "")
+set(PLATFORMS_DOC_CLASSES "")
+set(PLATFORMS_DOC_CLASS_PATHS "")
 
 file_glob_dirs(__PLATFORM_DIRS "${ENGINE_SOURCE_DIR}/platform/*")
 
@@ -225,30 +224,51 @@ foreach(__DIR IN LISTS __PLATFORM_DIRS)
 	# getting platform id
 	get_top_directory("${__DIR}" __PLATFORM_ID)
 
+	if(COMMAND "${__PLATFORM_ID}_get_platform_doc_classes" AND COMMAND "${__PLATFORM_ID}_get_platform_doc_relative_path")
+		cmake_language(CALL "${__PLATFORM_ID}_get_platform_doc_classes" ${__PLATFORM_ID}_PLATFORM_DOC_CLASSES)
+		cmake_language(CALL "${__PLATFORM_ID}_get_platform_doc_relative_path" ${__PLATFORM_ID}_PLATFORM_DOC_RELATIVE_PATH)
+
+		join_paths(__DOC_ABS_PATH "${__DIR}" "${${__PLATFORM_ID}_PLATFORM_DOC_RELATIVE_PATH}")
+		
+		if (NOT __DOC_ABS_PATH IN_LIST PLATFORMS_DOC_CLASS_PATHS) 
+			list(APPEND PLATFORMS_DOC_CLASS_PATHS "${__DOC_ABS_PATH}")
+		endif()
+
+		foreach(__PLATFORM_CLASS IN LISTS ${__PLATFORM_ID}_PLATFORM_DOC_CLASSES)
+			if (DEFINED ${__PLATFORM_CLASS}_CLASS_PATH)
+				# if class allready was defined.
+				message(WARNING "Class with the name \"${__PLATFORM_CLASS}\" already was defined by another platform. Old class path is \"${${__PLATFORM_CLASS}_CLASS_PATH}\". New class path is \"${__DOC_ABS_PATH}\". New class documentation will be discarded.")
+				continue()
+			endif()
+
+			# setting path of the specific class
+			set(${__PLATFORM_CLASS}_CLASS_PATH "${__DOC_ABS_PATH}")
+			list(APPEND PLATFORMS_DOC_CLASSES "${__PLATFORM_CLASS}")
+		endforeach()
+	endif()
+
 	# just to be sure
-	unset(${__PLATFORM_ID}_IS_PLATFORM_ACTIVE)
-	unset(${__PLATFORM_ID}_PLATFROM_NAME)
 	unset(${__PLATFORM_ID}_PLATFROM_CAN_BUILD)
 
 	# if export file exist 
 	if(EXISTS "${__DIR}/export/export.cpp")
 		list(APPEND PLATFORMS_EXPORTERS "${__PLATFORM_ID}")
+		execute_python_method(cmake_methods generate_export_icons
+			PYTHON_ARGS
+				STR_VAR "__DIR"
+				STR_VAR "__PLATFORM_ID"
+			ACTION_CACHE_NAME "${__PLATFORM_ID}_generating_export_icons"
+			DEPENDENT_FILES
+				"${__DIR}/export/logo.svg"
+				"${__DIR}/export/logo_svg.gen.h"
+				"${__DIR}/export/run_icon.svg"
+				"${__DIR}/export/run_svg.gen.h"
+		)
 	endif()
 
 	# if api file exist
 	if(EXISTS "${__DIR}/api/api.cpp")
 		list(APPEND PLATFORMS_APIS "${__PLATFORM_ID}")
-	endif()
-
-	# if platform defined as active (must be defined in detect.cmake)
-	cmake_language(CALL "${__PLATFORM_ID}_get_is_platform_active" ${__PLATFORM_ID}_IS_PLATFORM_ACTIVE)
-	if(${__PLATFORM_ID}_IS_PLATFORM_ACTIVE)
-
-		cmake_language(CALL "${__PLATFORM_ID}_get_platform_name" "${__PLATFORM_ID}_PLATFROM_NAME")
-		list(APPEND ACTIVE_PLATFORMS "${${__PLATFORM_ID}_PLATFROM_NAME}")
-		list(APPEND ACTIVE_PLATFORM_PATHS "${__DIR}")
-		list(APPEND ACTIVE_PLATFORMS_IDS "${__PLATFORM_ID}")
-
 	endif()
 
 	# if platform can be built (must be defined in detect.cmake)
@@ -264,32 +284,6 @@ foreach(__DIR IN LISTS __PLATFORM_DIRS)
 
 endforeach()
 
-
-set(__ACTIVE_PLATFORMS_SVG_FILES "")
-foreach(__PLATFORM_DIR IN LISTS ACTIVE_PLATFORM_PATHS)
-	if (EXISTS "${__PLATFORM_DIR}/logo.svg")
-		list(APPEND __ACTIVE_PLATFORMS_SVG_FILES
-			"${__PLATFORM_DIR}/logo.svg"
-			"${__PLATFORM_DIR}/logo_svg.gen.h"
-		)
-	endif()
-
-	if (EXISTS "${__PLATFORM_DIR}/run_icon.svg")
-		list(APPEND __ACTIVE_PLATFORMS_SVG_FILES
-			"${__PLATFORM_DIR}/run_icon.svg"
-			"${__PLATFORM_DIR}/run_icon_svg.gen.h"
-		)
-	endif()
-endforeach()
-
-execute_python_method(cmake_methods save_active_platforms
-	PYTHON_ARGS 
-		ARR_VAR "ACTIVE_PLATFORMS"
-		ARR_VAR "ACTIVE_PLATFORM_PATHS"
-	ACTION_CACHE_NAME "save_active_platforms"
-	DEPENDENT_FILES ${__ACTIVE_PLATFORMS_SVG_FILES}
-)
-
 set_string_option(godot_platform "${godot_platform}" DESCRIPTION "Target platform." ENUM ${PLATFORMS_LIST})
 
 if(NOT godot_platform IN_LIST PLATFORMS_LIST)
@@ -302,6 +296,7 @@ endif()
 ############### Utility setup ###############
 
 # Generator expressions for easier working with build types which can be used in the future.
+set(IS_EDITOR_GEN_EXPR           $<CONFIG:Editor_OptNone,Editor_OptDebug,Editor_OptSpeed,Editor_OptSpeedTrace,Editor_OptSize>)
 set(IS_DEBUG_GEN_EXPR            $<CONFIG:Debug_OptNone,Debug_OptDebug,Debug_OptSpeed,Debug_OptSpeedTrace,Debug_OptSize>)
 set(IS_RELEASE_GEN_EXPR          $<CONFIG:Release_OptNone,Release_OptDebug,Release_OptSpeed,Release_OptSpeedTrace,Release_OptSize>)
 set(IS_OPT_NONE_GEN_EXPR         $<CONFIG:Editor_OptNone,Debug_OptNone,Release_OptNone>)
@@ -310,6 +305,7 @@ set(IS_OPT_SPEED_GEN_EXPR        $<CONFIG:Editor_OptSpeed,Debug_OptSpeed,Release
 set(IS_OPT_SPEEDTRACE_GEN_EXPR   $<CONFIG:Editor_OptSpeedTrace,Debug_OptSpeedTrace,Release_OptSpeedTrace>)
 set(IS_OPT_SIZE_GEN_EXPR         $<CONFIG:Editor_OptSize,Debug_OptSize,Release_OptSize>)
 
+set(IS_DEBUG_FEATURE_GEN_EXPR    $<CONFIG:Editor_OptNone,Editor_OptDebug,Editor_OptSpeed,Editor_OptSpeedTrace,Editor_OptSize,Debug_OptNone,Debug_OptDebug,Debug_OptSpeed,Debug_OptSpeedTrace,Debug_OptSize>)
 
 # Normilizing godot bin directory and making it absolute.
 if(NOT IS_ABSOLUTE "${godot_bin_directory}")
@@ -753,6 +749,7 @@ if (MSVC)
 	)
 	target_link_options(global-env INTERFACE
 		$<$<OR:${IS_OPT_SPEED_GEN_EXPR},${IS_OPT_SPEEDTRACE_GEN_EXPR},${IS_OPT_SIZE_GEN_EXPR}>:/OPT:REF>
+		$<${IS_OPT_SPEEDTRACE_GEN_EXPR}:/OPT:NOICF>
 	)
 else()
 	if (godot_debug_symbols)
@@ -950,9 +947,9 @@ endif()
 ############### Configuring modules ###############
 
 # just to keep track of all classes
-set(MODULES_CLASSES "")
+set(MODULES_DOC_CLASSES "")
 # just to keep track of all unique classes directories paths
-set(CLASSES_DOC_PATHS "")
+set(MODULES_DOC_CLASS_PATHS "")
 # to keep track of all icons paths
 set(MODULES_ICONS_PATHS "")
 # Actually enabled modules which can be built
@@ -998,8 +995,8 @@ foreach (__MODULE_ID IN LISTS MODULES_IDS)
 
 		join_paths(__DOC_ABS_PATH "${${__MODULE_ID}_MODULE_PATH}" "${${__MODULE_ID}_MODULE_DOC_RELATIVE_PATH}")
 		
-		if (NOT __DOC_ABS_PATH IN_LIST CLASSES_DOC_PATHS) 
-			list(APPEND CLASSES_DOC_PATHS "${__DOC_ABS_PATH}")
+		if (NOT __DOC_ABS_PATH IN_LIST MODULES_DOC_CLASS_PATHS) 
+			list(APPEND MODULES_DOC_CLASS_PATHS "${__DOC_ABS_PATH}")
 		endif()
 
 		foreach(__MODULE_CLASS IN LISTS ${__MODULE_ID}_MODULE_DOC_CLASSES)
@@ -1011,7 +1008,7 @@ foreach (__MODULE_ID IN LISTS MODULES_IDS)
 
 			# setting path of the specific class
 			set(${__MODULE_CLASS}_CLASS_PATH "${__DOC_ABS_PATH}")
-			list(APPEND MODULES_CLASSES "${__MODULE_CLASS}")
+			list(APPEND MODULES_DOC_CLASSES "${__MODULE_CLASS}")
 		endforeach()
 	endif()
 
@@ -1133,6 +1130,10 @@ endif()
 
 if (godot_minizip)
 	target_compile_definitions(global-env INTERFACE "MINIZIP_ENABLED")
+endif()
+
+if (godot_brotli)
+	target_compile_definitions(global-env INTERFACE "BROTLI_ENABLED")
 endif()
 
 add_env(global-libs-list)
