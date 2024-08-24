@@ -53,3 +53,6 @@ class GDExtensionInterfaceDump {
 #endif // GDEXTENSION_INTERFACE_DUMP_H
 """
         )
+
+def cmake_run(target, source):
+    run(target, source, None)

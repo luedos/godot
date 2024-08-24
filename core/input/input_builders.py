@@ -3,6 +3,9 @@
 from collections import OrderedDict
 
 
+def cmake_make_default_controller_mappings(target, source):
+    make_default_controller_mappings(target, source, None)
+
 def make_default_controller_mappings(target, source, env):
     dst = str(target[0])
     with open(dst, "w", encoding="utf-8", newline="\n") as g:

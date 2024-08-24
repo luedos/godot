@@ -2,6 +2,8 @@
 
 import os
 
+def cmake_make_debug_linuxbsd(target, source):
+    make_debug_linuxbsd(target, source, None)
 
 def make_debug_linuxbsd(target, source, env):
     dst = str(target[0])

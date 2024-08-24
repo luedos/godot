@@ -1,6 +1,9 @@
 """Functions used to generate source files during build time"""
 
 
+def cmake_make_splash(target, source):
+    make_splash(target, source, None)
+
 def make_splash(target, source, env):
     src = str(source[0])
     dst = str(target[0])
@@ -20,6 +23,8 @@ def make_splash(target, source, env):
         g.write("};\n")
         g.write("#endif")
 
+def cmake_make_splash_editor(target, source):
+    make_splash_editor(target, source, None)
 
 def make_splash_editor(target, source, env):
     src = str(source[0])
@@ -41,6 +46,8 @@ def make_splash_editor(target, source, env):
         g.write("};\n")
         g.write("#endif")
 
+def cmake_make_app_icon(target, source):
+    make_app_icon(target, source, None)
 
 def make_app_icon(target, source, env):
     src = str(source[0])

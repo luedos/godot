@@ -5,6 +5,9 @@ import os
 from detect import get_mingw_bin_prefix, try_cmd
 
 
+def cmake_make_debug_mingw(target, source):
+    make_debug_mingw(target, source, None)
+
 def make_debug_mingw(target, source, env):
     dst = str(target[0])
     # Force separate debug symbols if executable size is larger than 1.9 GB.

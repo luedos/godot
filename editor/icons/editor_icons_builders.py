@@ -3,6 +3,8 @@
 import os
 from io import StringIO
 
+def cmake_make_editor_icons_action(target, source):
+    make_editor_icons_action(target, source, None)
 
 # See also `scene/theme/icons/default_theme_icons_builders.py`.
 def make_editor_icons_action(target, source, env):

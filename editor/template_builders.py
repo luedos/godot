@@ -49,6 +49,9 @@ def parse_template(inherits, source, delimiter):
         )
 
 
+def cmake_make_templates(target, source):
+    make_templates(target, source, None)
+
 def make_templates(target, source, env):
     dst = str(target[0])
     with StringIO() as s:

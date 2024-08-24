@@ -22,6 +22,13 @@ def escape_string(s):
             result += chr(c)
     return result
 
+def cmake_make_certs_header(target, source, system_certs_path="", is_builtin_certs=True):
+    # cheating our way through
+    env_map = { 
+        "system_certs_path":system_certs_path,
+        "builtin_certs":is_builtin_certs
+    }
+    make_certs_header(target, source, env_map)
 
 def make_certs_header(target, source, env):
     src = str(source[0])
@@ -52,6 +59,8 @@ def make_certs_header(target, source, env):
             g.write("};\n")
         g.write("#endif // CERTS_COMPRESSED_GEN_H")
 
+def cmake_make_authors_header(target, source, *args, **kwargs):
+    make_authors_header(target, source, None, *args, **kwargs)
 
 def make_authors_header(target, source, env):
     sections = [
@@ -101,6 +110,8 @@ def make_authors_header(target, source, env):
 
         g.write("#endif // AUTHORS_GEN_H\n")
 
+def cmake_make_donors_header(target, source, *args, **kwargs):
+    make_donors_header(target, source, None, *args, **kwargs)
 
 def make_donors_header(target, source, env):
     sections = [
@@ -158,6 +169,8 @@ def make_donors_header(target, source, env):
 
         g.write("#endif // DONORS_GEN_H\n")
 
+def cmake_make_license_header(target, source, *args, **kwargs):
+    make_license_header(target, source, None, *args, **kwargs)
 
 def make_license_header(target, source, env):
     src_copyright = str(source[0])

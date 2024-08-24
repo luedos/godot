@@ -140,3 +140,22 @@ def make_doc_translations_header(target, source, env):
 
 def make_extractable_translations_header(target, source, env):
     make_translations_header(target, source, env, "extractable")
+
+
+def cmake_make_doc_header(target, source):
+    make_doc_header(target, source, None)
+
+def cmake_make_fonts_header(target, source):
+    make_fonts_header(target, source, None)
+
+def cmake_make_editor_translations_header(target, source):
+    make_editor_translations_header(target, source, None)
+
+def cmake_make_property_translations_header(target, source):
+    make_property_translations_header(target, source, None)
+
+def cmake_make_doc_translations_header(target, source):
+    make_doc_translations_header(target, source, None)
+
+def cmake_make_extractable_translations_header(target, source):
+    make_extractable_translations_header(target, source, None)
