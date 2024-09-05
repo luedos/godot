@@ -4,15 +4,6 @@ add_env(drivers-backtrace-env
 		global-env
 )
 
-add_lib(dirvers-backtrace-lib
-	OBJECT
-	PARENT_LIB
-		drivers-lib
-	COMPONENTS
-		drivers-backtrace-env
-		global-warnings-env
-)
-
 add_lib(thirdparty-drivers-backtrace-lib
 	OBJECT
 	PARENT_LIB
@@ -39,4 +30,17 @@ target_sources_from_path(thirdparty-drivers-backtrace-lib PRIVATE "${__THIRDPART
 )
 
 target_include_directories(drivers-backtrace-env INTERFACE "${__THIRDPARTY_BACKTRACE_PATH}")
-target_glob_sources(dirvers-backtrace-lib PRIVATE "*.cpp")
+
+file(GLOB __BACKTRACE_SOURCES LIST_DIRECTORIES FALSE "*.cpp")
+if (NOT "${__BACKTRACE_SOURCES}" STREQUAL "")
+	add_lib(dirvers-backtrace-lib
+		OBJECT
+		PARENT_LIB
+			drivers-lib
+		COMPONENTS
+			drivers-backtrace-env
+			global-warnings-env
+		SOURCES
+			${__BACKTRACE_SOURCES}
+	)
+endif()

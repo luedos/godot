@@ -49,6 +49,8 @@ if(EDITOR_BUILD)
 		servers-lib
 		# This is required because editor is dependent on gles generated headers
 		drivers-lib
+		# This is required for export icons
+		platform-gen
 	)
 
 	__generate_python_class_map(__PYTHON_CLASS_MAP "MODULES_DOC_CLASSES;PLATFORMS_DOC_CLASSES" _CLASS_PATH)
