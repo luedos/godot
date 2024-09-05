@@ -6,7 +6,8 @@ function(${__MODULE_NAME}_configure_module)
 	# Eventually support for each them should be added back (except Haiku if not supported by .NET Core)
 	assert(
 		"Mono module does not currently support building for '${godot_platform}' platform."
-		godot_platform MATCHES "(windows|macos|linuxbsd)")
+		"mono" IN_LIST PLATFORM_SUPPORTS
+	)
 endfunction()
 
 function(${__MODULE_NAME}_get_module_can_build __OUTPUT)

@@ -16,12 +16,13 @@ if (godot_use_sowrap)
 endif()
 
 if (godot_vulkan)
-	target_sources(godot-exe PRIVATE "vulkan_context_x11.cpp")
+	target_sources(godot-exe PRIVATE "rendering_context_driver_vulkan_x11.cpp")
 endif()
 
 if (godot_opengl3)
 	target_compile_definitions(global-env INTERFACE "GLAD_GLX_NO_X11")
 	target_sources(godot-exe PRIVATE
+		"gl_manager_x11_egl.cpp"
 		"gl_manager_x11.cpp"
 		"detect_prime_x11.cpp"
 		"${ENGINE_SOURCE_DIR}/thirdparty/glad/glx.c"

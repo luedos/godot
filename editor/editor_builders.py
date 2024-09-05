@@ -9,6 +9,7 @@ import uuid
 import zlib
 
 from methods import print_warning
+from methods import generated_wrapper
 
 
 def make_doc_header(target, source, env):
@@ -141,6 +142,48 @@ def make_doc_translations_header(target, source, env):
 def make_extractable_translations_header(target, source, env):
     make_translations_header(target, source, env, "extractable")
 
+
+def cmake_doc_data_class_path_builder(target, source):
+    paths = dict(sorted(source.items()))
+    data = "\n".join([f'\t{{"{key}", "{value}"}},' for key, value in paths.items()])
+    with generated_wrapper(target) as file:
+        file.write(
+            f"""\
+static const int _doc_data_class_path_count = {len(paths)};
+
+struct _DocDataClassPath {{
+    const char *name;
+    const char *path;
+}};
+
+static const _DocDataClassPath _doc_data_class_paths[{len(source) + 1}] = {{
+{data}
+    {{nullptr, nullptr}},
+}};
+"""
+        )
+
+def cmake_register_exporters_builder(target, source):
+    platforms = source
+    exp_inc = "\n".join([f'#include "platform/{p}/export/export.h"' for p in platforms])
+    exp_reg = "\n".join([f"\tregister_{p}_exporter();" for p in platforms])
+    exp_type = "\n".join([f"\tregister_{p}_exporter_types();" for p in platforms])
+    with generated_wrapper(target) as file:
+        file.write(
+            f"""\
+#include "register_exporters.h"
+
+{exp_inc}
+
+void register_exporters() {{
+{exp_reg}
+}}
+
+void register_exporter_types() {{
+{exp_type}
+}}
+"""
+        )
 
 def cmake_make_doc_header(target, source):
     make_doc_header(target, source, None)

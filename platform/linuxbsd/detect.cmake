@@ -17,12 +17,18 @@ function(${__PLATFORM_NAME}_create_custom_options)
 	set_bool_option(godot_fontconfig                TRUE    DESCRIPTION "Use fontconfig for system fonts support.")
 	set_bool_option(godot_udev                      TRUE    DESCRIPTION "Use udev for gamepad connection callbacks.")
 	set_bool_option(godot_x11                       TRUE    DESCRIPTION "Enable X11 display.")
+	set_bool_option(godot_wayland                   TRUE    DESCRIPTION "Enable Wayland display.")
+	set_bool_option(godot_libdecor                  TRUE    DESCRIPTION "Enable libdecor support.")
 	set_bool_option(godot_touch                     TRUE    DESCRIPTION "Enable touch events.")
 	set_bool_option(godot_execinfo                  FALSE   DESCRIPTION "Use libexecinfo on systems where glibc is not available.")
 endfunction()
 
 function(${__PLATFORM_NAME}_get_platform_name __OUTPUT)
 	set("${__OUTPUT}" "LinuxBSD" PARENT_SCOPE)
+endfunction()
+
+function(${__PLATFORM_NAME}_get_platform_supported __OUTPUT)
+	set("${__OUTPUT}" "mono" PARENT_SCOPE)
 endfunction()
 
 function(${__PLATFORM_NAME}_get_platform_doc_classes __OUTPUT)
@@ -66,6 +72,22 @@ function(${__PLATFORM_NAME}_configure_platform)
 		# This is needed for our crash handler to work properly.
 		# gdb works fine without it though, so maybe our crash handler could too.
 		target_link_options(global-env INTERFACE "-rdynamic")
+	endif()
+
+	cmake_host_system_information(RESULT __IS_HOST_64BITS QUERY IS_64BIT)
+	# Just because I'm random perfectionist, we will transform 1/0 into TRUE/FALSE
+	if(__IS_HOST_64BITS EQUAL 1)
+		set(__IS_HOST_64BITS TRUE)
+	else()
+		set(__IS_HOST_64BITS FALSE)
+	endif()
+
+	if (__IS_HOST_64BITS AND PROCESSOR_IS_X86_32)
+		target_compile_options(global-env INTERFACE "-m32")
+		target_link_options(global-env INTERFACE "-m32")
+	elseif (NOT __IS_HOST_64BITS AND PROCESSOR_IS_X86_64)
+		target_compile_options(global-env INTERFACE "-m64")
+		target_link_options(global-env INTERFACE "-m64")
 	endif()
 
 	if (PROCESSOR_ARCH_ALIAS STREQUAL "rv64")
@@ -144,6 +166,8 @@ function(${__PLATFORM_NAME}_configure_platform)
 		endif()
 	endif()
 
+	target_compile_options(global-env INTERFACE "-ffp-contract=off")
+
 	if (godot_lto STREQUAL "auto")
 		set_parent_var(godot_lto "full")
 	endif()
@@ -173,6 +197,17 @@ function(${__PLATFORM_NAME}_configure_platform)
 
 	if (godot_use_sowrap)
 		target_compile_definitions(global-env INTERFACE "SOWRAP_ENABLED")
+	endif()
+
+	if (godot_wayland)
+		execute_process(
+			COMMAND "wayland-scanner" "-v" "2>/dev/null"
+			RESULT_VARIABLE __WAYLAND_CALL_RESULT
+		)
+		if (NOT __WAYLAND_CALL_RESULT EQUAL 0)
+			message(WARNING "wayland-scanner not found. Disabling Wayland support.")
+			set_parent_var(godot_wayland FALSE)
+		endif()
 	endif()
 
 	if (godot_touch)
@@ -280,7 +315,11 @@ function(${__PLATFORM_NAME}_configure_platform)
 
 	if (NOT godot_builtin_embree AND PROCESSOR_ARCH_ALIAS MATCHES "(x86_64|arm64)")
 		# No pkgconfig file so far, hardcode expected lib name.
-		target_link_libraries(global-env INTERFACE "embree3")
+		target_link_libraries(global-env INTERFACE "embree4")
+	endif()
+
+	if (godot_builtin_openxr)
+		target_append_pkg_config(global-env INTERFACE ALL REQUIRED "openxr")
 	endif()
 
 	if (godot_fontconfig)
@@ -364,7 +403,11 @@ function(${__PLATFORM_NAME}_configure_platform)
 			target_append_pkg_config(global-env INTERFACE ALL REQUIRED "xkbcommon")
 			target_compile_definitions(global-env INTERFACE "XKB_ENABLED")
 		else()
-			message(WARNING "Warning: libxkbcommon development libraries not found. Disabling dead key composition and key label support.")
+			if (godot_wayland)
+				message(FATAL_ERROR "libxkbcommon development libraries required by Wayland not found. Aborting.")
+			else()
+				message(WARNING "Warning: libxkbcommon development libraries not found. Disabling dead key composition and key label support.")
+			endif()
 		endif()
 	else()
 			target_compile_definitions(global-env INTERFACE "XKB_ENABLED")
@@ -421,8 +464,30 @@ function(${__PLATFORM_NAME}_configure_platform)
 		target_compile_definitions(global-env INTERFACE "X11_ENABLED")
 	endif()
 
+	if (godot_wayland)
+		if (NOT godot_use_sowrap)
+			target_append_pkg_config(global-env INTERFACE ALL REQUIRED
+				"libdecor-0"
+				"wayland-client"
+				"wayland-cursor"
+				"wayland-egl"
+			)
+		endif()
+
+		if (godot_libdecor)
+			target_compile_definitions(global-env INTERFACE "LIBDECOR_ENABLED")
+		endif()
+
+		target_include_directories(global-env INTERFACE
+			"${CMAKE_CURRENT_SOURCE_DIR}"
+			"${ENGINE_SOURCE_DIR}/thirdparty/linuxbsd_headers/wayland"
+		)
+		target_compile_definitions(global-env INTERFACE "WAYLAND_ENABLED")
+		target_link_libraries(global-env INTERFACE "rt")
+	endif()
+
 	if (godot_vulkan)
-		target_compile_definitions(global-env INTERFACE "VULKAN_ENABLED")
+		target_compile_definitions(global-env INTERFACE "VULKAN_ENABLED" "RD_ENABLED")
 
 		if (NOT godot_use_volk)
 			target_append_pkg_config(global-env INTERFACE ALL REQUIRED "vulkan")
@@ -449,41 +514,22 @@ function(${__PLATFORM_NAME}_configure_platform)
 		OUTPUT_VARIABLE __LIBC_VER_NAME
 	)
 
-	if (NOT godot_execinfo AND NOT __LIBC_VER_NAME STREQUAL "glibc")
-		# The default crash handler depends on glibc, so if the host uses
-		# a different libc (BSD libc, musl), fall back to libexecinfo.
-		message(WARNING "Note: Using `execinfo=yes` for the crash handler as required on platforms where glibc is missing.")
-		set_parent_var(godot_execinfo TRUE)
-	endif()
-
-	if (godot_execinfo)
-		target_link_libraries(global-env INTERFACE "execinfo")
-	endif()
-
-	if (NOT godot_editor_build)
-		# TODO: add support for export templates
+	if (NOT __LIBC_VER_NAME STREQUAL "glibc")
+		if (godot_execinfo)
+			target_link_libraries(global-env INTERFACE "execinfo")
+			target_compile_definitions(global-env INTERFACE "CRASH_HANDLER_ENABLED")
+		else()
+			# The default crash handler depends on glibc, so if the host uses
+			# a different libc (BSD libc, musl), fall back to libexecinfo.
+			message(WARNING "Note: Using `execinfo=yes` for the crash handler as required on platforms where glibc is missing.")
+		endif()
+	else()
+		target_compile_definitions(global-env INTERFACE "CRASH_HANDLER_ENABLED")
 	endif()
 
 	if (CMAKE_HOST_SYSTEM_NAME MATCHES "FreeBSD")
 		target_link_options(global-env INTERFACE "-lkvm")
 	endif()
-
-	cmake_host_system_information(RESULT __IS_HOST_64BITS QUERY IS_64BIT)
-	# Just because I'm random perfectionist, we will transform 1/0 into TRUE/FALSE
-	if(__IS_HOST_64BITS EQUAL 1)
-		set(__IS_HOST_64BITS TRUE)
-	else()
-		set(__IS_HOST_64BITS FALSE)
-	endif()
-
-	if (__IS_HOST_64BITS AND PROCESSOR_IS_X86_32)
-		target_compile_options(global-env INTERFACE "-m32")
-		target_link_options(global-env INTERFACE "-m32" "-L/usr/lib/i386-linux-gnu")
-	elseif (NOT __IS_HOST_64BITS AND PROCESSOR_IS_X86_64)
-		target_compile_options(global-env INTERFACE "-m64")
-		target_link_options(global-env INTERFACE "-m64" "-L/usr/lib/i686-linux-gnu")
-	endif()
-
 
 	# Link those statically for portability
 	if (godot_use_static_cpp)

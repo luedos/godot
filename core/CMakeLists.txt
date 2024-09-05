@@ -4,6 +4,7 @@ execute_python_method(gen_methods generate_encryption_key_header
 		STR_ENV_VAR "SCRIPT_AES256_ENCRYPTION_KEY"
 	ACTION_CACHE_NAME "generate_encryption_key_header"
 	DEPENDENT_FILES "${CMAKE_CURRENT_SOURCE_DIR}/script_encryption_key.gen.cpp"
+	APPEND_SYS_PATH "${ENGINE_SOURCE_DIR}"
 )
 
 add_env(core-env
@@ -28,6 +29,8 @@ add_lib(thirdparty-core-lib
 		thirdparty-warnings-env
 )
 
+add_custom_target(core-gen)
+
 # Misc thirdparty code: header paths are hardcoded, we don't need to append
 # to the include path (saves a few chars on the compiler invocation for touchy MSVC...)
 target_sources_from_path(thirdparty-core-lib PRIVATE "${ENGINE_SOURCE_DIR}/thirdparty/misc"
@@ -38,7 +41,6 @@ target_sources_from_path(thirdparty-core-lib PRIVATE "${ENGINE_SOURCE_DIR}/third
 	# C++ sources
 	"pcg.cpp"
 	"polypartition.cpp"
-	"clipper.cpp"
 	"smolv.cpp"
 )
 
@@ -65,6 +67,19 @@ if (godot_brotli AND godot_builtin_brotli)
 	endif()
 endif()
 
+if (godot_builtin_clipper2)
+	set(__THIRDPARTY_CLIPPER2_DIR "${ENGINE_SOURCE_DIR}/thirdparty/clipper2")
+
+	target_sources_from_path(thirdparty-core-lib PRIVATE "${__THIRDPARTY_CLIPPER2_DIR}"
+		"src/clipper.engine.cpp"
+		"src/clipper.offset.cpp"
+		"src/clipper.rectclip.cpp"
+	)
+
+	target_include_directories(global-env INTERFACE "${__THIRDPARTY_CLIPPER2_DIR}/include")
+	target_compile_definitions(global-env INTERFACE "CLIPPER2_ENABLED")
+endif()
+
 if (godot_builtin_zlib)
 	set(__THIRDPARTY_ZLIB_DIR "${ENGINE_SOURCE_DIR}/thirdparty/zlib")
 
@@ -73,7 +88,6 @@ if (godot_builtin_zlib)
 		"compress.c"
 		"crc32.c"
 		"deflate.c"
-		"infback.c"
 		"inffast.c"
 		"inflate.c"
 		"inftrees.c"
@@ -132,8 +146,7 @@ if (godot_builtin_zstd)
 	)
 
 	if (godot_platform MATCHES "(android|ios|linuxbsd|macos)")
-		set(__DECOMPRESS_SOURCE "${__THIRDPARTY_ZSTD_DIR}/decompress/huf_decompress_amd64.S")	
-		set_property(SOURCE "${__DECOMPRESS_SOURCE}" PROPERTY LANGUAGE C)
+		set(__DECOMPRESS_SOURCE "${__THIRDPARTY_ZSTD_DIR}/decompress/huf_decompress_amd64.S")
 		target_sources(thirdparty-core-lib PRIVATE "${__DECOMPRESS_SOURCE}")
 	endif()
 
@@ -147,6 +160,56 @@ endif()
 
 target_glob_sources(core-lib PRIVATE "*.cpp")
 
+# Generate disabled classes
+set(__DISABLED_CLASSES_FILE_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/disabled_classes.gen.h")
+add_python_generator_command(gen_methods disabled_class_builder
+	TARGET_FILES "${__DISABLED_CLASSES_FILE_HEADER}"
+	SOURCE_ARRAY ${DISABLED_CLASSES}
+	APPEND_SYS_PATH "${ENGINE_SOURCE_DIR}"
+	SOURCES_DEPENDENT_TARGET core-gen
+	BY_FILE generate_disabled_classes
+)
+
+# Generate version info
+set(__VERSION_INFO_FILE_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/version_generated.gen.h")
+add_python_generator_command(gen_methods version_info_builder
+	TARGET_FILES "${__VERSION_INFO_FILE_HEADER}"
+	PYTHON_ARGS
+		RAW_VAR "version_info=PYTHON_VERSION_INFO"
+	APPEND_SYS_PATH "${ENGINE_SOURCE_DIR}"
+	SOURCES_DEPENDENT_TARGET core-gen
+	BY_FILE generate_version_info
+)
+
+# Generate version hash
+set(__VERSION_HASH_FILE_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/version_hash.gen.cpp")
+add_python_generator_command(gen_methods version_hash_builder
+	TARGET_FILES "${__VERSION_HASH_FILE_SOURCE}"
+	PYTHON_ARGS
+		RAW_VAR "version_info=PYTHON_VERSION_INFO"
+	APPEND_SYS_PATH "${ENGINE_SOURCE_DIR}"
+	SOURCES_DEPENDENT_TARGET core-gen
+	BY_FILE generate_version_hash
+)
+target_sources(core-lib PRIVATE "${__VERSION_HASH_FILE_SOURCE}")
+
+# Generate AES256 script encryption key
+if (NOT DEFINED ENV{SCRIPT_AES256_ENCRYPTION_KEY})
+	set(__GDKEY "0000000000000000000000000000000000000000000000000000000000000000")
+else()
+	set(__GDKEY "$ENV{SCRIPT_AES256_ENCRYPTION_KEY}")
+endif()
+
+set(__SCRIPT_ENCRYPTION_FILE_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/script_encryption_key.gen.cpp")
+add_python_generator_command(gen_methods encryption_key_builder
+	TARGET_FILES "${__SCRIPT_ENCRYPTION_FILE_SOURCE}"
+	SOURCE_ARRAY "${__GDKEY}"
+	APPEND_SYS_PATH "${ENGINE_SOURCE_DIR}"
+	SOURCES_DEPENDENT_TARGET core-gen
+	BY_FILE generate_encryption_key
+)
+target_sources(core-lib PRIVATE "${__SCRIPT_ENCRYPTION_FILE_SOURCE}")
+
 # Certificates
 set(__CERTIFICATES_FILE_HEADER "${ENGINE_SOURCE_DIR}/core/io/certs_compressed.gen.h")
 add_python_generator_command(core_builders cmake_make_certs_header
@@ -155,9 +218,8 @@ add_python_generator_command(core_builders cmake_make_certs_header
 	PYTHON_ARGS
 		STR_VAR "system_certs_path=godot_system_certs_path"
 		BOOL_VAR "is_builtin_certs=godot_builtin_certs"
-	SOURCES_DEPENDENT_TARGET core-lib 
+	SOURCES_DEPENDENT_TARGET core-gen 
 	APPEND_SYS_PATH "${ENGINE_SOURCE_DIR}"
-	COMMENT "Building ca-certificates header."
 )
 
 # Authors
@@ -165,9 +227,8 @@ set(__AUTHORS_FILE_HEADER "${ENGINE_SOURCE_DIR}/core/authors.gen.h")
 add_python_generator_command(core_builders cmake_make_authors_header
 	TARGET_FILES "${__AUTHORS_FILE_HEADER}"
 	SOURCE_FILES "${ENGINE_SOURCE_DIR}/AUTHORS.md"
-	SOURCES_DEPENDENT_TARGET core-lib 
+	SOURCES_DEPENDENT_TARGET core-gen 
 	APPEND_SYS_PATH "${ENGINE_SOURCE_DIR}"
-	COMMENT "Generating authors header."
 )
 
 # Donors
@@ -175,9 +236,8 @@ set(__DONORS_FILE_HEADER "${ENGINE_SOURCE_DIR}/core/donors.gen.h")
 add_python_generator_command(core_builders cmake_make_donors_header
 	TARGET_FILES "${__DONORS_FILE_HEADER}"
 	SOURCE_FILES "${ENGINE_SOURCE_DIR}/DONORS.md"
-	SOURCES_DEPENDENT_TARGET core-lib 
+	SOURCES_DEPENDENT_TARGET core-gen 
 	APPEND_SYS_PATH "${ENGINE_SOURCE_DIR}"
-	COMMENT "Generating donors header."
 )
 
 # License
@@ -187,18 +247,10 @@ add_python_generator_command(core_builders cmake_make_license_header
 	SOURCE_FILES 
 		"${ENGINE_SOURCE_DIR}/COPYRIGHT.txt"
 		"${ENGINE_SOURCE_DIR}/LICENSE.txt"
-	SOURCES_DEPENDENT_TARGET core-lib 
+	SOURCES_DEPENDENT_TARGET core-gen 
 	APPEND_SYS_PATH "${ENGINE_SOURCE_DIR}"
-	COMMENT "Generating license header."
 )
 
-add_custom_target(core-gen 
-	DEPENDS
-		${__CERTIFICATES_FILE_HEADER}
-		${__AUTHORS_FILE_HEADER}
-		${__DONORS_FILE_HEADER}
-		${__LICENSE_FILE_HEADER}
-)
 add_dependencies(core-env core-gen)
 add_dependencies(core-env modules-enabled-header-gen)
 

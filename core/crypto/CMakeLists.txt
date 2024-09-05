@@ -47,6 +47,7 @@ if(NOT godot_module_mbedtls_enabled)
 		"constant_time.c"
 		"ctr_drbg.c"
 		"entropy.c"
+		"md.c"
 		"md5.c"
 		"sha1.c"
 		"sha256.c"

@@ -17,6 +17,7 @@ function(${__MODULE_NAME}_get_doc_classes __OUTPUT)
 	set(${__OUTPUT}
 		"AudioStreamOggVorbis"
 		"AudioStreamPlaybackOggVorbis"
+		"ResourceImporterOggVorbis"
 		PARENT_SCOPE
 	)
 endfunction()

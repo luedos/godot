@@ -25,6 +25,10 @@ if (godot_x11)
 	add_subdirectory(x11)
 endif()
 
+if (godot_wayland)
+	add_subdirectory(wayland)
+endif()
+
 if (godot_speechd)
 	target_sources(godot-exe PRIVATE "tts_linux.cpp")
 	if (godot_use_sowrap)

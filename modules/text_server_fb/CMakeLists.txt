@@ -11,12 +11,15 @@ add_lib(text-server-fb-lib
 if ("svg" IN_LIST MODULES_LIST)
 	target_include_directories(text-server-fb-lib PRIVATE
 		"${ENGINE_SOURCE_DIR}/thirdparty/thorvg/inc"
-		"${ENGINE_SOURCE_DIR}/thirdparty/thorvg/src/lib"
+		"${ENGINE_SOURCE_DIR}/thirdparty/thorvg/src/common"
+		"${ENGINE_SOURCE_DIR}/thirdparty/thorvg/src/renderer"
 	)
+	target_compile_definitions(text-server-fb-lib PRIVATE "TVG_STATIC")
 endif()
 
 if (godot_builtin_msdfgen AND "msdfgen" IN_LIST MODULES_LIST)
 	# Treat msdfgen headers as system headers to avoid raising warnings.
+	target_compile_definitions(text-server-fb-lib PRIVATE "MSDFGEN_PUBLIC=")
 	target_include_directories(text-server-fb-lib SYSTEM PRIVATE
 		"${ENGINE_SOURCE_DIR}/thirdparty/msdfgen"
 	)

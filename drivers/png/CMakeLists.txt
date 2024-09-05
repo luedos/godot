@@ -45,29 +45,43 @@ if (godot_builtin_libpng)
 	# Needed for drivers includes and in platform/web.
 	target_include_directories(global-env INTERFACE "${__THIRDPARTY_LIBPNG_PATH}")
 
-	inline_if(__USE_NEON godot_platform STREQUAL "android" AND PROCESSOR_IS_ARM32 AND NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
-	if (__USE_NEON)
-		target_compile_definitions(drivers-png-env INTERFACE "PNG_ARM_NEON_OPT=2")
-	else()
-		target_compile_definitions(drivers-png-env INTERFACE "PNG_ARM_NEON_OPT=0")
-	endif()
+	# inline_if(__USE_NEON godot_platform STREQUAL "android" AND PROCESSOR_IS_ARM32 AND NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
+	# if (__USE_NEON)
+	# 	target_compile_definitions(drivers-png-env INTERFACE "PNG_ARM_NEON_OPT=2")
+	# else()
+	# 	target_compile_definitions(drivers-png-env INTERFACE "PNG_ARM_NEON_OPT=0")
+	# endif()
 
-	if (__USE_NEON)
-		#TODO: add support for the S_compiler.
-		# Biggest problem here is that s_compiler is different from regular compiler.. somewhy..
-		# reserach possibility to add new languages into cmake (and add specific compilers to those languages)
-		# https://cmake.org/pipermail/cmake/2011-November/047512.html
-		# https://stackoverflow.com/questions/38293535/generic-rule-from-makefile-to-cmake
-		
+	if (PROCESSOR_ARCH_ALIAS MATCHES "^arm")
+		if (MSVC)
+			target_compile_definitions(thirdparty-drivers-png-lib PRIVATE "PNG_ARM_NEON_OPT=0")
+		else()
+			#TODO: add support for the S_compiler.
+			# Biggest problem here is that s_compiler is different from regular compiler.. somewhy..
+			# reserach possibility to add new languages into cmake (and add specific compilers to those languages)
+			# https://cmake.org/pipermail/cmake/2011-November/047512.html
+			# https://stackoverflow.com/questions/38293535/generic-rule-from-makefile-to-cmake
+			
+			target_sources_from_path(thirdparty-drivers-png-lib PRIVATE "${__THIRDPARTY_LIBPNG_PATH}"
+				"arm/arm_init.c"
+				"arm/filter_neon_intrinsics.c"
+				"arm/filter_neon.S"
+				"arm/palette_neon_intrinsics.c"
+			)
+			set_property(SOURCE "${__THIRDPARTY_LIBPNG_PATH}/arm/filter_neon.S" PROPERTY LANGUAGE C)
+		endif()
+	elseif (PROCESSOR_ARCH_ALIAS MATCHES "^x86")
+		target_compile_definitions(thirdparty-drivers-png-lib PRIVATE "PNG_INTEL_SSE")
 		target_sources_from_path(thirdparty-drivers-png-lib PRIVATE "${__THIRDPARTY_LIBPNG_PATH}"
-			"arm/arm_init.c"
-			"arm/filter_neon_intrinsics.c"
-			"arm/filter_neon.S"
-			"arm/palette_neon_intrinsics.c"
+			"intel/intel_init.c"
+			"intel/filter_sse2_intrinsics.c"
 		)
-		set_property(SOURCE "${__THIRDPARTY_LIBPNG_PATH}/arm/filter_neon.S" PROPERTY LANGUAGE C)
+	elseif (PROCESSOR_ARCH_ALIAS STREQUAL "ppc64")
+		target_sources_from_path(thirdparty-drivers-png-lib PRIVATE "${__THIRDPARTY_LIBPNG_PATH}"
+			"powerpc/powerpc_init.c"
+			"powerpc/filter_vsx_intrinsics.c"
+		)
 	endif()
-
 endif()
 
 target_glob_sources(drivers-png-lib PRIVATE "*.cpp")

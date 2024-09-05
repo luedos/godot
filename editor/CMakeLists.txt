@@ -28,11 +28,7 @@ function(__generate_python_class_map __OUTPUT __CLASSES_LIST __VALUES_SUFFIX)
 
 endfunction()
 
-if(godot_editor_build)
-	inline_if(__FREETYPE_ENABLED "freetype" IN_LIST MODULES_LIST)
-	inline_if(__SVG_ENABLED "svg" IN_LIST MODULES_LIST)
-	assert("Not all modules required by editor builds are enabled." __FREETYPE_ENABLED AND __SVG_ENABLED)
-
+if(EDITOR_BUILD)
 	add_env(editor-env
 		COMPONENTS
 			global-env
@@ -55,12 +51,23 @@ if(godot_editor_build)
 		drivers-lib
 	)
 
+	__generate_python_class_map(__PYTHON_CLASS_MAP "MODULES_DOC_CLASSES;PLATFORMS_DOC_CLASSES" _CLASS_PATH)
+	set(__DOC_DATA_CLASS_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/doc_data_class_path.gen.h")
+	execute_python_method(editor_builders cmake_doc_data_class_path_builder
+		PYTHON_ARGS
+			STR_VAR "target=__DOC_DATA_CLASS_HEADER"
+			RAW_VAR "source=__PYTHON_CLASS_MAP"
+		APPEND_SYS_PATH "${ENGINE_SOURCE_DIR}"
+		ACTION_CACHE_NAME "doc_data_class_path_builder"
+		DEPENDENT_FILES "${__DOC_DATA_CLASS_HEADER}"
+	)
+
 	set(__REGISTER_EXPORTERS_FILE "${CMAKE_CURRENT_SOURCE_DIR}/register_exporters.gen.cpp")
 	target_sources(editor-lib PRIVATE "${__REGISTER_EXPORTERS_FILE}")
-	execute_python_method(editor_builders cmake_make_register_exporters
+	execute_python_method(editor_builders cmake_register_exporters_builder
 		PYTHON_ARGS
-			STR_VAR "output_file=__REGISTER_EXPORTERS_FILE"
-			ARR_VAR "platform_exporters=PLATFORMS_EXPORTERS"
+			STR_VAR "target=__REGISTER_EXPORTERS_FILE"
+			ARR_VAR "source=PLATFORMS_EXPORTERS"
 		APPEND_SYS_PATH "${ENGINE_SOURCE_DIR}"
 		ACTION_CACHE_NAME "make_register_exporters"
 		DEPENDENT_FILES "${__REGISTER_EXPORTERS_FILE}"
@@ -79,17 +86,6 @@ if(godot_editor_build)
 	endforeach()
 
 	list(SORT __CLASSES_DOCS)
-	# generating map for the python, from all godot docs.
-	__generate_python_class_map(__PYTHON_CLASS_MAP "MODULES_DOC_CLASSES;PLATFORMS_DOC_CLASSES" _CLASS_PATH)
-	set(__DOC_DATA_CLASS_PATH "${CMAKE_CURRENT_SOURCE_DIR}")
-	execute_python_method(editor_builders cmake_make_doc_data_class_path
-		PYTHON_ARGS
-			STR_VAR "to_path=__DOC_DATA_CLASS_PATH"
-			RAW_VAR "class_map=__PYTHON_CLASS_MAP"
-		APPEND_SYS_PATH "${ENGINE_SOURCE_DIR}"
-		ACTION_CACHE_NAME "make_doc_data_class_path"
-		DEPENDENT_FILES "${__DOC_DATA_CLASS_PATH}/doc_data_class_path.gen.h"
-	)
 
 	set(__GEN_HEADERS)
 
@@ -100,9 +96,8 @@ if(godot_editor_build)
 		TARGET_FILES "${__CLASSES_HEADER_FILE}"
 		APPEND_SYS_PATH "${ENGINE_SOURCE_DIR}"
 		BY_FILE "docs_header"
-		COMMENT "Generating documentation header."
 	)
-	
+
 	# Editor interface and class reference translations incur a significant size
 	# cost for the editor binary (see godot-proposals#3421).
 	# To limit it, we only include translations with a high enough completion
@@ -118,7 +113,6 @@ if(godot_editor_build)
 		TARGET_FILES "${__TRANSLATION_HEADER_FILE}"
 		APPEND_SYS_PATH "${ENGINE_SOURCE_DIR}"
 		BY_FILE "editor_translations_header"
-		COMMENT "Generating editor translations header."
 	)
 
 	# Property translations
@@ -130,7 +124,6 @@ if(godot_editor_build)
 		TARGET_FILES "${__TRANSLATION_HEADER_FILE}"
 		APPEND_SYS_PATH "${ENGINE_SOURCE_DIR}"
 		BY_FILE "property_translations_header"
-		COMMENT "Generating property translations header."
 	)
 
 	# Documentation translations
@@ -142,32 +135,20 @@ if(godot_editor_build)
 		TARGET_FILES "${__TRANSLATION_HEADER_FILE}"
 		APPEND_SYS_PATH "${ENGINE_SOURCE_DIR}"
 		BY_FILE "doc_translations_header"
-		COMMENT "Generating translations header."
 	)
 
-	# Fonts
-	set(__FONTS_HEADER_FILE "${CMAKE_CURRENT_SOURCE_DIR}/builtin_fonts.gen.h")
-	list(APPEND __GEN_HEADERS ${__FONTS_HEADER_FILE})
+	# Extractable translations
+	set(__TRANSLATION_HEADER_FILE "${CMAKE_CURRENT_SOURCE_DIR}/extractable_translations.gen.h")
+	list(APPEND __GEN_HEADERS "${__TRANSLATION_HEADER_FILE}")
+	file(GLOB __TRANSLATIONS_LIST LIST_DIRECTORIES FALSE "${ENGINE_SOURCE_DIR}/editor/translations/extractable/*.po")
+	file(GLOB __TEMP_TRANSLATIONS_LIST LIST_DIRECTORIES FALSE "${ENGINE_SOURCE_DIR}/editor/translations/extractable/extractable.pot")
+	list(APPEND __TRANSLATIONS_LIST ${__TEMP_TRANSLATIONS_LIST})
 
-	file(GLOB __TEMP_FONTS_FILES LIST_DIRECTORIES FALSE "${ENGINE_SOURCE_DIR}/thirdparty/fonts/*.ttf")
-	set(__FONTS_FILES ${__TEMP_FONTS_FILES})
-
-	file(GLOB __TEMP_FONTS_FILES LIST_DIRECTORIES FALSE "${ENGINE_SOURCE_DIR}/thirdparty/fonts/*.otf")
-	list(APPEND __FONTS_FILES ${__TEMP_FONTS_FILES})
-
-	file(GLOB __TEMP_FONTS_FILES LIST_DIRECTORIES FALSE "${ENGINE_SOURCE_DIR}/thirdparty/fonts/*.woff")
-	list(APPEND __FONTS_FILES ${__TEMP_FONTS_FILES})
-
-	file(GLOB __TEMP_FONTS_FILES LIST_DIRECTORIES FALSE "${ENGINE_SOURCE_DIR}/thirdparty/fonts/*.woff2")
-	list(APPEND __FONTS_FILES ${__TEMP_FONTS_FILES})
-	
-	list(SORT __FONTS_FILES)
-	add_python_generator_command(editor_builders cmake_make_fonts_header
-		SOURCE_FILES ${__FONTS_FILES}
-		TARGET_FILES "${__FONTS_HEADER_FILE}"
+	add_python_generator_command(editor_builders cmake_make_extractable_translations_header
+		SOURCE_FILES ${__TRANSLATIONS_LIST}
+		TARGET_FILES "${__TRANSLATION_HEADER_FILE}"
 		APPEND_SYS_PATH "${ENGINE_SOURCE_DIR}"
-		BY_FILE "fonts_header"
-		COMMENT "Generating builtin fonts header."
+		BY_FILE "extractable_translations_header"
 	)
 
 	add_custom_target(editor-gen
@@ -176,12 +157,15 @@ if(godot_editor_build)
 	)
 	add_dependencies(editor-env editor-gen)
 
+	target_sources(editor-lib PRIVATE ${__REGISTER_EXPORTERS_FILE})
 	target_glob_sources(editor-lib PRIVATE "*.cpp")
 
-	add_subdirectory("debugger")
-	add_subdirectory("export")
-	add_subdirectory("gui")
-	add_subdirectory("icons")
-	add_subdirectory("import")
-	add_subdirectory("plugins")
+	add_subdirectory(debugger)
+	add_subdirectory(export)
+	add_subdirectory(gui)
+	add_subdirectory(icons)
+	add_subdirectory(import)
+	add_subdirectory(plugins)
+	add_subdirectory(project_manager)
+	add_subdirectory(themes)
 endif()

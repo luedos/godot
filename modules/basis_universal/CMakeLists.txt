@@ -4,7 +4,17 @@ add_env(basisu-env
 )
 
 set(__THIRDPARTY_BASISU_PATH "${ENGINE_SOURCE_DIR}/thirdparty/basis_universal")
-target_include_directories(basisu-env SYSTEM INTERFACE "${__THIRDPARTY_BASISU_PATH}")
+if (NOT MSVC)
+	target_include_directories(basisu-env SYSTEM INTERFACE
+		"${__THIRDPARTY_BASISU_PATH}"
+		"${ENGINE_SOURCE_DIR}/thirdparty/jpeg-compressor"
+	)
+else()
+	target_include_directories(basisu-env INTERFACE
+		"${__THIRDPARTY_BASISU_PATH}"
+		"${ENGINE_SOURCE_DIR}/thirdparty/jpeg-compressor"
+	)
+endif()
 
 if (godot_builtin_zstd)
 	target_include_directories(basisu-env INTERFACE "${ENGINE_SOURCE_DIR}/thirdparty/zstd")
@@ -40,7 +50,7 @@ add_lib(thirdparty-basisu-transcoder-lib
 		"${__THIRDPARTY_BASISU_PATH}/transcoder/basisu_transcoder.cpp"
 )
 
-if (godot_editor_build)
+if (EDITOR_BUILD)
 	target_compile_definitions(thirdparty-basisu-env INTERFACE "BASISU_NO_IMG_LOADERS")
 	add_lib(thirdparty-basisu-encoder-lib
 		OBJECT
@@ -66,7 +76,6 @@ if (godot_editor_build)
 		"basisu_resample_filters.cpp"
 		"basisu_ssim.cpp"
 		"basisu_uastc_enc.cpp"
-		"jpgd.cpp"
 		"pvpngreader.cpp"
 	)
 endif()

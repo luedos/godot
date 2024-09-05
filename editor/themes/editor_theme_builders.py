@@ -2,6 +2,8 @@
 
 import os
 
+def cmake_make_fonts_header(target, source):
+    make_fonts_header(target, source, None)
 
 def make_fonts_header(target, source, env):
     dst = str(target[0])

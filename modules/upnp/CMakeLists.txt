@@ -41,8 +41,8 @@ if (godot_builtin_miniupnpc)
 	)
 
 	target_include_directories(upnp-env INTERFACE "${__THIRDPARTY_MINIUPNPC_PATH}/include")
-	target_compile_definitions(upnp-env INTERFACE
-		"MINIUPNP_STATICLIB"
-		"MINIUPNPC_SET_SOCKET_TIMEOUT"
-	)
+	target_compile_definitions(upnp-env INTERFACE "MINIUPNP_STATICLIB")
+	if (NOT godot_platform STREQUAL "windows")
+		target_compile_definitions(upnp-env INTERFACE "MINIUPNPC_SET_SOCKET_TIMEOUT")
+	endif()
 endif()

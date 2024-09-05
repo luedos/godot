@@ -15,8 +15,10 @@ add_lib(text-server-adv-lib
 if ("svg" IN_LIST MODULES_LIST)
 	target_include_directories(text-server-adv-env INTERFACE
 		"${ENGINE_SOURCE_DIR}/thirdparty/thorvg/inc"
-		"${ENGINE_SOURCE_DIR}/thirdparty/thorvg/src/lib"
+		"${ENGINE_SOURCE_DIR}/thirdparty/thorvg/src/common"
+		"${ENGINE_SOURCE_DIR}/thirdparty/thorvg/src/renderer"
 	)
+	target_compile_definitions(text-server-adv-env INTERFACE "TVG_STATIC")
 endif()
 
 inline_if(__FREETYPE_ENABLED "freetype" IN_LIST MODULES_LIST)
@@ -95,6 +97,7 @@ if (godot_builtin_harfbuzz)
 		"src/hb-subset-cff1.cc"
 		"src/hb-subset-cff2.cc"
 		"src/hb-subset-input.cc"
+		"src/hb-subset-instancer-iup.cc"
 		"src/hb-subset-instancer-solver.cc"
 		"src/hb-subset-plan.cc"
 		"src/hb-subset-repacker.cc"
@@ -377,6 +380,8 @@ if (godot_builtin_icu4c)
 		"common/uloc.cpp"
 		"common/uloc_keytype.cpp"
 		"common/uloc_tag.cpp"
+		"common/ulocale.cpp"
+		"common/ulocbuilder.cpp"
 		"common/umapfile.cpp"
 		"common/umath.cpp"
 		"common/umutablecptrie.cpp"
@@ -441,9 +446,9 @@ if (godot_builtin_icu4c)
 		"i18n/uspoof_impl.cpp"
 	)
 
-	set(__ICU_DATA_NAME "icudt73l.dat")
+	set(__ICU_DATA_NAME "icudt75l.dat")
 
-	if (godot_editor_build)
+	if (EDITOR_BUILD)
 		add_python_generator_command(cmake_icu_data_gen cmake_make_icu_data
 			TARGET_FILES "${__THIRDPARTY_ICU_PATH}/icudata.gen.h"
 			SOURCE_FILES "${__THIRDPARTY_ICU_PATH}/${__ICU_DATA_NAME}"
@@ -481,7 +486,7 @@ if (godot_builtin_icu4c)
 		"ICU_DATA_NAME=${__ICU_DATA_NAME}"
 	)
 
-	if (godot_editor_build)
+	if (EDITOR_BUILD)
 		target_compile_definitions(text-server-adv-env INTERFACE "ICU_STATIC_DATA")
 	endif()
 
@@ -491,6 +496,7 @@ endif()
 
 if (godot_builtin_msdfgen AND "msdfgen" IN_LIST MODULES_LIST)
 	# Treat msdfgen headers as system headers to avoid raising warnings.
+	target_compile_definitions(text-server-adv-env INTERFACE "MSDFGEN_PUBLIC=")
 	target_include_directories(text-server-adv-lib SYSTEM PRIVATE "${ENGINE_SOURCE_DIR}/thirdparty/msdfgen")
 endif()
 

@@ -23,6 +23,8 @@ if (godot_builtin_glslang)
 			thirdparty-warnings-env
 	)
 	set(__THIRDPARTY_GLSLANG_SOURCES
+		"glslang/GenericCodeGen/CodeGen.cpp"
+		"glslang/GenericCodeGen/Link.cpp"
 		"glslang/MachineIndependent/attribute.cpp"
 		"glslang/MachineIndependent/Constant.cpp"
 		"glslang/MachineIndependent/glslang_tab.cpp"
@@ -51,9 +53,7 @@ if (godot_builtin_glslang)
 		"glslang/MachineIndependent/SpirvIntrinsics.cpp"
 		"glslang/MachineIndependent/SymbolTable.cpp"
 		"glslang/MachineIndependent/Versions.cpp"
-		"glslang/GenericCodeGen/CodeGen.cpp"
-		"glslang/GenericCodeGen/Link.cpp"
-		"OGLCompilersDLL/InitializeDll.cpp"
+		"glslang/ResourceLimits/ResourceLimits.cpp"
 		"SPIRV/disassemble.cpp"
 		"SPIRV/doc.cpp"
 		"SPIRV/GlslangToSpv.cpp"

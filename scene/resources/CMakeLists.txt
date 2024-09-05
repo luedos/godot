@@ -12,4 +12,7 @@ add_lib(thirdparty-misc-lib
 
 target_glob_sources(scene-lib PRIVATE "*.cpp")
 
-add_subdirectory(default_theme)
+add_subdirectory(2d)
+if (NOT godot_disable_3d)
+	add_subdirectory(3d)
+endif()

@@ -23,6 +23,9 @@ add_subdirectory("pulseaudio")
 
 if (godot_platform STREQUAL "windows")
 	add_subdirectory(wasapi)
+	if (NOT MSVC)
+		add_subdirectory(backtrace)
+	endif()
 endif()
 
 if (godot_xaudio2)
@@ -39,9 +42,14 @@ if (godot_vulkan)
 	add_subdirectory(vulkan)
 endif()
 
+if (godot_d3d12)
+	add_subdirectory(d3d12)
+endif()
+
 if (godot_opengl3)
 	add_subdirectory(gl_context)
 	add_subdirectory(gles3)
+	add_subdirectory(egl)
 endif()
 
 # Core dependencies

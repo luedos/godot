@@ -16,7 +16,7 @@ add_lib(websocket-lib
 		global-warnings-env
 )
 target_glob_sources(websocket-lib PRIVATE "*.cpp")
-if (godot_editor_build)
+if (EDITOR_BUILD)
 	target_glob_sources(websocket-lib PRIVATE "editor/*.cpp")
 endif()
 
@@ -41,7 +41,7 @@ if (godot_builtin_wslay)
 	target_include_directories(websocket-env INTERFACE "${__THIRDPARTY_WSLAY_PATH}")
 	target_compile_definitions(websocket-env INTERFACE "HAVE_CONFIG_H")
 
-	if (godot_platform MATCHES "(windows|uwp)")
+	if (godot_platform STREQUAL "windows")
 		target_compile_definitions(websocket-env INTERFACE "HAVE_WINSOCK2_H")
 	else()
 		target_compile_definitions(websocket-env INTERFACE "HAVE_NETINET_IN_H")

@@ -6,5 +6,5 @@ function(${__MODULE_NAME}_configure_module)
 endfunction()
 
 function(${__MODULE_NAME}_get_module_can_build __OUTPUT)
-	set(${__OUTPUT} "${godot_editor_build}" PARENT_SCOPE)
+	set(${__OUTPUT} "${EDITOR_BUILD}" PARENT_SCOPE)
 endfunction()

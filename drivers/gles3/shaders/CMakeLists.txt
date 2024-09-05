@@ -1,9 +1,7 @@
 set(__GLES3_FILES
 	"canvas.glsl"
-	"copy.glsl"
 	"scene.glsl"
 	"sky.glsl"
-	"cubemap_filter.glsl"
 	"canvas_occlusion.glsl"
 	"canvas_sdf.glsl"
 	"particles.glsl"
@@ -35,3 +33,5 @@ add_custom_target(drivers-gles3-shaders-gen
 )
 
 add_dependencies(drivers-env drivers-gles3-shaders-gen)
+
+add_subdirectory(effects)

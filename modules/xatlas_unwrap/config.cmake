@@ -6,7 +6,7 @@ function(${__MODULE_NAME}_configure_module)
 endfunction()
 
 function(${__MODULE_NAME}_get_module_can_build __OUTPUT)
-	if (godot_editor_build AND NOT godot_platform MATCHES "(android|ios)")
+	if (EDITOR_BUILD AND NOT godot_platform MATCHES "(android|ios)")
 		set(${__OUTPUT} TRUE PARENT_SCOPE)
 	else()
 		set(${__OUTPUT} FALSE PARENT_SCOPE)

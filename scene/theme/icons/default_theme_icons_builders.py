@@ -59,3 +59,6 @@ def make_default_theme_icons_action(target, source, env):
 
         with open(dst, "w", encoding="utf-8", newline="\n") as f:
             f.write(s.getvalue())
+
+def cmake_make_default_theme_icons_action(target, source):
+    make_default_theme_icons_action(target, source, None)

@@ -12,7 +12,6 @@ add_python_generator_command(input_builders cmake_make_default_controller_mappin
 	SOURCE_FILES ${__CONTROLLER_DATABASES_SOURCES}
 	APPEND_SYS_PATH "${ENGINE_SOURCE_DIR}"
 	CREATE_CUSTOM_TARGET core-input-gen
-	COMMENT "Generating default controller mappings."
 )
 
 add_dependencies(core-env core-input-gen)

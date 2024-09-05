@@ -9,6 +9,6 @@ add_lib(multiplayer-lib
 )
 target_glob_sources(multiplayer-lib PRIVATE "*.cpp")
 
-if (godot_editor_build)
+if (EDITOR_BUILD)
 	target_glob_sources(multiplayer-lib PRIVATE "editor/*.cpp")
 endif()

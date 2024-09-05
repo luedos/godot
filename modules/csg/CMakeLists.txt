@@ -9,6 +9,6 @@ add_lib(csg-lib
 )
 target_glob_sources(csg-lib PRIVATE "*.cpp")
 
-if (godot_editor_build)
+if (EDITOR_BUILD)
 	target_glob_sources(csg-lib PRIVATE "editor/*.cpp")
 endif()

@@ -16,7 +16,6 @@ endfunction()
 function(${__MODULE_NAME}_get_doc_classes __OUTPUT)
 	set(${__OUTPUT}
 		"EditorSceneFormatImporterBlend"
-		"EditorSceneFormatImporterFBX"
 		"EditorSceneFormatImporterGLTF"
 		"GLTFAccessor"
 		"GLTFAnimation"

@@ -259,7 +259,9 @@ function(normilize_path __OUTPUT __PATH)
 	set(__OPTIONS_ARGS 
 		ABSOLUTE # Force path to be absolute
 	)
-	set(__ONE_VALUE_ARGS "")
+	set(__ONE_VALUE_ARGS
+		PARENT_PATH_PREFIX
+	)
 	set(__MULTI_VALUE_ARGS "")
 	cmake_parse_arguments(PARSE_ARGV 2 __ARGS "${__OPTIONS_ARGS}" "${__ONE_VALUE_ARGS}" "${__MULTI_VALUE_ARGS}")
 
@@ -271,8 +273,12 @@ function(normilize_path __OUTPUT __PATH)
 		set(__ARGS_ABSOLUTE true)
 	endif()
 
-	# This is defult prefix to use. 
-	set(__PATH_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}")
+	# This is defult prefix to use.
+	if ("${__ARGS_PARENT_DIR}" STREQUAL "")
+		set (__ARGS_PARENT_PATH_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}")
+	endif()
+
+	set(__PATH_PREFIX "${__ARGS_PARENT_PATH_PREFIX}")
 
 	# lots of fuckery here, better not look
 	# ye, ye, I know, python is better for that (python at least has library for working with the paths).
@@ -1003,6 +1009,7 @@ function(add_python_generator_command __MODULE __FUNCTION)
 	)
 	set(__MULTI_VALUE_ARGS 
 		SOURCE_FILES # Source files to be used
+		SOURCE_ARRAY # If source files are not provided, it is possible to provide general array of values.
 		TARGET_FILES # Target files expected to be produced by this comand
 		SYMBOLIC_TARGETS # The posibility to add some target sources with SYMBOLIC property turned on
 		SYMBOLIC_SOURCES # The posibility to add some sources with SYMBOLIC property turned on
@@ -1031,19 +1038,39 @@ function(add_python_generator_command __MODULE __FUNCTION)
 		set(__MODULE "${__SUB_MODULES}.${__MODULE}")
 	endif()
 
-	check_for_gen_expr(__SOURCE_FILES_HAS_GEN_EXPR "${__ARGS_SOURCE_FILES}")
-	if(__SOURCE_FILES_HAS_GEN_EXPR)
+	set(__EMPTY_ARRAY)
+	if (NOT "${__ARGS_SOURCE_FILES}" STREQUAL "")
+		check_for_gen_expr(__SOURCE_FILES_HAS_GEN_EXPR "${__ARGS_SOURCE_FILES}")
+		if(__SOURCE_FILES_HAS_GEN_EXPR)
 
-		# if sources files has gen expr, we will put them into seperate variable infront of the command
-		list(PREPEND __ARGS_CUSTOM_VARS ARR_VAR "var_source_files=__ARGS_SOURCE_FILES")
-		# and prepend command future call with usage of this variable as 'source' argument
-		list(PREPEND __ARGS_PYTHON_ARGS RAW_VAL "source=var_source_files")
+			# if sources files has gen expr, we will put them into seperate variable infront of the command
+			list(PREPEND __ARGS_CUSTOM_VARS ARR_VAR "var_source_files=__ARGS_SOURCE_FILES")
+			# and prepend command future call with usage of this variable as 'source' argument
+			list(PREPEND __ARGS_PYTHON_ARGS RAW_VAL "source=var_source_files")
 
+		else()
+
+			# if no gen expressions, just prepend those sources as 'source' argument
+			list(PREPEND __ARGS_PYTHON_ARGS ARR_VAR "source=__ARGS_SOURCE_FILES")
+
+		endif()
+	elseif (NOT "${__ARGS_SOURCE_ARRAY}" STREQUAL "")
+		check_for_gen_expr(__SOURCE_ARRAY_HAS_GEN_EXPR "${__ARGS_SOURCE_ARRAY}")
+		if(__SOURCE_ARRAY_HAS_GEN_EXPR)
+
+			# if sources files has gen expr, we will put them into seperate variable infront of the command
+			list(PREPEND __ARGS_CUSTOM_VARS ARR_VAR "var_source_files=__ARGS_SOURCE_ARRAY")
+			# and prepend command future call with usage of this variable as 'source' argument
+			list(PREPEND __ARGS_PYTHON_ARGS RAW_VAL "source=var_source_files")
+
+		else()
+
+			# if no gen expressions, just prepend those sources as 'source' argument
+			list(PREPEND __ARGS_PYTHON_ARGS ARR_VAR "source=__ARGS_SOURCE_ARRAY")
+
+		endif()
 	else()
-
-		# if no gen expressions, just prepend those sources as 'source' argument
-		list(PREPEND __ARGS_PYTHON_ARGS ARR_VAR "source=__ARGS_SOURCE_FILES")
-
+		list(PREPEND __ARGS_PYTHON_ARGS ARR_VAR "source=__EMPTY_ARRAY")
 	endif()
 
 	check_for_gen_expr(__TARGET_FILES_HAS_GEN_EXPR "${__ARGS_TARGET_FILES}")
@@ -1311,7 +1338,8 @@ function(execute_python_method __MODULE __FUNCTION)
 		ECHO_OUTPUT_VARIABLE
 		ECHO_ERROR_VARIABLE
 		IGNORE_MODULE_AS_DEPENDENCY
-		OPTIONAL # do we need to throw an error, if this command fails? If no, specify this option. 
+		OPTIONAL # do we need to throw an error, if this command fails? If no, specify this option.
+		VERBOSE_PRINT
 	)
 	set(__ONE_VALUE_ARGS 
 		MODULE_DIR # relative directory of the module
@@ -1426,7 +1454,7 @@ function(execute_python_method __MODULE __FUNCTION)
 		list(APPEND __ADDITIONAL_ARGS COMMAND_ERROR_IS_FATAL ANY)
 	endif()
 
-	if(VERBOSE)
+	if(VERBOSE OR __ARGS_VERBOSE_PRINT)
 
 		message(STATUS "============== Executing python method =============")
 		message(STATUS "Working dir: ${__ARGS_WORKING_DIR}")

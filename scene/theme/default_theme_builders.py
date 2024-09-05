@@ -28,3 +28,6 @@ def make_fonts_header(target, source, env):
             g.write("};\n")
 
         g.write("#endif")
+
+def cmake_make_fonts_header(target, source):
+    make_fonts_header(target, source, None)

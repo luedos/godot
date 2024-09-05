@@ -6,5 +6,11 @@ function(${__MODULE_NAME}_configure_module)
 endfunction()
 
 function(${__MODULE_NAME}_get_module_can_build __OUTPUT)
-	set(${__OUTPUT} TRUE PARENT_SCOPE)
+    # glslang is only needed when Vulkan or Direct3D 12-based renderers are available,
+    # as OpenGL doesn't use glslang.
+	if (godot_vulkan OR godot_d3d12)
+		set(${__OUTPUT} TRUE PARENT_SCOPE)
+	else()
+		set(${__OUTPUT} FALSE PARENT_SCOPE)
+	endif()
 endfunction()

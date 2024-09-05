@@ -6,7 +6,7 @@ function(${__MODULE_NAME}_configure_module)
 endfunction()
 
 function(${__MODULE_NAME}_get_module_can_build __OUTPUT)
-	if (godot_platform MATCHES "(linuxbsd|windows|android)" AND godot_openxr AND NOT godot_disable_3d)
+	if (godot_platform MATCHES "(linuxbsd|windows|android|macos)" AND godot_openxr AND NOT godot_disable_3d)
 		set(${__OUTPUT} TRUE PARENT_SCOPE)
 	else()
 		set(${__OUTPUT} FALSE PARENT_SCOPE)
@@ -19,9 +19,16 @@ function(${__MODULE_NAME}_get_doc_classes __OUTPUT)
 		"OpenXRAction"
 		"OpenXRActionSet"
 		"OpenXRActionMap"
+		"OpenXRAPIExtension"
+		"OpenXRExtensionWrapperExtension"
 		"OpenXRInteractionProfile"
+		"OpenXRInteractionProfileMetadata"
 		"OpenXRIPBinding"
 		"OpenXRHand"
+		"OpenXRCompositionLayer"
+		"OpenXRCompositionLayerQuad"
+		"OpenXRCompositionLayerCylinder"
+		"OpenXRCompositionLayerEquirect"
 		PARENT_SCOPE
 	)
 endfunction()

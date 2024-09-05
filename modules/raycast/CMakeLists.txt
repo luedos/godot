@@ -28,10 +28,10 @@ if (godot_builtin_embree)
 	target_sources_from_path(thirdparty-embree-lib PRIVATE "${__THIRDPARTY_EMBREE_PATH}"
 		"common/sys/sysinfo.cpp"
 		"common/sys/alloc.cpp"
+		"common/sys/estring.cpp"
 		"common/sys/filename.cpp"
 		"common/sys/library.cpp"
 		"common/sys/thread.cpp"
-		"common/sys/string.cpp"
 		"common/sys/regression.cpp"
 		"common/sys/mutex.cpp"
 		"common/sys/condition.cpp"
@@ -49,6 +49,7 @@ if (godot_builtin_embree)
 		"kernels/common/rtcore.cpp"
 		"kernels/common/rtcore_builder.cpp"
 		"kernels/common/scene.cpp"
+		"kernels/common/scene_verify.cpp"
 		"kernels/common/alloc.cpp"
 		"kernels/common/geometry.cpp"
 		"kernels/common/scene_triangle_mesh.cpp"
@@ -69,8 +70,6 @@ if (godot_builtin_embree)
 		"kernels/bvh/bvh_builder_twolevel.cpp"
 		"kernels/bvh/bvh_intersector1_bvh4.cpp"
 		"kernels/bvh/bvh_intersector_hybrid4_bvh4.cpp"
-		"kernels/bvh/bvh_intersector_stream_bvh4.cpp"
-		"kernels/bvh/bvh_intersector_stream_filters.cpp"
 	)
 	
 	target_include_directories(raycast-env INTERFACE

@@ -5,6 +5,10 @@ function(${__MODULE_NAME}_configure_module)
 	# does nothing
 endfunction()
 
+function(${__MODULE_NAME}_create_custom_options)
+	set_bool_option(godot_minimp3_extra_formats FALSE DESCRIPTION "Build minimp3 with MP1/MP2 decoding support")
+endfunction()
+
 function(${__MODULE_NAME}_get_module_can_build __OUTPUT)
 	set(${__OUTPUT} TRUE PARENT_SCOPE)
 endfunction()
@@ -12,6 +16,7 @@ endfunction()
 function(${__MODULE_NAME}_get_doc_classes __OUTPUT)
 	set(${__OUTPUT}
 		"AudioStreamMP3"
+		"ResourceImporterMP3"
 		PARENT_SCOPE
 	)
 endfunction()

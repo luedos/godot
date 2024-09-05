@@ -8,3 +8,7 @@ endfunction()
 function(${__MODULE_NAME}_get_module_can_build __OUTPUT)
 	set(${__OUTPUT} TRUE PARENT_SCOPE)
 endfunction()
+
+function(${__MODULE_NAME}_get_module_dependencies __REQUIRED_DEPENDENCIES __OPTIONAL_DEPENDENCIES)
+	set("${__REQUIRED_DEPENDENCIES}" "jpg" PARENT_SCOPE)
+endfunction()

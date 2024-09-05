@@ -8,7 +8,6 @@ add_python_generator_command(template_builders cmake_make_templates
 	CREATE_CUSTOM_TARGET editor-template-gd-gen
 	APPEND_SYS_PATH "${ENGINE_SOURCE_DIR}"
 	WORKING_DIR "${ENGINE_SOURCE_DIR}"
-	COMMENT "Generating GDScript templates header."
 )
 
 add_dependencies(gdscript-lib editor-template-gd-gen)

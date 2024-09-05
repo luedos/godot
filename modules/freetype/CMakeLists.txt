@@ -73,12 +73,6 @@ if (godot_builtin_freetype)
 		target_compile_definitions(freetype-env INTERFACE "FT_CONFIG_OPTION_USE_BROTLI")
 	endif()
 
-	if (godot_platform STREQUAL "uwp")
-		# Include header for UWP to fix build issues
-		# Globally too, as freetype is used in scene (see bottom)
-		target_compile_options(global-env INTERFACE "/FI" "\"modules/freetype/uwpdef.h\"")
-	endif()
-
 	# Also needed in main env for scene/
 	target_include_directories(global-env INTERFACE "${__THIRDPARTY_FREETYPE_PATH}/include")
 
@@ -88,7 +82,7 @@ if (godot_builtin_freetype)
 		"FT_CONFIG_OPTION_SYSTEM_ZLIB"
 	)
 
-	if (godot_editor_build)
+	if (EDITOR_BUILD)
 		target_compile_definitions(freetype-env INTERFACE "ZLIB_DEBUG")
 	endif()
 

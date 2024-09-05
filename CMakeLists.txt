@@ -1,5 +1,5 @@
-cmake_minimum_required (VERSION 3.19.0)
-project (godot VERSION 4.0 LANGUAGES CXX C)
+cmake_minimum_required (VERSION 3.20.0)
+project (godot VERSION 4.3.0 LANGUAGES CXX C ASM)
 
 # Seting defualt language standarts. 
 set(CMAKE_CXX_STANDARD 17)
@@ -41,14 +41,23 @@ if ("${godot_platform}" STREQUAL "")
 endif()
 
 # Just in case we provided platform from some options
-if(godot_platform MATCHES "(linux|dragonfly|freebsd|netbsd|openbsd)")
+if (godot_platform STREQUAL "osx")
+	message(WARNING "Platform \"osx\" has been renamed to \"macos\" in Godot 4. Building for platform \"macos\".")
+	set(godot_platform "macos")
+elseif (godot_platform STREQUAL "iphone")
+	message(WARNING "Platform \"iphone\" has been renamed to \"ios\" in Godot 4. Building for platform \"ios\".")
+	set(godot_platform "ios")
+elseif(godot_platform MATCHES "(linux|dragonfly|freebsd|netbsd|openbsd|x11)")
+	if (godot_platform STREQUAL "x11")
+		message(WARNING "Platform \"x11\" has been renamed to \"linuxbsd\" in Godot 4.0. Building for platform \"linuxbsd\".")
+	endif()
 	set(godot_platform "linuxbsd")
-elseif(godot_platform STREQUAL "x11")
-	message(WARNING "Platform \"x11\" has been renamed to \"linuxbsd\" in Godot 4.0. Building for platform \"linuxbsd\".")
-	set(godot_platform "linuxbsd")
+elseif (godot_platform STREQUAL "javascript")
+	message(WARNING "Platform \"javascript\" has been renamed to \"web\" in Godot 4. Building for platform \"web\".")
+	set(godot_platform "web")
 endif()
 
-message(STATUS "Godot detected platform: ${godot_platform}")
+message(STATUS "Godot detected platform: '${godot_platform}'.")
 
 ############### Processing processor ###############
 
@@ -107,23 +116,19 @@ endif()
 ############### Creating default parameters ###############
 
 # Important note: even though all option variables here is cache variables, when we referencing them we only use simple variant, so some variables can be overridden.
-# (for example, some platforms tend to override godot_editor_build option)
 # Another important note: even though every variable in cmake is upper case, options use strictly lower case. This is done to have at least some comparability with scons options which is important for build profile.
 # Options are not fully comparable with their scons counterparts, but the main difference is just a 'godot_' suffix in front of them.
 
 # Target build options
 set_string_option   (godot_bin_directory            "bin/$<CONFIG>"     DESCRIPTION "Build directory. (can use generator expression). If not absolute, will be relative to CMAKE_BINARY_DIR (aka directory where you configured your cmake).")
-# In godot 4 this option was deprecated in favor of 'target' (which could be editor/release/debug),
-# but, because in some cases in cmake we can choose target post configuration,
-# and it would be really hard to configure project without knowing whatever we should or should not build editor,
-# I decided to create an additional option 'godot_editor_build' to more precisely specify in configuration time whenever or not we are building editor.
-set_string_option   (godot_editor_build             "auto"              DESCRIPTION "Build the tools (a.k.a. the Godot editor). This option is complimentary to CMAKE_BUILD_TYPE. In single configuration generators this option has next behavior: auto - fully rely on CMAKE_BUILD_TYPE, true - transfer whatever build type was decided to 'editor' analogue, false - if CMAKE_BUILD_TYPE is editor choose the 'debug' analogue. In case of multi-configuration generator, this option decide whenever 'editor' configs should be added." ENUM "auto" "true" "false")
+set_string_option   (godot_target                   "editor"            DESCRIPTION "Compilation target." ENUM "editor" "template_release" "template_debug")
 set_bool_option     (godot_dev_build                FALSE               DESCRIPTION "Developer build with dev-only debugging code (DEV_ENABLED).")
 set_bool_option     (godot_debug_symbols            FALSE               DESCRIPTION "Build with debugging symbols.")
 set_bool_option     (godot_separate_debug_symbols   FALSE               DESCRIPTION "Build with debugging symbols.")
 set_string_option   (godot_lto                      "none"              DESCRIPTION "Link-time optimization (production builds)." ENUM "none" "auto" "thin" "full")
 set_string_option   (godot_lto_jobs_count	        "4"              	DESCRIPTION "Link-time optimization number of jobs (production builds). This additional configuration used here because cmake configures number of compilation jobs at build time, so we can't know it at configuration time, and we need it to setup lto properly.")
 set_bool_option     (godot_production               FALSE               DESCRIPTION "Set defaults to build Godot for use in production.")
+set_bool_option     (godot_threads                  TRUE                DESCRIPTION "Enable threading support.")
 
 # Components
 set_bool_option     (godot_deprecated               TRUE                DESCRIPTION "Enable deprecated features.")
@@ -133,8 +138,10 @@ set_bool_option     (godot_brotli                   TRUE                DESCRIPT
 set_bool_option     (godot_xaudio2                  FALSE               DESCRIPTION "Enable the XAudio2 audio driver.")
 set_bool_option     (godot_vulkan                   TRUE                DESCRIPTION "Enable the vulkan rendering driver.")
 set_bool_option     (godot_opengl3                  TRUE                DESCRIPTION "Enable the OpenGL/GLES3 rendering driver.")
+set_bool_option     (godot_d3d12                    FALSE               DESCRIPTION "Enable the Direct3D 12 rendering driver.")
 set_bool_option     (godot_openxr                   TRUE                DESCRIPTION "Enable the OpenXR driver.")
 set_bool_option     (godot_use_volk                 TRUE                DESCRIPTION "Use the volk library to load the Vulkan loader dynamically.")
+set_bool_option     (godot_disable_exceptions       TRUE                DESCRIPTION "Force disabling exception handling code.")
 set_string_option   (godot_custom_modules           ""                  DESCRIPTION "A list of semicolum-separated directory paths containing custom modules to build.")
 set_bool_option     (godot_custom_modules_recursive TRUE                DESCRIPTION "Detect custom modules recursively for each specified path.")
 
@@ -153,10 +160,13 @@ set_bool_option     (godot_modules_enabled_by_default TRUE              DESCRIPT
 set_bool_option     (godot_no_editor_splash         TRUE                DESCRIPTION "Don't use the custom splash screen for the editor.")
 set_string_option   (godot_system_certs_path        ""                  DESCRIPTION "Use this path as SSL certificates default for editor (for package maintainers).")
 set_bool_option     (godot_use_precise_math_checks  FALSE               DESCRIPTION "Math checks use very precise epsilon (debug option).")
+set_bool_option     (godot_engine_update_check      TRUE                DESCRIPTION "Enable engine update checks in the Project Manager.")
+set_bool_option     (godot_steamapi                 FALSE               DESCRIPTION "Enable minimal SteamAPI integration for usage time tracking (editor only).")
 
 # Thirdparty libraries
 set_bool_option     (godot_builtin_brotli           TRUE    DESCRIPTION "Use the built-in Brotli library.")
 set_bool_option     (godot_builtin_certs            TRUE    DESCRIPTION "Use the built-in SSL certificates bundles.")
+set_bool_option     (godot_builtin_clipper2         TRUE    DESCRIPTION "Use the built-in Clipper2 library.")
 set_bool_option     (godot_builtin_embree           TRUE    DESCRIPTION "Use the built-in Embree library.")
 set_bool_option     (godot_builtin_enet             TRUE    DESCRIPTION "Use the built-in ENet library.")
 set_bool_option     (godot_builtin_freetype         TRUE    DESCRIPTION "Use the built-in FreeType library.")
@@ -173,6 +183,7 @@ set_bool_option     (godot_builtin_libwebp          TRUE    DESCRIPTION "Use the
 set_bool_option     (godot_builtin_wslay            TRUE    DESCRIPTION "Use the built-in wslay library.")
 set_bool_option     (godot_builtin_mbedtls          TRUE    DESCRIPTION "Use the built-in mbedTLS library.")
 set_bool_option     (godot_builtin_miniupnpc        TRUE    DESCRIPTION "Use the built-in miniupnpc library.")
+set_bool_option     (godot_builtin_openxr           TRUE    DESCRIPTION "Use the built-in OpenXR library.")
 set_bool_option     (godot_builtin_pcre2            TRUE    DESCRIPTION "Use the built-in PCRE2 library.")
 set_bool_option     (godot_builtin_pcre2_with_jit   TRUE    DESCRIPTION "Use JIT compiler for the built-in PCRE2 library.")
 set_bool_option     (godot_builtin_recastnavigation TRUE    DESCRIPTION "Use the built-in Recast navigation library.")
@@ -182,6 +193,9 @@ set_bool_option     (godot_builtin_squish           TRUE    DESCRIPTION "Use the
 set_bool_option     (godot_builtin_xatlas           TRUE    DESCRIPTION "Use the built-in xatlas library.")
 set_bool_option     (godot_builtin_zlib             TRUE    DESCRIPTION "Use the built-in zlib library.")
 set_bool_option     (godot_builtin_zstd             TRUE    DESCRIPTION "Use the built-in Zstd library.")
+
+inline_if(EDITOR_BUILD godot_target STREQUAL "editor")
+inline_if(DEBUG_FEATURES godot_target MATCHES "(editor|template_debug)")
 
 ############### Finding platforms ###############
 
@@ -253,17 +267,6 @@ foreach(__DIR IN LISTS __PLATFORM_DIRS)
 	# if export file exist 
 	if(EXISTS "${__DIR}/export/export.cpp")
 		list(APPEND PLATFORMS_EXPORTERS "${__PLATFORM_ID}")
-		execute_python_method(cmake_methods generate_export_icons
-			PYTHON_ARGS
-				STR_VAR "__DIR"
-				STR_VAR "__PLATFORM_ID"
-			ACTION_CACHE_NAME "${__PLATFORM_ID}_generating_export_icons"
-			DEPENDENT_FILES
-				"${__DIR}/export/logo.svg"
-				"${__DIR}/export/logo_svg.gen.h"
-				"${__DIR}/export/run_icon.svg"
-				"${__DIR}/export/run_svg.gen.h"
-		)
 	endif()
 
 	# if api file exist
@@ -280,8 +283,11 @@ foreach(__DIR IN LISTS __PLATFORM_DIRS)
 			cmake_language(CALL "${__PLATFORM_ID}_create_custom_options")
 		endif()
 
+		set(${__PLATFORM_ID}_SUPPORTED_LIST "")
+		if (COMMAND "${__PLATFORM_ID}_get_platform_supported")
+			cmake_language(CALL "${__PLATFORM_ID}_get_platform_supported" ${__PLATFORM_ID}_SUPPORTED_LIST)
+		endif()
 	endif()
-
 endforeach()
 
 set_string_option(godot_platform "${godot_platform}" DESCRIPTION "Target platform." ENUM ${PLATFORMS_LIST})
@@ -296,16 +302,12 @@ endif()
 ############### Utility setup ###############
 
 # Generator expressions for easier working with build types which can be used in the future.
-set(IS_EDITOR_GEN_EXPR           $<CONFIG:Editor_OptNone,Editor_OptDebug,Editor_OptSpeed,Editor_OptSpeedTrace,Editor_OptSize>)
-set(IS_DEBUG_GEN_EXPR            $<CONFIG:Debug_OptNone,Debug_OptDebug,Debug_OptSpeed,Debug_OptSpeedTrace,Debug_OptSize>)
-set(IS_RELEASE_GEN_EXPR          $<CONFIG:Release_OptNone,Release_OptDebug,Release_OptSpeed,Release_OptSpeedTrace,Release_OptSize>)
-set(IS_OPT_NONE_GEN_EXPR         $<CONFIG:Editor_OptNone,Debug_OptNone,Release_OptNone>)
-set(IS_OPT_DEBUG_GEN_EXPR        $<CONFIG:Editor_OptDebug,Debug_OptDebug,Release_OptDebug>)
-set(IS_OPT_SPEED_GEN_EXPR        $<CONFIG:Editor_OptSpeed,Debug_OptSpeed,Release_OptSpeed>)
-set(IS_OPT_SPEEDTRACE_GEN_EXPR   $<CONFIG:Editor_OptSpeedTrace,Debug_OptSpeedTrace,Release_OptSpeedTrace>)
-set(IS_OPT_SIZE_GEN_EXPR         $<CONFIG:Editor_OptSize,Debug_OptSize,Release_OptSize>)
-
-set(IS_DEBUG_FEATURE_GEN_EXPR    $<CONFIG:Editor_OptNone,Editor_OptDebug,Editor_OptSpeed,Editor_OptSpeedTrace,Editor_OptSize,Debug_OptNone,Debug_OptDebug,Debug_OptSpeed,Debug_OptSpeedTrace,Debug_OptSize>)
+set(IS_OPT_GEN_EXPR $<CONFIG:Release,RelWithDebInfo,MinSizeRel>)
+set(IS_OPT_NONE_GEN_EXPR $<CONFIG:Debug>)
+set(IS_OPT_SIZE_GEN_EXPR $<CONFIG:MinSizeRel>)
+set(IS_OPT_SPEED_GEN_EXPR $<CONFIG:Release,RelWithDebInfo>)
+set(IS_OPT_DEBUG_GEN_EXPR $<CONFIG:RelWithDebInfo>)
+set(IS_DEB_INFO_GEN_EXPR $<CONFIG:Debug,RelWithDebInfo>)
 
 # Normilizing godot bin directory and making it absolute.
 if(NOT IS_ABSOLUTE "${godot_bin_directory}")
@@ -313,113 +315,6 @@ if(NOT IS_ABSOLUTE "${godot_bin_directory}")
 else()
 	normilize_path(godot_bin_directory "${godot_bin_directory}")
 endif()
-
-############### Processing configurations ###############
-
-set(__POSSIBLE_EDITOR_BUILD_TYPES
-	"Editor_OptNone"
-	"Editor_OptDebug"
-	"Editor_OptSpeed"
-	"Editor_OptSpeedTrace"
-	"Editor_OptSize"
-)
-
-set(__POSSIBLE_RELEASE_BUILD_TYPES
-	"Release_OptNone"
-	"Release_OptDebug"
-	"Release_OptSpeed"
-	"Release_OptSpeedTrace"
-	"Release_OptSize"
-)
-
-set(__POSSIBLE_DEBUG_BUILD_TYPES
-	"Debug_OptNone"
-	"Debug_OptDebug"
-	"Debug_OptSpeed"
-	"Debug_OptSpeedTrace"
-	"Debug_OptSize"
-)
-
-set(__POSSIBLE_ALL_BUILD_TYPES ${__POSSIBLE_EDITOR_BUILD_TYPES} ${__POSSIBLE_RELEASE_BUILD_TYPES} ${__POSSIBLE_DEBUG_BUILD_TYPES})
-
-if (CMAKE_CONFIGURATION_TYPES)
-	# If we are using multi-configuration generator.
-	if (godot_editor_build STREQUAL "auto" OR "${godot_editor_build}" STREQUAL "")
-		message(FATAL_ERROR "Configuring cmake for multi-configuration generator. In this case strong specification of 'godot_editor_build' is required (choose 'true' of 'false').")
-	endif()
-
-	if (godot_editor_build)
-		set(CMAKE_CONFIGURATION_TYPES ${__POSSIBLE_EDITOR_BUILD_TYPES})
-	else()
-		set(CMAKE_CONFIGURATION_TYPES ${__POSSIBLE_RELEASE_BUILD_TYPES} ${__POSSIBLE_DEBUG_BUILD_TYPES})
-	endif()
-
-	message(STATUS "Possible configurations are: ${CMAKE_CONFIGURATION_TYPES}")
-else()
-
-	# if no build type defined, make default Editor_OptDebug.
-	if("${CMAKE_BUILD_TYPE}" STREQUAL "")
-		if (godot_editor_build STREQUAL "auto" OR godot_editor_build)
-			set(__DEFAULT_TARGET "Editor")
-		elseif (godot_dev_build)
-			set(__DEFAULT_TARGET "Debug")
-		else()
-			set(__DEFAULT_TARGET "Release")
-		endif()
-
-		if (godot_dev_build)
-			set(__DEFAULT_OPT "None")
-		elseif(__DEFAULT_TARGET MATCHES "(Debug|Editor)")
-			set(__DEFAULT_OPT "SpeedTrace")
-		else()
-			set(__DEFAULT_OPT "Speed")
-		endif()
-
-		set(CMAKE_BUILD_TYPE "${__DEFAULT_TARGET}_Opt${__DEFAULT_OPT}" CACHE STRING "" FORCE)
-	endif()
-
-	set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "${__POSSIBLE_ALL_BUILD_TYPES}")
-
-	if (NOT CMAKE_BUILD_TYPE IN_LIST __POSSIBLE_ALL_BUILD_TYPES)
-		message(FATAL_ERROR "Invalid build type ${CMAKE_BUILD_TYPE}. Possible build types are: ${__POSSIBLE_ALL_BUILD_TYPES}")
-	endif()
-
-	if (godot_editor_build STREQUAL "auto")
-		if (CMAKE_BUILD_TYPE MATCHES "^Editor")
-			set(godot_editor_build TRUE)
-		else()
-			set(godot_editor_build FALSE)
-		endif()
-	elseif (godot_editor_build AND NOT CMAKE_BUILD_TYPE MATCHES "^Editor")
-		string(REGEX REPLACE "^.+(_.+)" "Editor\\1" __NEW_BUILD_TYPE "${CMAKE_BUILD_TYPE}")
-		message(WARNING "Switching build type from '${CMAKE_BUILD_TYPE}' to '${__NEW_BUILD_TYPE}' because 'godot_editor_build' specified as true.")
-		set(CMAKE_BUILD_TYPE "${__NEW_BUILD_TYPE}" CACHE STRING "" FORCE)
-	elseif (NOT godot_editor_build AND CMAKE_BUILD_TYPE MATCHES "^Editor")
-		string(REGEX REPLACE "^Editor(.+)" "Debug\\1" __NEW_BUILD_TYPE "${CMAKE_BUILD_TYPE}")
-		message(WARNING "Switching build type from '${CMAKE_BUILD_TYPE}' to '${__NEW_BUILD_TYPE}' because 'godot_editor_build' specified as false.")
-		set(CMAKE_BUILD_TYPE "${__NEW_BUILD_TYPE}" CACHE STRING "" FORCE)
-	endif()
-
-	message(STATUS "Current build type is '$CACHE{CMAKE_BUILD_TYPE}'.")
-endif()
-
-# We will clean up all flags which were added by the cmake itself, 
-# because all those flags will be specifically added by the platforms
-
-foreach(__LANG "CXX" "C" "OBJCXX" "OBJC")
-
-	set(CMAKE_${__LANG}_FLAGS "")
-
-	foreach(__BUILD_TYPE IN LISTS __POSSIBLE_ALL_BUILD_TYPES)
-		string(TOUPPER "${__BUILD_TYPE}" __BUILD_TYPE)
-		set(CMAKE_${__LANG}_FLAGS_${__BUILD_TYPE} "")
-	endforeach()
-endforeach()
-
-foreach (__BUILD_TYPE IN LISTS __POSSIBLE_ALL_BUILD_TYPES)
-	string(TOUPPER "${__BUILD_TYPE}" __BUILD_TYPE)
-	set(CMAKE_EXE_LINKER_FLAGS_${__BUILD_TYPE} "")
-endforeach()
 
 ############### Creating the environment ###############
 
@@ -677,16 +572,14 @@ execute_python_method(cmake_methods write_disabled_classes
 
 target_include_directories(global-env INTERFACE "${ENGINE_SOURCE_DIR}")
 
-if (godot_editor_build)
+if (EDITOR_BUILD)
 	target_compile_definitions(global-env INTERFACE "TOOLS_ENABLED")
 endif()
 
 # DEBUG_ENABLED enables debugging *features* and debug-only code, which is intended
 # to give *users* extra debugging information for their game development.
-if (godot_editor_build)
+if (godot_target MATCHES "(editor|template_debug)")
 	target_compile_definitions(global-env INTERFACE "DEBUG_ENABLED")
-else()
-	target_compile_definitions(global-env INTERFACE $<${IS_DEBUG_GEN_EXPR}:DEBUG_ENABLED>)
 endif()
 
 if (godot_dev_build)
@@ -701,13 +594,19 @@ if (godot_use_precise_math_checks)
 	target_compile_definitions(global-env INTERFACE "PRECISE_MATH_CHECKS")
 endif()
 
-if (NOT EXISTS "${ENGINE_SOURCE_DIR}/main/splash_editor.png")
-	# Force disabling editor splash if missing.
-	set(godot_no_editor_splash TRUE)
-endif()
+if (EDITOR_BUILD)
+	if (godot_engine_update_check)
+		target_compile_definitions(global-env INTERFACE "ENGINE_UPDATE_CHECK_ENABLED")
+	endif()
 
-if (godot_no_editor_splash)
-	target_compile_definitions(global-env INTERFACE "NO_EDITOR_SPLASH")
+	if (NOT EXISTS "${ENGINE_SOURCE_DIR}/main/splash_editor.png")
+		# Force disabling editor splash if missing.
+		set(godot_no_editor_splash TRUE)
+	endif()
+
+	if (godot_no_editor_splash)
+		target_compile_definitions(global-env INTERFACE "NO_EDITOR_SPLASH")
+	endif()
 endif()
 
 if (NOT godot_deprecated)
@@ -736,61 +635,15 @@ if (godot_dev_build)
 	message(STATUS "NOTE: Developer build, with debug optimization level and debug symbols (unless overridden).")
 endif()
 
-if (MSVC)
-	if (godot_debug_symbols)
-		target_compile_options(global-env INTERFACE "/Zi" "/FS")
-		target_link_options(global-env INTERFACE "/DEBUG:FULL")
-	endif()
-
-	target_compile_options(global-env INTERFACE
-		$<$<OR:${IS_OPT_SPEED_GEN_EXPR},${IS_OPT_SPEEDTRACE_GEN_EXPR}>:/O2>
-		$<${IS_OPT_SIZE_GEN_EXPR}:/O1>
-		$<$<OR:${IS_OPT_DEBUG_GEN_EXPR},${IS_OPT_NONE_GEN_EXPR}>:/Od>
-	)
-	target_link_options(global-env INTERFACE
-		$<$<OR:${IS_OPT_SPEED_GEN_EXPR},${IS_OPT_SPEEDTRACE_GEN_EXPR},${IS_OPT_SIZE_GEN_EXPR}>:/OPT:REF>
-		$<${IS_OPT_SPEEDTRACE_GEN_EXPR}:/OPT:NOICF>
-	)
-else()
-	if (godot_debug_symbols)
-		# Adding dwarf-4 explicitly makes stacktraces work with clang builds,
-		# otherwise addr2line doesn't understand them
-		target_compile_options(global-env INTERFACE "-gdwarf-4")
-		if (godot_dev_build)
-			target_compile_options(global-env INTERFACE "-g3")
-		else()
-			target_compile_options(global-env INTERFACE "-g2")
-		endif()
-	else()
-		if (CMAKE_CXX_COMPILER_ID MATCHES "AppleClang")
-			target_link_options(global-env INTERFACE "-Wl,-S" "-Wl,-x" "-Wl,-dead_strip")
-		else()
-			target_link_options(global-env INTERFACE "-s")
-		endif()
-	endif()
-
-	target_compile_options(global-env INTERFACE
-		$<${IS_OPT_SPEED_GEN_EXPR}:-O3>
-		$<${IS_OPT_SPEEDTRACE_GEN_EXPR}:-O2>
-		$<${IS_OPT_SIZE_GEN_EXPR}:-Os>
-		$<${IS_OPT_DEBUG_GEN_EXPR}:-Og>
-		$<${IS_OPT_NONE_GEN_EXPR}:-O0>
-	)
-endif()
-
-if (NOT godot_lto STREQUAL "none")
-	message(STATUS "Using LTO: ${godot_lto}")
-endif()
-
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 	if ("${CMAKE_CXX_COMPILER_VERSION}" STREQUAL "")
 		message(WARNING 
 			"Couldn't detect compiler version, skipping version checks. "
 			"Build may fail if the compiler doesn't support C++17 fully.")
-	elseif (CMAKE_CXX_COMPILER_VERSION VERSION_LESS "7")
+	elseif (CMAKE_CXX_COMPILER_VERSION VERSION_LESS "9")
 		message(FATAL_ERROR
-			"Detected GCC version older than 7, which does not fully support "
-			"C++17. Supported versions are GCC 7, 9 and later. Use a newer GCC "
+			"Detected GCC version older than 9, which does not fully support "
+			"C++17. Supported versions are GCC 9 and later. Use a newer GCC "
 			"version, or Clang 6 or later."
 		)
 	elseif (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "8.0" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "8.4")
@@ -818,7 +671,7 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 			)
 		elseif (NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "10.0")
 			message(FATAL_ERROR
-				"Detected Apple Clang version older than 10, which does not fully "
+				"Detected Apple Clang version older than 12, which does not fully "
 				"support C++17. Supported versions are Apple Clang 10 and later."
 			)
 		endif()
@@ -828,6 +681,74 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 			"C++17. Supported versions are Clang 6 and later."
 		)
 	endif()
+endif()
+
+if (MSVC)
+	if (godot_debug_symbols)
+		target_compile_options(global-env INTERFACE "/Zi" "/FS")
+		target_link_options(global-env INTERFACE "/DEBUG:FULL")
+	else()
+		target_link_options(global-env INTERFACE "/DEBUG:NONE")
+	endif()
+
+	target_compile_options(global-env INTERFACE
+		$<${IS_OPT_SPEED_GEN_EXPR}:/O2>
+		$<${IS_OPT_SIZE_GEN_EXPR}:/O1>
+		$<${IS_OPT_NONE_GEN_EXPR}:/Od>
+	)
+	target_link_options(global-env INTERFACE
+		$<${IS_OPT_GEN_EXPR}:/OPT:REF>
+		$<${IS_OPT_DEBUG_GEN_EXPR}:/OPT:NOICF>
+	)
+else()
+	if (godot_debug_symbols)
+		# Adding dwarf-4 explicitly makes stacktraces work with clang builds,
+		# otherwise addr2line doesn't understand them
+		target_compile_options(global-env INTERFACE "-gdwarf-4")
+		if (CMAKE_CXX_COMPILER MATCHES "/em\\+\\+(-[a-zA-Z0-9.])?$")
+			# Emscripten only produces dwarf symbols when using "-g3".
+			target_compile_options(global-env INTERFACE "-g3")
+			# Emscripten linker needs debug symbols options too.
+			target_link_options(global-env INTERFACE "-gdwarf-4" "-g3")
+		elseif (godot_dev_build)
+			target_compile_options(global-env INTERFACE "-g3")
+		else()
+			target_compile_options(global-env INTERFACE "-g2")
+		endif()
+	else()
+		if (CMAKE_CXX_COMPILER_ID MATCHES "AppleClang")
+			target_link_options(global-env INTERFACE "-Wl,-S" "-Wl,-x" "-Wl,-dead_strip")
+		else()
+			target_link_options(global-env INTERFACE "-s")
+		endif()
+	endif()
+
+	target_compile_options(global-env INTERFACE
+		$<${IS_OPT_SPEED_GEN_EXPR}:-O3>
+		$<${IS_OPT_SIZE_GEN_EXPR}:-Os>
+		$<${IS_OPT_DEBUG_GEN_EXPR}:-Og>
+		$<${IS_OPT_NONE_GEN_EXPR}:-O0>
+	)
+	target_link_options(global-env INTERFACE
+		$<${IS_OPT_SPEED_GEN_EXPR}:-O3>
+		$<${IS_OPT_SIZE_GEN_EXPR}:-Os>
+		$<${IS_OPT_DEBUG_GEN_EXPR}:-Og>
+		$<${IS_OPT_NONE_GEN_EXPR}:-O0>
+	)
+endif()
+
+if (NOT godot_lto STREQUAL "none")
+	message(STATUS "Using LTO: ${godot_lto}")
+endif()
+
+if (godot_disable_exceptions)
+	if (MSVC)
+		target_compile_definitions(global-env INTERFACE "_HAS_EXCEPTIONS=0")
+	else()
+		target_compile_options(global-env INTERFACE "-fno-exceptions")
+	endif()
+elseif (MSVS)
+	target_compile_options(global-env INTERFACE "/EHsc")
 endif()
 
 # Configure compiler warnings
@@ -866,6 +787,7 @@ if (MSVC)
 
 	if (godot_werror)
 		target_compile_options(global-warnings-env INTERFACE "/WX")
+		target_link_options(global-warnings-env INTERFACE "/WX")
 	endif()
 else() # GCC, Clang
 	target_compile_options(thirdparty-warnings-env INTERFACE "-w")
@@ -1051,13 +973,6 @@ execute_python_method(cmake_methods sort_module_list
 	OUTPUT_VARIABLE MODULES_LIST
 )
 
-execute_python_method(cmake_methods generate_version_header
-	PYTHON_ARGS
-		STR_VAR "MODULES_VERSION_STRING"
-	ACTION_CACHE_NAME "generate_version_header"
-	DEPENDENT_FILES "${CMAKE_CURRENT_SOURCE_DIR}/core/version_generated.gen.h"
-)
-
 ############### Processing program suffix ###############
 
 # If I correct, order of suffixes should work like that:
@@ -1082,13 +997,7 @@ else()
 	set("__${godot_platform}_PROGRAM_SUFFIX" "${godot_platform}")
 endif()
 
-set(__SUFFIX "${__SUFFIX}.${__${godot_platform}_PROGRAM_SUFFIX}")
-
-if (godot_editor_build)
-	set(__SUFFIX "${__SUFFIX}.editor")
-else()
-	set(__SUFFIX "${__SUFFIX}$<IF:${IS_RELEASE_GEN_EXPR},.template_release,.template_debug>")
-endif()
+set(__SUFFIX "${__SUFFIX}.${__${godot_platform}_PROGRAM_SUFFIX}.${godot_target}")
 
 if (godot_dev_build)
 	set(__SUFFIX "${__SUFFIX}.dev")
@@ -1100,6 +1009,10 @@ endif()
 
 set(__SUFFIX "${__SUFFIX}.${PROCESSOR_ARCH_ALIAS}")
 
+if (NOT godot_threads)
+	set(__SUFFIX "${__SUFFIX}.nothreads")
+endif()
+
 if(NOT godot_extra_suffix STREQUAL "")
 	set(__SUFFIX "${__SUFFIX}.${godot_extra_suffix}")
 endif()
@@ -1107,8 +1020,14 @@ endif()
 # Prepend extra suffix
 target_property(PREPEND_STR global-env EXTRA_SUFFIX "${__SUFFIX}")
 
+execute_python_method(cmake_methods get_version_info
+	PYTHON_ARGS
+		STR_VAR "module_version_string=MODULES_VERSION_STRING"
+	OUTPUT_VARIABLE PYTHON_VERSION_INFO
+)
+
 if (godot_disable_3d)
-	if (godot_editor_build)
+	if (EDITOR_BUILD)
 		message(FATAL_ERROR 
 			"Build option 'disable_3d=yes' cannot be used for editor builds, "
 			"but only for export templates.")
@@ -1118,7 +1037,7 @@ if (godot_disable_3d)
 endif()
 
 if (godot_disable_advance_gui)
-	if (godot_editor_build)
+	if (EDITOR_BUILD)
 		message(FATAL_ERROR 
 			"Build option 'disable_advanced_gui=yes' cannot be used for editor builds, "
 			"but only for export templates."
@@ -1136,12 +1055,16 @@ if (godot_brotli)
 	target_compile_definitions(global-env INTERFACE "BROTLI_ENABLED")
 endif()
 
+if (godot_threads)
+	target_compile_definitions(global-env INTERFACE "THREADS_ENABLED")
+endif()
+
 add_env(global-libs-list)
 
 add_subdirectory(core)
 add_subdirectory(servers)
 add_subdirectory(scene)
-if (godot_editor_build)
+if (EDITOR_BUILD)
 	add_subdirectory(editor)
 endif()
 add_subdirectory(drivers)

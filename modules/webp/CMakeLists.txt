@@ -141,6 +141,7 @@ if (godot_builtin_libwebp)
 		"src/utils/filters_utils.c"
 		"src/utils/huffman_encode_utils.c"
 		"src/utils/huffman_utils.c"
+		"src/utils/palette.c"
 		"src/utils/quant_levels_dec_utils.c"
 		"src/utils/quant_levels_utils.c"
 		"src/utils/random_utils.c"

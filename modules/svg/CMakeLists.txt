@@ -24,58 +24,69 @@ add_lib(thirdparty-thorvg-lib
 
 set(__THIRDPARTY_THORVG_PATH "${ENGINE_SOURCE_DIR}/thirdparty/thorvg")
 target_sources_from_path(thirdparty-thorvg-lib PRIVATE "${__THIRDPARTY_THORVG_PATH}"
-	"src/lib/sw_engine/tvgSwFill.cpp"
-	"src/lib/sw_engine/tvgSwImage.cpp"
-	"src/lib/sw_engine/tvgSwMath.cpp"
-	"src/lib/sw_engine/tvgSwMemPool.cpp"
-	"src/lib/sw_engine/tvgSwRaster.cpp"
-	"src/lib/sw_engine/tvgSwRenderer.cpp"
-	"src/lib/sw_engine/tvgSwRle.cpp"
-	"src/lib/sw_engine/tvgSwShape.cpp"
-	"src/lib/sw_engine/tvgSwStroke.cpp"
-	"src/lib/tvgAccessor.cpp"
-	"src/lib/tvgBezier.cpp"
-	"src/lib/tvgCanvas.cpp"
-	"src/lib/tvgFill.cpp"
-	"src/lib/tvgGlCanvas.cpp"
-	"src/lib/tvgInitializer.cpp"
-	"src/lib/tvgLinearGradient.cpp"
-	"src/lib/tvgLoader.cpp"
-	"src/lib/tvgLzw.cpp"
-	"src/lib/tvgPaint.cpp"
-	"src/lib/tvgPicture.cpp"
-	"src/lib/tvgRadialGradient.cpp"
-	"src/lib/tvgRender.cpp"
-	"src/lib/tvgSaver.cpp"
-	"src/lib/tvgScene.cpp"
-	"src/lib/tvgShape.cpp"
-	"src/lib/tvgSwCanvas.cpp"
-	"src/lib/tvgTaskScheduler.cpp"
-	"src/loaders/external_png/tvgPngLoader.cpp"
-	"src/loaders/jpg/tvgJpgd.cpp"
-	"src/loaders/jpg/tvgJpgLoader.cpp"
-	"src/loaders/raw/tvgRawLoader.cpp"
+	# common
+	"src/common/tvgCompressor.cpp"
+	"src/common/tvgLines.cpp"
+	"src/common/tvgMath.cpp"
+	"src/common/tvgStr.cpp"
+	# SVG parser
 	"src/loaders/svg/tvgSvgCssStyle.cpp"
 	"src/loaders/svg/tvgSvgLoader.cpp"
 	"src/loaders/svg/tvgSvgPath.cpp"
 	"src/loaders/svg/tvgSvgSceneBuilder.cpp"
 	"src/loaders/svg/tvgSvgUtil.cpp"
 	"src/loaders/svg/tvgXmlParser.cpp"
-	"src/loaders/tvg/tvgTvgBinInterpreter.cpp"
-	"src/loaders/tvg/tvgTvgLoader.cpp"
-	"src/savers/tvg/tvgTvgSaver.cpp"
+	"src/loaders/raw/tvgRawLoader.cpp"
+	# image loaders
+	"src/loaders/external_png/tvgPngLoader.cpp"
+	"src/loaders/jpg/tvgJpgd.cpp"
+	"src/loaders/jpg/tvgJpgLoader.cpp"
+	# renderer common
+	"src/renderer/tvgAccessor.cpp"
+	# "src/renderer/tvgAnimation.cpp"
+	"src/renderer/tvgCanvas.cpp"
+	"src/renderer/tvgFill.cpp"
+	# "src/renderer/tvgGlCanvas.cpp"
+	"src/renderer/tvgInitializer.cpp"
+	"src/renderer/tvgLoader.cpp"
+	"src/renderer/tvgPaint.cpp"
+	"src/renderer/tvgPicture.cpp"
+	"src/renderer/tvgRender.cpp"
+	# "src/renderer/tvgSaver.cpp"
+	"src/renderer/tvgScene.cpp"
+	"src/renderer/tvgShape.cpp"
+	"src/renderer/tvgSwCanvas.cpp"
+	"src/renderer/tvgTaskScheduler.cpp"
+	"src/renderer/tvgText.cpp"
+	# "src/renderer/tvgWgCanvas.cpp"
+	# renderer sw_engine
+	"src/renderer/sw_engine/tvgSwFill.cpp"
+	"src/renderer/sw_engine/tvgSwImage.cpp"
+	"src/renderer/sw_engine/tvgSwMath.cpp"
+	"src/renderer/sw_engine/tvgSwMemPool.cpp"
+	"src/renderer/sw_engine/tvgSwRaster.cpp"
+	"src/renderer/sw_engine/tvgSwRenderer.cpp"
+	"src/renderer/sw_engine/tvgSwRle.cpp"
+	"src/renderer/sw_engine/tvgSwShape.cpp"
+	"src/renderer/sw_engine/tvgSwStroke.cpp"
 )
+
+if (godot_module_webp_enabled)
+	target_sources(thirdparty-thorvg-lib PRIVATE "${__THIRDPARTY_THORVG_PATH}/src/loaders/external_webp/tvgWebpLoader.cpp")
+	target_compile_definitions(thirdparty-thorvg-lib PRIVATE "THORVG_WEBP_LOADER_SUPPORT")
+endif()
+
+target_compile_definitions(svg-env INTERFACE "TVG_STATIC")
 
 target_include_directories(svg-env INTERFACE "${__THIRDPARTY_THORVG_PATH}/inc")
 target_include_directories(thirdparty-thorvg-lib PRIVATE
-	"${__THIRDPARTY_THORVG_PATH}/src/lib"
-	"${__THIRDPARTY_THORVG_PATH}/src/lib/sw_engine"
+	"${__THIRDPARTY_THORVG_PATH}/src/common"
+	"${__THIRDPARTY_THORVG_PATH}/src/loaders/svg"
+	"${__THIRDPARTY_THORVG_PATH}/src/renderer"
+	"${__THIRDPARTY_THORVG_PATH}/src/renderer/sw_engine"
+	"${__THIRDPARTY_THORVG_PATH}/src/loaders/raw"
 	"${__THIRDPARTY_THORVG_PATH}/src/loaders/external_png"
 	"${__THIRDPARTY_THORVG_PATH}/src/loaders/jpg"
-	"${__THIRDPARTY_THORVG_PATH}/src/loaders/raw"
-	"${__THIRDPARTY_THORVG_PATH}/src/loaders/svg"
-	"${__THIRDPARTY_THORVG_PATH}/src/loaders/tvg"
-	"${__THIRDPARTY_THORVG_PATH}/src/savers/tvg"
 )
 
 # Also requires libpng headers
@@ -83,4 +94,11 @@ if (godot_builtin_libpng)
 	target_include_directories(thirdparty-thorvg-lib PRIVATE
 		"${ENGINE_SOURCE_DIR}/thirdparty/libpng"
 	)
+endif()
+
+if (godot_module_webp_enabled)
+	target_include_directories(thirdparty-thorvg-lib PRIVATE "${__THIRDPARTY_THORVG_PATH}/src/loaders/external_webp")
+	if (godot_builtin_libwebp)
+		target_include_directories(thirdparty-thorvg-lib PRIVATE "${ENGINE_SOURCE_DIR}/thirdparty/libwebp/src")
+	endif()
 endif()

@@ -12,6 +12,6 @@ target_glob_sources(gltf-lib PRIVATE "structures/*.cpp")
 
 add_subdirectory(extensions)
 
-if (godot_editor_build)
+if (EDITOR_BUILD)
 	target_glob_sources(gltf-lib PRIVATE "editor/*.cpp")
 endif()

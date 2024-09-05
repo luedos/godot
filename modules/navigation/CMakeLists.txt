@@ -12,8 +12,12 @@ add_lib(navigation-lib
 		global-warnings-env
 )
 target_glob_sources(navigation-lib PRIVATE "*.cpp")
+target_glob_sources(navigation-lib PRIVATE "2d/*.cpp")
+if (NOT godot_disable_3d)
+	target_glob_sources(navigation-lib PRIVATE "3d/*.cpp")
+endif()
 
-if (godot_editor_build)
+if (EDITOR_BUILD)
 	target_glob_sources(navigation-lib PRIVATE "editor/*.cpp")
 endif()
 

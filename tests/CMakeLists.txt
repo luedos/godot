@@ -17,8 +17,6 @@ if (godot_platform STREQUAL "windows")
 	target_compile_definitions(tests-lib PRIVATE "DOCTEST_THREAD_LOCAL")
 endif()
 
-# Increase number of addressable sections in object files
-# due to doctest's heavy use of templates and macros.
-if (MSVC)
-	target_compile_options(tests-lib PRIVATE "/bigobj")
+if (godot_disable_exceptions)
+	target_compile_definitions(tests-lib PRIVATE "DOCTEST_CONFIG_NO_EXCEPTIONS_BUT_WITH_ALL_ASSERTS")
 endif()

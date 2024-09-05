@@ -15,8 +15,9 @@ target_glob_sources(msdfgen-lib PRIVATE "*.cpp")
 
 if (godot_builtin_msdfgen)
 	add_lib(thirdparty-msdfgen-lib
-		PARENT_ENV
-			global-libs-list
+		OBJECT
+		PARENT_LIB
+			modules-lib
 		COMPONENTS
 			msdfgen-env
 			thirdparty-warnings-env
@@ -29,8 +30,6 @@ if (godot_builtin_msdfgen)
 		"core/Projection.cpp"
 		"core/Scanline.cpp"
 		"core/Shape.cpp"
-		"core/SignedDistance.cpp"
-		"core/Vector2.cpp"
 		"core/contour-combiners.cpp"
 		"core/edge-coloring.cpp"
 		"core/edge-segments.cpp"
@@ -44,6 +43,7 @@ if (godot_builtin_msdfgen)
 		"core/shape-description.cpp"
 	)
 
+	target_compile_definitions(msdfgen-env INTERFACE "MSDFGEN_PUBLIC=")
 	target_include_directories(msdfgen-env INTERFACE 
 		"${__THIRDPARTY_MSDFGEN_PATH}"
 		"${ENGINE_SOURCE_DIR}/thirdparty/freetype/include"

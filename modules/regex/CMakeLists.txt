@@ -34,6 +34,7 @@ if (godot_builtin_pcre2)
 	set(__THIRDPARTY_PCRE2_SOURCES
 		"pcre2_auto_possess.c"
 		"pcre2_chartables.c"
+		"pcre2_chkdint.c"
 		"pcre2_compile.c"
 		"pcre2_config.c"
 		"pcre2_context.c"
@@ -43,7 +44,7 @@ if (godot_builtin_pcre2)
 		"pcre2_extuni.c"
 		"pcre2_find_bracket.c"
 		"pcre2_jit_compile.c"
-		# "pcre2_jit_match.c", "pcre2_jit_misc.c", # these files are included in pcre2_jit_compile.c.
+		# "pcre2_jit_match.c", "pcre2_jit_misc.c", # Included in `pcre2_jit_compile.c`.
 		"pcre2_maketables.c"
 		"pcre2_match.c"
 		"pcre2_match_data.c"
@@ -58,6 +59,7 @@ if (godot_builtin_pcre2)
 		"pcre2_substring.c"
 		"pcre2_tables.c"
 		"pcre2_ucd.c"
+		# "pcre2_ucptables.c", # Included in `pcre2_tables.c`.
 		"pcre2_valid_utf.c"
 		"pcre2_xclass.c"
 	)
