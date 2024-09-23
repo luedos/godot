@@ -658,6 +658,9 @@ function(check_action_cache __OUTPUT __ACTION_NAME)
 		set("${__OUTPUT}" TRUE PARENT_SCOPE)
 	else()
 		set("${__OUTPUT}" FALSE PARENT_SCOPE)
+		if (VERBOSE)
+			message(STATUS "Action cache '${__ACTION_NAME}' hash '${__OLD_HASH}' outdated, by new hash '${__NEW_HASH}'.")
+		endif()
 	endif()
 endfunction()
 
@@ -668,6 +671,10 @@ function(update_action_cache __ACTION_NAME)
 
 	generate_action_hash(__NEW_HASH ${ARGN})
 	set("${__ACTION_NAME}_ACTION_CACHE" "${__NEW_HASH}" CACHE INTERNAL "Cache for action '${__ACTION_NAME}' which is used to not do this action in cmake if not necessary." FORCE)
+
+	if (VERBOSE)
+		message(STATUS "Writing new hash for action cache '${__ACTION_NAME}': '${__NEW_HASH}'.")
+	endif()
 endfunction()
 
 # Simple parsing of the python value definition.

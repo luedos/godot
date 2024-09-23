@@ -49,6 +49,9 @@ if(EDITOR_BUILD)
 		servers-lib
 		# This is required because editor is dependent on gles generated headers
 		drivers-lib
+	)
+
+	add_dependencies(editor-lib 
 		# This is required for export icons
 		platform-gen
 	)

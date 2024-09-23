@@ -493,15 +493,6 @@ endforeach()
 list(REMOVE_DUPLICATES __ADDITIONAL_INCLUDES)
 target_include_directories(global-env INTERFACE ${__ADDITIONAL_INCLUDES})
 
-# generating some files
-execute_python_method(cmake_methods cmake_write_modules
-	PYTHON_ARGS
-		ARR_VAR "MODULES_IDS"
-		ARR_VAR "MODULES_PATHS"
-	ACTION_CACHE_NAME "register_module_types"
-	DEPENDENT_FILES "${CMAKE_CURRENT_SOURCE_DIR}/modules/register_module_types.gen.cpp"
-)
-
 ############### Processing build profile ###############
 
 set(__DISABLED_CLASSES_RAW_ARRAY "[]")
